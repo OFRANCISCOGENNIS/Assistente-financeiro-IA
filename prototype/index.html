@@ -619,18 +619,33 @@
             <div class="score-ring">
               <svg viewBox="0 0 120 120">
                 <circle cx="60" cy="60" r="52" fill="none" stroke="var(--grid)" stroke-width="10"/>
-                <circle cx="60" cy="60" r="52" fill="none" stroke="var(--accent)" stroke-width="10"
-                  stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="71.9"/>
+                <circle cx="60" cy="60" r="52" fill="none" stroke="var(--warn)" stroke-width="10"
+                  stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="78.4"/>
               </svg>
-              <div class="n">78<small>de 100</small></div>
+              <div class="n">76<small>de 100</small></div>
             </div>
             <div style="flex:1; min-width: 240px">
-              <h2 style="font-size:16px">Sua conta está bem protegida</h2>
-              <p class="hint" style="margin-bottom:6px">Complete os passos abaixo para chegar a 100.</p>
+              <h2 style="font-size:16px">Seu score está na banda Atenção</h2>
+              <p class="hint" style="margin-bottom:6px">+12 pts disponíveis nos itens abaixo — resolvê-los leva você à banda Protegido.</p>
               <div class="check-item done"><span class="box">✓</span> Passkey ativa neste aparelho</div>
               <div class="check-item done"><span class="box">✓</span> Verificação em duas etapas por push</div>
-              <div class="check-item"><span class="box"></span> Revisar 1 dispositivo com acesso incomum <button class="act">Revisar</button></div>
-              <div class="check-item"><span class="box"></span> Configurar contato de recuperação <button class="act">Configurar</button></div>
+              <div class="check-item"><span class="box"></span> Revisar 1 dispositivo com acesso incomum <button class="act">Revisar (+5 pts)</button></div>
+              <div class="check-item"><span class="box"></span> Configurar contato de recuperação <button class="act">Configurar (+3 pts)</button></div>
+              <div class="check-item"><span class="box"></span> Cancelar assinatura sem uso (StreamMax) <button class="act">Resolver (+4 pts)</button></div>
+              <div style="display:flex; gap:18px; margin-top:12px; flex-wrap:wrap">
+                <div style="flex:1; min-width:140px">
+                  <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:4px">
+                    <span style="color:var(--ink-2); font-weight:600">Financeiro</span><b class="num">50/60</b>
+                  </div>
+                  <div class="limit-bar"><i style="width:83%; background:var(--accent)"></i></div>
+                </div>
+                <div style="flex:1; min-width:140px">
+                  <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:4px">
+                    <span style="color:var(--ink-2); font-weight:600">Segurança</span><b class="num">29/40</b>
+                  </div>
+                  <div class="limit-bar"><i style="width:72%; background:var(--accent)"></i></div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
