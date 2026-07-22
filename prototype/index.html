@@ -853,10 +853,16 @@
     <!-- ============ ORÇAMENTO ============ -->
     <section class="view" id="view-orc" aria-label="Orçamento mensal">
       <div class="view-h">
-        <h1>Orçamento de julho</h1>
-        <span class="sub">Dia 22 de 31 · 71% do mês já passou</span>
+        <h1>Orçamento</h1>
+        <span class="sub">Limites por categoria e ritmo do mês</span>
+        <div class="mode-switch" role="group" aria-label="Modo de dados">
+          <button data-mode="demo" aria-pressed="true">Demonstração</button>
+          <button data-mode="real" aria-pressed="false">Meus dados</button>
+        </div>
       </div>
 
+      <div id="realOrc" hidden></div>
+      <div id="demoOrc">
       <div class="grid g-tiles">
         <div class="card tile">
           <div class="label">Orçamento total</div>
@@ -959,6 +965,7 @@
             milagrosas: o que muda comportamento é acompanhar o acumulado.</p>
         </div>
       </div>
+      </div><!-- /demoOrc -->
     </section>
 
     <!-- ============ METAS ============ -->
@@ -1053,9 +1060,15 @@
     <section class="view" id="view-inv" aria-label="Investimentos">
       <div class="view-h">
         <h1>Investimentos</h1>
-        <span class="sub">Carteira consolidada · atualizada há 2 min</span>
+        <span class="sub">Carteira consolidada</span>
+        <div class="mode-switch" role="group" aria-label="Modo de dados">
+          <button data-mode="demo" aria-pressed="true">Demonstração</button>
+          <button data-mode="real" aria-pressed="false">Meus dados</button>
+        </div>
       </div>
 
+      <div id="realInv" hidden></div>
+      <div id="demoInv">
       <div class="grid g-tiles">
         <div class="card tile">
           <div class="label">Total investido</div>
@@ -1147,6 +1160,7 @@
           </div>
         </div>
       </div>
+      </div><!-- /demoInv -->
     </section>
 
     <!-- ============ EMPRESA (MEI) ============ -->
@@ -1450,6 +1464,36 @@
   </div>
 </div>
 
+<!-- definir limites do orçamento -->
+<div class="sheet-veil" id="budgetSheet">
+  <div class="sheet" role="dialog" aria-label="Definir limites do orçamento" style="max-height:82vh; overflow-y:auto">
+    <h2>Limites do mês</h2>
+    <p style="margin-bottom:2px">Defina um teto por categoria. Deixe em branco o que não quer acompanhar.</p>
+    <div id="budgetFields" style="margin-top:8px"></div>
+    <button class="btn-primary" id="btnBudgetSave" style="margin-top:16px">Salvar limites</button>
+    <button class="alt" id="btnBudgetCancel">Cancelar</button>
+  </div>
+</div>
+
+<!-- adicionar investimento -->
+<div class="sheet-veil" id="invSheet">
+  <div class="sheet" role="dialog" aria-label="Adicionar investimento">
+    <h2>Adicionar investimento</h2>
+    <div class="field">
+      <label for="invName">Nome</label>
+      <input id="invName" type="text" placeholder="Ex.: Tesouro Selic 2029" autocomplete="off">
+    </div>
+    <span class="fieldset-label">Classe</span>
+    <div class="chip-row" id="invClasses"></div>
+    <div class="field">
+      <label for="invValue">Valor aplicado</label>
+      <input id="invValue" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
+    </div>
+    <button class="btn-primary" id="btnInvSave" style="margin-top:18px">Salvar</button>
+    <button class="alt" id="btnInvCancel">Cancelar</button>
+  </div>
+</div>
+
 <!-- guardião — bloqueio consultivo (nível 3) -->
 <div class="sheet-veil" id="guardSheet">
   <div class="sheet" role="dialog" aria-label="Confirmação de exportação sensível">
@@ -1546,7 +1590,7 @@
   const uid = () => "id" + Math.random().toString(36).slice(2, 9);
 
   const store = {
-    d: { mode: "demo", accounts: [], tx: [], goals: [] },
+    d: { mode: "demo", accounts: [], tx: [], goals: [], budgets: {}, investments: [] },
     load() { try { const r = localStorage.getItem(KEY); if (r) this.d = Object.assign(this.d, JSON.parse(r)); } catch (e) {} },
     save() { try { localStorage.setItem(KEY, JSON.stringify(this.d)); } catch (e) {} },
   };
@@ -1671,14 +1715,133 @@
   }
   const fmtDate = iso => { if (!iso) return ""; const [y, m, dd] = iso.split("-"); return dd + "/" + m; };
 
+  /* ---------- Orçamento (Meus dados) ---------- */
+  const daysInMonth = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); };
+  const monthElapsed = () => Math.round(new Date().getDate() / daysInMonth() * 100);
+  const realOrc = $("#realOrc");
+  function renderOrc() {
+    if (!realOrc) return;
+    const spentMap = {}; byCategory().forEach(([c, v]) => spentMap[c] = v);
+    const budgets = store.d.budgets || {};
+    const cats = [...new Set([...Object.keys(budgets), ...Object.keys(spentMap)])];
+    if (!cats.length) {
+      realOrc.innerHTML = `<div class="card empty"><div class="big">🥧</div>
+        <h2>Defina seus limites do mês</h2>
+        <p>Escolha um teto para cada categoria e eu acompanho o quanto você já gastou, avisando quando o ritmo passar do ideal.</p>
+        <div class="cta-row"><button class="btn-mini" id="orcSetBtn">Definir limites</button></div></div>`;
+      $("#orcSetBtn").addEventListener("click", openBudget);
+      return;
+    }
+    const pace = monthElapsed();
+    const totalBud = cats.reduce((a, c) => a + (budgets[c] || 0), 0);
+    const totalSpent = cats.reduce((a, c) => a + (spentMap[c] || 0), 0);
+    const rows = cats.map(c => {
+      const lim = budgets[c] || 0, sp = spentMap[c] || 0;
+      const pct = lim ? Math.round(sp / lim * 100) : (sp > 0 ? 999 : 0);
+      const state = !lim ? "" : pct > 100 ? "over" : pct >= 85 ? "warn-b" : "ok";
+      const color = !lim ? "var(--ink-3)" : pct > 100 ? "var(--critical)" : pct >= 85 ? "var(--warn)" : "var(--accent)";
+      return `<div class="budget-row ${state}"><div class="b-head"><span class="cat">${c}</span>
+        <span class="pct num">${lim ? pct + "%" : "sem limite"}</span></div>
+        <div class="limit-bar pace-line"><i style="width:${Math.min(100, lim ? pct : 4)}%; background:${color}"></i>
+          ${lim ? `<span class="pace-mark" style="left:${pace}%"></span>` : ""}</div>
+        <div class="b-sub"><span class="num money">${brl(sp)}${lim ? " de " + brl(lim) : ""}</span>
+          <span>${lim ? (pct > 100 ? brl(sp - lim) + " acima" : brl(lim - sp) + " restantes") : "toque em Definir limites"}</span></div></div>`;
+    }).join("");
+    realOrc.innerHTML = `
+      <div class="grid g-tiles">
+        <div class="card tile"><div class="label">Orçamento total</div>
+          <div class="value num money">${brl(totalBud)}</div>
+          <div class="delta"><span class="vs">${cats.filter(c => budgets[c]).length} categoria(s) com limite</span></div></div>
+        <div class="card tile"><div class="label">Você já usou</div>
+          <div class="value num">${totalBud ? Math.round(totalSpent / totalBud * 100) : 0}%</div>
+          <div class="delta"><span class="vs">com ${pace}% do mês decorrido</span></div></div>
+        <div class="card tile"><div class="label">Gasto até agora</div>
+          <div class="value num money">${brl(totalSpent)}</div></div>
+        <div class="card tile"><div class="label">Restante</div>
+          <div class="value num money" style="color:${totalBud - totalSpent >= 0 ? "var(--good-text)" : "var(--critical)"}">${brl(Math.max(0, totalBud - totalSpent))}</div></div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div style="display:flex; align-items:baseline; gap:10px"><h2>Por categoria</h2>
+          <button class="btn-mini alt" id="orcSetBtn" style="margin-left:auto">Definir limites</button></div>
+        <p class="hint">A marca vertical mostra onde o mês está (${pace}%) — barra além dela = ritmo acelerado</p>
+        ${rows}
+      </div>`;
+    $("#orcSetBtn").addEventListener("click", openBudget);
+  }
+
+  /* ---------- Investimentos (Meus dados) ---------- */
+  const INV_CLASSES = [["Renda fixa", "#2a78d6"], ["FIIs", "#1baf7a"], ["Ações", "#eda100"], ["Exterior", "#e87ba4"], ["Cripto", "#4a3aa7"], ["Outros", "#898781"]];
+  const realInv = $("#realInv");
+  function renderInv() {
+    if (!realInv) return;
+    const inv = store.d.investments || [];
+    if (!inv.length) {
+      realInv.innerHTML = `<div class="card empty"><div class="big">📈</div>
+        <h2>Sua carteira começa aqui</h2>
+        <p>Adicione suas posições (Tesouro, CDB, ações, FIIs, cripto…) e eu mostro o total investido e como sua carteira está distribuída.</p>
+        <div class="cta-row"><button class="btn-mini" id="invAddBtn">Adicionar investimento</button></div></div>`;
+      $("#invAddBtn").addEventListener("click", openInv);
+      return;
+    }
+    const total = inv.reduce((a, p) => a + p.value, 0) || 1;
+    const byClass = {}; inv.forEach(p => byClass[p.klass] = (byClass[p.klass] || 0) + p.value);
+    const segs = INV_CLASSES.filter(([k]) => byClass[k]).map(([k, col]) =>
+      `<i style="width:${byClass[k] / total * 100}%; background:${col}" title="${k}"></i>`).join("");
+    const legend = INV_CLASSES.filter(([k]) => byClass[k]).map(([k, col]) =>
+      `<span><span class="sw" style="background:${col}"></span>${k} ${Math.round(byClass[k] / total * 100)}%</span>`).join("");
+    const colOf = k => (INV_CLASSES.find(c => c[0] === k) || ["", "var(--s1)"])[1];
+    const rows = inv.map(p => `<div class="row-item">
+      <span class="cat-dot" style="background:${colOf(p.klass)}"></span>
+      <div class="grow"><div class="t">${p.name}</div><div class="d">${p.klass}</div></div>
+      <span class="num money">${brl(p.value)}</span>
+      <button class="del" data-del-inv="${p.id}" aria-label="Excluir">✕</button></div>`).join("");
+    realInv.innerHTML = `
+      <div class="grid g-tiles">
+        <div class="card tile"><div class="label">Total investido</div>
+          <div class="value num money">${brl(total)}</div>
+          <div class="delta"><span class="vs">${inv.length} posição(ões)</span></div></div>
+        <div class="card tile"><div class="label">Classes</div>
+          <div class="value num">${Object.keys(byClass).length}</div>
+          <div class="delta"><span class="vs">de ${INV_CLASSES.length} possíveis</span></div></div>
+        <div class="card tile"><div class="label">Maior posição</div>
+          <div class="value num money">${brl(Math.max(...inv.map(p => p.value)))}</div></div>
+        <div class="card tile"><div class="label">% em renda fixa</div>
+          <div class="value num">${Math.round((byClass["Renda fixa"] || 0) / total * 100)}%</div>
+          <div class="delta"><span class="vs">o colchão da carteira</span></div></div>
+      </div>
+      <div class="grid g-2-1">
+        <div class="card">
+          <div style="display:flex; align-items:baseline"><h2>Posições</h2>
+            <button class="btn-mini alt" id="invAddBtn" style="margin-left:auto">+ Investimento</button></div>
+          <p class="hint">Suas aplicações</p>
+          <div class="row-list mini-list">${rows}</div>
+        </div>
+        <div class="card"><h2>Alocação</h2><p class="hint">Como sua carteira está dividida</p>
+          <div class="alloc-bar">${segs}</div>
+          <div class="alloc-legend">${legend}</div></div>
+      </div>`;
+    $("#invAddBtn").addEventListener("click", openInv);
+    $$("[data-del-inv]", realInv).forEach(b => b.addEventListener("click", () => {
+      store.d.investments = store.d.investments.filter(p => p.id !== b.dataset.delInv); store.save(); renderInv();
+    }));
+  }
+
   /* ---------- modo demonstração / meus dados ---------- */
   const demoDash = $("#demoDash");
+  function toggleReal(demoId, realId) {
+    const real = store.d.mode === "real";
+    const dEl = $("#" + demoId), rEl = $("#" + realId);
+    if (dEl) dEl.hidden = real;
+    if (rEl) rEl.hidden = !real;
+  }
   function applyMode() {
     const real = store.d.mode === "real";
-    demoDash.hidden = real; realDash.hidden = !real;
+    toggleReal("demoDash", "realDash");
+    toggleReal("demoOrc", "realOrc");
+    toggleReal("demoInv", "realInv");
     $$(".mode-switch button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === store.d.mode)));
     if (real) {
-      renderReal();
+      renderReal(); renderOrc(); renderInv();
       $("#dashGreeting").textContent = "Seu painel";
       const now = new Date();
       $("#dashSub").textContent = `${now.getDate()} de ${MESES_L[now.getMonth()]} de ${now.getFullYear()} · dados neste navegador`;
@@ -1773,6 +1936,46 @@
     showToast(`Meta "${name}" criada`);
   });
 
+  /* ---------- definir limites do orçamento ---------- */
+  const budgetSheet = $("#budgetSheet");
+  function openBudget() {
+    const b = store.d.budgets || {};
+    $("#budgetFields").innerHTML = CATS_OUT.map(c =>
+      `<div class="field" style="margin-top:8px"><label>${c}</label>
+        <input type="text" inputmode="decimal" data-bcat="${c}" placeholder="sem limite" value="${b[c] ? "R$ " + b[c].toLocaleString("pt-BR") : ""}"></div>`).join("");
+    budgetSheet.classList.add("open");
+  }
+  $("#btnBudgetCancel").addEventListener("click", () => budgetSheet.classList.remove("open"));
+  budgetSheet.addEventListener("click", e => { if (e.target === budgetSheet) budgetSheet.classList.remove("open"); });
+  $("#btnBudgetSave").addEventListener("click", () => {
+    const b = {};
+    $$("#budgetFields [data-bcat]").forEach(inp => { const v = parseNum(inp.value); if (v > 0) b[inp.dataset.bcat] = v; });
+    store.d.budgets = b; store.save(); budgetSheet.classList.remove("open"); renderOrc();
+    showToast("Limites do orçamento salvos");
+  });
+
+  /* ---------- adicionar investimento ---------- */
+  const invSheet = $("#invSheet");
+  let invClass = INV_CLASSES[0][0];
+  function openInv() {
+    $("#invName").value = ""; $("#invValue").value = ""; invClass = INV_CLASSES[0][0];
+    $("#invClasses").innerHTML = INV_CLASSES.map((c, i) => `<button class="chip" aria-pressed="${i === 0}">${c[0]}</button>`).join("");
+    $$("#invClasses .chip").forEach(ch => ch.addEventListener("click", () => {
+      $$("#invClasses .chip").forEach(x => x.setAttribute("aria-pressed", "false"));
+      ch.setAttribute("aria-pressed", "true"); invClass = ch.textContent;
+    }));
+    invSheet.classList.add("open"); $("#invName").focus();
+  }
+  $("#btnInvCancel").addEventListener("click", () => invSheet.classList.remove("open"));
+  invSheet.addEventListener("click", e => { if (e.target === invSheet) invSheet.classList.remove("open"); });
+  $("#btnInvSave").addEventListener("click", () => {
+    const name = $("#invName").value.trim(), value = parseNum($("#invValue").value);
+    if (!name || value <= 0) { $("#invName").focus(); return; }
+    store.d.investments.push({ id: uid(), name, klass: invClass, value });
+    store.save(); invSheet.classList.remove("open"); renderInv();
+    showToast(`${name} adicionado à carteira`);
+  });
+
   const ACT = { addAcct: openAcct, addTx: openAdd, addGoal: openGoal };
   applyMode();
 
@@ -1817,7 +2020,7 @@
   $("#cmdTheme").addEventListener("click", () => { toggleTheme(); closeCmdk(); });
   addEventListener("keydown", e => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openCmdk(); }
-    if (e.key === "Escape") { closeCmdk(); [sheet, guardSheet, addSheet, acctSheet, goalSheet].forEach(s => s && s.classList.remove("open")); }
+    if (e.key === "Escape") { closeCmdk(); [sheet, guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet].forEach(s => s && s.classList.remove("open")); }
   });
 
   /* ---------- gráficos (SVG gerado) ---------- */
@@ -2034,7 +2237,8 @@
       const mIdx = MESES_L.findIndex(m => n.includes(m.slice(0, 4)));
       const now = new Date(); let months = 5;
       if (mIdx >= 0) { let dd = mIdx - now.getMonth(); if (dd <= 0) dd += 12; months = dd; }
-      return `Para juntar ${brl(alvo)} em ${months} ${months > 1 ? "meses" : "mês"}, você precisa separar:<span class="fig">${brl(alvo / months)}/mês</span>Posso transformar isso numa meta com aporte automático, se quiser.${src}`;
+      const gname = /viaj/.test(n) ? "Viagem" : (/carro/.test(n) ? "Carro" : /casa|apart|imovel/.test(n) ? "Imóvel" : "Nova meta");
+      return `Para juntar ${brl(alvo)} em ${months} ${months > 1 ? "meses" : "mês"}, você precisa separar:<span class="fig">${brl(alvo / months)}/mês</span>Quer que eu já crie essa meta pra você?<button class="btn-mini" data-cop-goal="${alvo}" data-cop-name="${gname}" style="margin-top:10px">Criar meta “${gname}” de ${brl(alvo)}</button>${src}`;
     }
     if (/(investir|investimento|onde aplicar|aplicar dinheiro)/.test(n)) {
       const res = s.goals.find(g => /reserva/i.test(g.name));
@@ -2065,6 +2269,16 @@
   $$("#copSuggest .chip").forEach(b => b.addEventListener("click", () => copAsk(b.textContent)));
   $("#copSend").addEventListener("click", () => copAsk(copInput.value));
   copInput.addEventListener("keydown", e => { if (e.key === "Enter") copAsk(copInput.value); });
+  copLog.addEventListener("click", e => {
+    const b = e.target.closest("[data-cop-goal]");
+    if (!b || b.disabled) return;
+    const target = parseFloat(b.dataset.copGoal);
+    if (store.d.mode !== "real") { store.d.mode = "real"; store.save(); applyMode(); }
+    store.d.goals.push({ id: uid(), name: b.dataset.copName || "Nova meta", target, current: 0 });
+    store.save(); renderReal();
+    b.disabled = true; b.textContent = "Meta criada ✓"; b.style.opacity = ".7";
+    showToast(`Meta “${b.dataset.copName}” de ${brl(target)} criada`);
+  });
   function copWelcome() {
     copLog.innerHTML = "";
     const s = copSnap(), eco = s.rec - s.des;
