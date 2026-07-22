@@ -224,6 +224,27 @@
   .row-item.paid .t { color: var(--ink-2); }
   .fixed-sum { padding-bottom: 12px; border-bottom: 1px solid var(--ring); margin-bottom: 4px; }
 
+  /* simulador de metas */
+  input[type=range] { width: 100%; accent-color: var(--accent); margin-top: 10px; height: 22px; }
+  .sim-out { margin-top: 14px; padding: 11px 14px; background: var(--accent-soft);
+    border-radius: 9px; font-size: 13.5px; }
+  .sim-label { display: flex; justify-content: space-between; font-size: 13px; color: var(--ink-2);
+    font-weight: 600; }
+
+  /* safe-to-spend hero */
+  .safe-hero { display: flex; gap: 26px; align-items: center; flex-wrap: wrap;
+    background: linear-gradient(180deg, var(--accent-soft), transparent);
+    border-color: color-mix(in srgb, var(--accent) 22%, var(--ring)); }
+  .safe-hero .lead { flex: 1; min-width: 220px; }
+  .safe-hero .value { font-size: 30px; font-weight: 750; letter-spacing: -0.02em; margin: 3px 0; }
+  .safe-hero .value small { font-size: 14px; font-weight: 550; color: var(--ink-3); letter-spacing: 0; }
+  .safe-break { flex: 1.3; min-width: 260px; font-size: 12.5px; }
+  .safe-break .b-row { display: flex; justify-content: space-between; padding: 4px 0;
+    color: var(--ink-2); }
+  .safe-break .b-row.total { border-top: 1px solid var(--ring); margin-top: 3px; padding-top: 7px;
+    color: var(--ink); font-weight: 700; }
+  .safe-break .b-row .minus { color: var(--ink-3); }
+
   /* insights do agente */
   .insight { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--ring);
     font-size: 13px; align-items: flex-start; }
@@ -444,7 +465,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 17l5-5 4 3 6-7 3 3"/></svg>
       Investimentos
     </button>
-    <button class="nav-btn" disabled style="opacity:.45; cursor:default">
+    <button class="nav-btn" data-nav="metas">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
       Metas
     </button>
@@ -493,6 +514,22 @@
         </div>
         <button class="btn-mini alt">Ver orçamento</button>
         <button class="close" id="guardBannerClose" aria-label="Dispensar aviso">✕</button>
+      </div>
+
+      <div class="card safe-hero" style="margin-top:16px">
+        <div class="lead">
+          <div class="label" style="font-size:12.5px; color:var(--ink-2); font-weight:600">Disponível para gastar até o fim de julho</div>
+          <div class="value num money">R$ 1.740,00 <small>sem comprometer o mês</small></div>
+          <div class="hint" style="margin:0">O que sobra depois de reservar contas fixas, fatura, metas e recorrentes — não é o mesmo que o saldo.</div>
+        </div>
+        <div class="safe-break">
+          <div class="b-row"><span>Saldo disponível</span><b class="num money">R$ 6.842,10</b></div>
+          <div class="b-row"><span class="minus">− Contas fixas a pagar</span><span class="num money">R$ 1.979,00</span></div>
+          <div class="b-row"><span class="minus">− Fatura de cartão</span><span class="num money">R$ 2.315,44</span></div>
+          <div class="b-row"><span class="minus">− Aporte de metas</span><span class="num money">R$ 500,00</span></div>
+          <div class="b-row"><span class="minus">− Assinaturas e recorrentes</span><span class="num money">R$ 307,66</span></div>
+          <div class="b-row total"><span>Disponível para gastar</span><b class="num money">R$ 1.740,00</b></div>
+        </div>
       </div>
 
       <div class="grid g-tiles">
@@ -567,7 +604,7 @@
 
       <div class="grid g-1-1">
         <div class="card">
-          <h2>Contas fixas do mês</h2>
+          <h2>Contas do mês</h2>
           <p class="hint">Julho · o que já saiu e o que ainda falta</p>
           <div class="fixed-sum">
             <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:7px">
@@ -640,24 +677,6 @@
 
       <div class="grid g-1-1">
         <div class="card">
-          <h2>Próximos vencimentos</h2>
-          <p class="hint">Próximos 10 dias</p>
-          <div class="row-list">
-            <div class="row-item">
-              <div class="grow"><div class="t">Fatura Nubank</div><div class="d">vence sexta, 25/07</div></div>
-              <span class="num money">R$ 2.315,44</span><span class="pill due">3 dias</span>
-            </div>
-            <div class="row-item">
-              <div class="grow"><div class="t">Aluguel</div><div class="d">vence 30/07 · débito automático</div></div>
-              <span class="num money">R$ 1.850,00</span><span class="pill ok">agendado</span>
-            </div>
-            <div class="row-item">
-              <div class="grow"><div class="t">Internet — fibra</div><div class="d">vence 01/08</div></div>
-              <span class="num money">R$ 99,90</span><span class="pill warn">10 dias</span>
-            </div>
-          </div>
-        </div>
-        <div class="card">
           <h2>Cartões</h2>
           <p class="hint">Fatura aberta e limite</p>
           <div class="row-list">
@@ -672,7 +691,10 @@
                 <div class="d num money">R$ 486 de R$ 4.000 · fecha 04/08 · melhor dia de compra: 05</div></div>
             </div>
           </div>
-          <h2 style="margin-top:16px">Guardião</h2>
+        </div>
+        <div class="card">
+          <h2>Guardião</h2>
+          <p class="hint">Alertas de negligência priorizados por risco</p>
           <div class="alert warn">
             <span class="ic">⚠️</span>
             <div>
@@ -689,6 +711,94 @@
           <div class="alert info">
             <span class="ic">💡</span>
             <div>Gastos com <b>restaurantes</b> subiram 22% vs. sua média. Quer definir um teto mensal para a categoria?</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ METAS ============ -->
+    <section class="view" id="view-metas" aria-label="Metas financeiras">
+      <div class="view-h">
+        <h1>Metas</h1>
+        <span class="sub">4 metas ativas · simule aportes e veja quando você chega lá</span>
+      </div>
+
+      <div class="grid g-tiles">
+        <div class="card tile">
+          <div class="label">Total guardado</div>
+          <div class="value num money">R$ 35.720,00</div>
+          <div class="delta up">▲ R$ 1.150 <span class="vs">este mês</span></div>
+        </div>
+        <div class="card tile">
+          <div class="label">Soma das metas</div>
+          <div class="value num money">R$ 110.000,00</div>
+          <div class="delta"><span class="vs">4 objetivos</span></div>
+        </div>
+        <div class="card tile">
+          <div class="label">Aporte mensal</div>
+          <div class="value num money">R$ 1.150,00</div>
+          <div class="delta"><span class="vs">12% da sua renda</span></div>
+        </div>
+        <div class="card tile">
+          <div class="label">Progresso geral</div>
+          <div class="value num">32%</div>
+          <div class="delta"><span class="vs">no rumo certo</span></div>
+        </div>
+      </div>
+
+      <div class="grid g-2-1">
+        <div class="card">
+          <h2>Simulador — Reserva de emergência 🛟</h2>
+          <p class="hint">Arraste o aporte e veja como muda a data de conclusão</p>
+          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:4px">
+            <span class="value num money" style="font-size:24px; font-weight:700">R$ 21.600</span>
+            <span class="hint" style="margin:0">de R$ 30.000 · 72%</span>
+          </div>
+          <div class="limit-bar" style="margin-top:8px"><i style="width:72%; background:var(--accent)"></i></div>
+          <div style="margin-top:18px">
+            <div class="sim-label"><span>Aporte mensal</span><b id="simVal" class="num money">R$ 500</b></div>
+            <input type="range" id="simSlider" min="200" max="1500" step="50" value="500" aria-label="Aporte mensal">
+          </div>
+          <div class="sim-out">
+            Faltam <b class="num money">R$ 8.400</b> · concluída em
+            <b id="simDate">dez/2027</b> (<span id="simMonths">17</span> meses no ritmo atual)
+          </div>
+        </div>
+        <div class="card">
+          <h2>Todas as metas</h2>
+          <p class="hint">Toque para simular cada uma</p>
+          <div class="row-list">
+            <div class="row-item">
+              <span style="font-size:20px">🛟</span>
+              <div class="grow"><div class="t">Reserva de emergência</div>
+                <div class="limit-bar"><i style="width:72%; background:var(--accent)"></i></div>
+                <div class="d num money">R$ 21.600 de R$ 30.000 · 72% · aporte R$ 500/mês</div></div>
+            </div>
+            <div class="row-item">
+              <span style="font-size:20px">✈️</span>
+              <div class="grow"><div class="t">Viagem — Chile 2027</div>
+                <div class="limit-bar"><i style="width:31%; background:var(--accent)"></i></div>
+                <div class="d num money">R$ 3.720 de R$ 12.000 · 31% · aporte R$ 400/mês</div></div>
+            </div>
+            <div class="row-item">
+              <span style="font-size:20px">💻</span>
+              <div class="grow"><div class="t">MacBook novo</div>
+                <div class="limit-bar"><i style="width:30%; background:var(--accent)"></i></div>
+                <div class="d num money">R$ 2.400 de R$ 8.000 · 30% · aporte R$ 250/mês</div></div>
+            </div>
+            <div class="row-item">
+              <span style="font-size:20px">🏠</span>
+              <div class="grow"><div class="t">Entrada do apê</div>
+                <div class="limit-bar"><i style="width:13%; background:var(--warn)"></i></div>
+                <div class="d num money">R$ 8.000 de R$ 60.000 · 13% · sem aporte há 3 meses</div></div>
+              <span class="pill warn">parada</span>
+            </div>
+          </div>
+          <div class="alert warn" style="margin-top:14px">
+            <span class="ic">⚠️</span>
+            <div><b>Guardião:</b> "Entrada do apê" parou em 13% — sem aporte há 3 meses, a data prevista escorregou para 2032. Retomar com <b class="num money">R$ 600/mês</b> recupera o prazo.
+              <div class="cta-row"><button class="btn-mini">Retomar aportes</button><button class="btn-mini alt">Redefinir meta</button></div>
+            </div>
           </div>
         </div>
       </div>
@@ -917,6 +1027,22 @@
     e.target.closest(".insight").remove();
     showToast("R$ 500 movidos para a reserva de emergência");
   });
+
+  /* ---------- simulador de metas ---------- */
+  const slider = $("#simSlider");
+  if (slider) {
+    const FALTA = 8400, MON = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+    const upd = () => {
+      const ap = +slider.value;
+      $("#simVal").textContent = "R$ " + ap.toLocaleString("pt-BR");
+      const months = Math.ceil(FALTA / ap);
+      $("#simMonths").textContent = months;
+      const idx = 6 + months; // base julho/2026 (índice 6)
+      $("#simDate").textContent = MON[idx % 12] + "/" + (2026 + Math.floor(idx / 12));
+    };
+    slider.addEventListener("input", upd);
+    upd();
+  }
   const guardSheet = $("#guardSheet");
   $("#btnExport").addEventListener("click", () => guardSheet.classList.add("open"));
   $("#btnExportCancel").addEventListener("click", () => guardSheet.classList.remove("open"));
