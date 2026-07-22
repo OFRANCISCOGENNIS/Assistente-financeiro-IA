@@ -224,6 +224,38 @@
   .row-item.paid .t { color: var(--ink-2); }
   .fixed-sum { padding-bottom: 12px; border-bottom: 1px solid var(--ring); margin-bottom: 4px; }
 
+  /* FAB — lançamento rápido */
+  .fab { position: fixed; right: 26px; bottom: 26px; z-index: 50; width: 54px; height: 54px;
+    border-radius: 16px; background: var(--accent); color: var(--accent-ink);
+    font-size: 26px; font-weight: 600; box-shadow: var(--shadow); display: none;
+    place-items: center; line-height: 1; }
+  body.logged .fab { display: grid; }
+  .fab:hover { filter: brightness(1.08); }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .chip { padding: 7px 13px; border-radius: 99px; border: 1px solid var(--ring);
+    font-size: 13px; font-weight: 600; color: var(--ink-2); background: var(--card); }
+  .chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink);
+    border-color: var(--accent); }
+  .sheet .field { text-align: left; margin-top: 12px; }
+  .sheet .fieldset-label { display: block; text-align: left; font-size: 12.5px;
+    font-weight: 600; margin-top: 14px; }
+
+  /* investimentos */
+  .alloc-bar { display: flex; height: 14px; border-radius: 7px; overflow: hidden; margin-top: 10px; }
+  .alloc-bar i { height: 100%; }
+  .alloc-legend { display: flex; flex-wrap: wrap; gap: 10px 16px; margin-top: 10px;
+    font-size: 12.5px; color: var(--ink-2); }
+  .pos { color: var(--good-text); font-weight: 650; }
+  .neg { color: var(--critical); font-weight: 650; }
+
+  /* DRE / empresa */
+  .dre-row { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0;
+    font-size: 13.5px; border-bottom: 1px solid var(--ring); }
+  .dre-row:last-child { border-bottom: none; }
+  .dre-row.sub { color: var(--ink-2); }
+  .dre-row.total { font-weight: 750; border-top: 2px solid var(--baseline); }
+  .dre-row .op { color: var(--ink-3); font-size: 12px; margin-right: 6px; }
+
   /* orçamento mensal */
   .budget-row { padding: 12px 0; border-bottom: 1px solid var(--ring); }
   .budget-row:last-child { border-bottom: none; }
@@ -473,15 +505,6 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="10" rx="2"/><rect x="13" y="3" width="8" height="6" rx="2"/><rect x="13" y="11" width="8" height="10" rx="2"/><rect x="3" y="15" width="8" height="6" rx="2"/></svg>
       Dashboard
     </button>
-    <button class="nav-btn" data-nav="sec">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>
-      Segurança
-    </button>
-    <div class="nav-sep">Em breve</div>
-    <button class="nav-btn" disabled style="opacity:.45; cursor:default">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 17l5-5 4 3 6-7 3 3"/></svg>
-      Investimentos
-    </button>
     <button class="nav-btn" data-nav="orc">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3a9 9 0 1 0 9 9h-9V3z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15V3.5z"/></svg>
       Orçamento
@@ -490,6 +513,19 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
       Metas
     </button>
+    <button class="nav-btn" data-nav="inv">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 17l5-5 4 3 6-7 3 3"/></svg>
+      Investimentos
+    </button>
+    <button class="nav-btn" data-nav="pj">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/></svg>
+      Empresa
+    </button>
+    <button class="nav-btn" data-nav="sec">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>
+      Segurança
+    </button>
+    <div class="nav-sep">Em breve</div>
     <button class="nav-btn" disabled style="opacity:.45; cursor:default">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19h16M6 19V9m4 10V5m4 14v-8m4 8V11"/></svg>
       Educação
@@ -936,6 +972,198 @@
       </div>
     </section>
 
+    <!-- ============ INVESTIMENTOS ============ -->
+    <section class="view" id="view-inv" aria-label="Investimentos">
+      <div class="view-h">
+        <h1>Investimentos</h1>
+        <span class="sub">Carteira consolidada · atualizada há 2 min</span>
+      </div>
+
+      <div class="grid g-tiles">
+        <div class="card tile">
+          <div class="label">Total investido</div>
+          <div class="value num money">R$ 61.300,00</div>
+          <div class="delta up">▲ R$ 1.870 <span class="vs">este mês</span></div>
+        </div>
+        <div class="card tile">
+          <div class="label">Rentabilidade 12 meses</div>
+          <div class="value num pos">+11,2%</div>
+          <div class="delta"><span class="vs">CDI no período: +10,4%</span></div>
+        </div>
+        <div class="card tile">
+          <div class="label">Dividendos em julho</div>
+          <div class="value num money">R$ 142,00</div>
+          <div class="delta"><span class="vs">FIIs · reinvestidos</span></div>
+        </div>
+        <div class="card tile">
+          <div class="label">Aporte do mês</div>
+          <div class="value num money">R$ 1.150,00</div>
+          <div class="delta"><span class="vs">automático, no dia do salário</span></div>
+        </div>
+      </div>
+
+      <div class="grid g-2-1">
+        <div class="card">
+          <h2>Posições</h2>
+          <p class="hint">Por classe · rentabilidade em 12 meses</p>
+          <div class="row-list">
+            <div class="row-item">
+              <span class="cat-dot" style="background: var(--s1)"></span>
+              <div class="grow"><div class="t">Tesouro Selic 2029</div><div class="d">renda fixa · liquidez diária · reserva de emergência mora aqui</div></div>
+              <span class="num money">R$ 21.600</span><span class="pos num">+10,9%</span>
+            </div>
+            <div class="row-item">
+              <span class="cat-dot" style="background: var(--s2)"></span>
+              <div class="grow"><div class="t">CDB 110% CDI — Banco Inter</div><div class="d">renda fixa · vence 2027</div></div>
+              <span class="num money">R$ 12.400</span><span class="pos num">+11,4%</span>
+            </div>
+            <div class="row-item">
+              <span class="cat-dot" style="background: var(--s3, #1baf7a)"></span>
+              <div class="grow"><div class="t">FIIs — 4 fundos</div><div class="d">HGLG11, MXRF11 e outros · DY 12m: 9,8%</div></div>
+              <span class="num money">R$ 9.800</span><span class="pos num">+8,7%</span>
+            </div>
+            <div class="row-item">
+              <span class="cat-dot" style="background: var(--s4, #eda100)"></span>
+              <div class="grow"><div class="t">Ações Brasil — 6 papéis</div><div class="d">via corretora · B3</div></div>
+              <span class="num money">R$ 8.900</span><span class="pos num">+14,2%</span>
+            </div>
+            <div class="row-item">
+              <span class="cat-dot" style="background: var(--s5, #e87ba4)"></span>
+              <div class="grow"><div class="t">ETF Exterior — IVVB11</div><div class="d">S&amp;P 500 em reais</div></div>
+              <span class="num money">R$ 5.200</span><span class="pos num">+16,8%</span>
+            </div>
+            <div class="row-item">
+              <span class="cat-dot" style="background: var(--s7, #4a3aa7)"></span>
+              <div class="grow"><div class="t">Cripto — BTC e ETH</div><div class="d">em exchange · alta volatilidade</div></div>
+              <span class="num money">R$ 3.400</span><span class="neg num">−4,1%</span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Alocação</h2>
+          <p class="hint">Como sua carteira está dividida</p>
+          <div class="alloc-bar" role="img" aria-label="Alocação: renda fixa 55%, FIIs 16%, ações 15%, exterior 8%, cripto 6%">
+            <i style="width:35%; background: var(--s1)" title="Tesouro 35%"></i>
+            <i style="width:20%; background: var(--s2)" title="CDB 20%"></i>
+            <i style="width:16%; background: #1baf7a" title="FIIs 16%"></i>
+            <i style="width:15%; background: #eda100" title="Ações 15%"></i>
+            <i style="width:8%; background: #e87ba4" title="Exterior 8%"></i>
+            <i style="width:6%; background: #4a3aa7" title="Cripto 6%"></i>
+          </div>
+          <div class="alloc-legend">
+            <span><span class="sw" style="background: var(--s1)"></span>Tesouro 35%</span>
+            <span><span class="sw" style="background: var(--s2)"></span>CDB 20%</span>
+            <span><span class="sw" style="background:#1baf7a"></span>FIIs 16%</span>
+            <span><span class="sw" style="background:#eda100"></span>Ações 15%</span>
+            <span><span class="sw" style="background:#e87ba4"></span>Exterior 8%</span>
+            <span><span class="sw" style="background:#4a3aa7"></span>Cripto 6%</span>
+          </div>
+          <h2 style="margin-top:18px">Guardião da carteira</h2>
+          <div class="alert info">
+            <span class="ic">🧭</span>
+            <div><b>55% em renda fixa</b> — coerente com seu perfil moderado e com a reserva
+              dentro da meta. Sua carteira rendeu <b class="pos">+0,8 p.p. acima do CDI</b> em 12 meses.</div>
+          </div>
+          <div class="alert info">
+            <span class="ic">⚖️</span>
+            <div>Cripto está em <b>6%</b> da carteira (teto que você definiu: 8%). Nenhum rebalanceamento necessário.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ EMPRESA (MEI) ============ -->
+    <section class="view" id="view-pj" aria-label="Empresa">
+      <div class="view-h">
+        <h1>Empresa — MEI</h1>
+        <span class="sub">Genis Design ME · julho · separado das suas finanças pessoais</span>
+      </div>
+
+      <div class="grid g-tiles">
+        <div class="card tile">
+          <div class="label">Faturamento de julho</div>
+          <div class="value num money">R$ 8.200,00</div>
+          <div class="delta up">▲ 9% <span class="vs">vs. junho</span></div>
+        </div>
+        <div class="card tile">
+          <div class="label">Resultado líquido</div>
+          <div class="value num money">R$ 700,00</div>
+          <div class="delta"><span class="vs">após custos e pró-labore</span></div>
+        </div>
+        <div class="card tile">
+          <div class="label">Capital de giro</div>
+          <div class="value num money">R$ 4.300,00</div>
+          <div class="delta down">21 dias <span class="vs">de operação — abaixo do ideal (30)</span></div>
+        </div>
+        <div class="card tile">
+          <div class="label">Teto MEI usado</div>
+          <div class="value num">67%</div>
+          <div class="delta"><span class="vs num money">R$ 54.300 de R$ 81.000 no ano</span></div>
+        </div>
+      </div>
+
+      <div class="grid g-1-1">
+        <div class="card">
+          <h2>DRE simplificada — julho</h2>
+          <p class="hint">Do faturamento ao que realmente sobra</p>
+          <div class="dre-row"><span>Receita de serviços</span><b class="num money">R$ 8.200,00</b></div>
+          <div class="dre-row sub"><span><span class="op">−</span>Custos variáveis (materiais, taxas, comissões)</span><span class="num money">R$ 3.100,00</span></div>
+          <div class="dre-row"><span>Margem de contribuição <span class="op">· 62%</span></span><b class="num money">R$ 5.100,00</b></div>
+          <div class="dre-row sub"><span><span class="op">−</span>Custos fixos (software, contador, DAS)</span><span class="num money">R$ 1.900,00</span></div>
+          <div class="dre-row"><span>Resultado operacional</span><b class="num money">R$ 3.200,00</b></div>
+          <div class="dre-row sub"><span><span class="op">−</span>Pró-labore (fixo, todo dia 5)</span><span class="num money">R$ 2.500,00</span></div>
+          <div class="dre-row total"><span>Resultado líquido</span><b class="num money pos">R$ 700,00</b></div>
+          <h2 style="margin-top:18px">Ponto de equilíbrio</h2>
+          <p class="hint">Faturamento mínimo para não ter prejuízo: (fixos + pró-labore) ÷ margem</p>
+          <div class="limit-bar pace-line" style="margin-top:6px">
+            <i style="width:100%; background: var(--good)"></i>
+            <span class="pace-mark" style="left:86.5%"></span>
+          </div>
+          <div class="b-sub" style="display:flex; justify-content:space-between; font-size:12px; color:var(--ink-3); margin-top:5px">
+            <span class="num money">Equilíbrio: R$ 7.097</span>
+            <span class="num money pos">Faturado: R$ 8.200 — R$ 1.103 acima ✓</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Radar empresarial do Guardião</h2>
+          <p class="hint">Os erros que mais fecham empresas, vigiados de perto</p>
+          <div class="alert warn">
+            <span class="ic">⚠️</span>
+            <div>
+              <b>Mistura PF/PJ:</b> encontrei <b>3 gastos pessoais</b> na conta da empresa este mês
+              (R$ 412). Misturar as contas é o erro nº 1 associado a fechamento de negócios — impede
+              saber o que a empresa realmente gera.
+              <div class="cta-row"><button class="btn-mini">Reclassificar os 3</button><button class="btn-mini alt">Ver lançamentos</button></div>
+            </div>
+          </div>
+          <div class="alert warn">
+            <span class="ic">💧</span>
+            <div><b>Capital de giro em 21 dias</b> — abaixo do colchão de 30 dias que você definiu.
+              Empresas fecham mais por falta de giro do que por falta de lucro. Reter
+              <b class="num money">R$ 1.800</b> do resultado dos próximos 2 meses recompõe.</div>
+          </div>
+          <div class="alert info">
+            <span class="ic">📆</span>
+            <div><b>Ciclo de caixa: 13 dias.</b> Seus clientes pagam em 28 dias e você paga
+              fornecedores em 15 — seu caixa financia quase 2 semanas de operação. Negociar
+              recebimento em 21 dias zeraria a diferença.</div>
+          </div>
+          <div class="alert info">
+            <span class="ic">📈</span>
+            <div><b>Projeção do teto MEI:</b> no ritmo atual você fecha o ano em
+              <b class="num money">R$ 93.000</b> — acima do teto de R$ 81.000. Ótimo sinal de
+              crescimento: hora de planejar a migração para ME com seu contador, antes que vire multa.</div>
+          </div>
+          <div class="alert info" style="background: color-mix(in srgb, var(--good) 10%, transparent)">
+            <span class="ic">✅</span>
+            <div><b>Pró-labore fixo em dia</b> — R$ 2.500 todo dia 5, há 6 meses. É isso que mantém
+              PF e PJ separados de verdade.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ============ SEGURANÇA ============ -->
     <section class="view" id="view-sec" aria-label="Central de Segurança">
       <div class="view-h">
@@ -1065,12 +1293,46 @@
   <div class="cmdk" role="dialog" aria-label="Paleta de comandos">
     <input id="cmdkInput" placeholder="Digite um comando ou pesquise…" autocomplete="off">
     <button class="item" data-nav="dash">📊 &nbsp;Ir para o Dashboard</button>
+    <button class="item" id="cmdAdd">➕ &nbsp;Registrar despesa</button>
     <button class="item" data-nav="orc">🥧 &nbsp;Abrir Orçamento mensal</button>
     <button class="item" data-nav="metas">🎯 &nbsp;Ver Metas</button>
+    <button class="item" data-nav="inv">📈 &nbsp;Ver Investimentos</button>
+    <button class="item" data-nav="pj">🏢 &nbsp;Abrir Empresa (MEI)</button>
     <button class="item" data-nav="sec">🛡️ &nbsp;Abrir Central de Segurança</button>
     <button class="item" id="cmdDiscreet">👁️ &nbsp;Alternar modo discreto</button>
     <button class="item" id="cmdTheme">🌗 &nbsp;Alternar tema claro/escuro</button>
     <div class="foot">Enter para selecionar · Esc para fechar</div>
+  </div>
+</div>
+
+<button class="fab" id="fabAdd" title="Registrar despesa (tecla N)" aria-label="Registrar despesa">+</button>
+
+<!-- lançamento rápido -->
+<div class="sheet-veil" id="addSheet">
+  <div class="sheet" role="dialog" aria-label="Registrar despesa">
+    <h2>Registrar despesa</h2>
+    <p style="margin-bottom:4px">Menos de 10 segundos — o resto eu preencho por você.</p>
+    <div class="field">
+      <label for="addValue">Valor</label>
+      <input id="addValue" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
+    </div>
+    <span class="fieldset-label">Categoria</span>
+    <div class="chip-row" id="addCats">
+      <button class="chip" aria-pressed="true">Mercado</button>
+      <button class="chip" aria-pressed="false">Restaurantes</button>
+      <button class="chip" aria-pressed="false">Transporte</button>
+      <button class="chip" aria-pressed="false">Lazer</button>
+      <button class="chip" aria-pressed="false">Saúde</button>
+      <button class="chip" aria-pressed="false">Outros</button>
+    </div>
+    <span class="fieldset-label">Pagamento</span>
+    <div class="chip-row" id="addPay">
+      <button class="chip" aria-pressed="true">Pix — Inter</button>
+      <button class="chip" aria-pressed="false">Nubank ····4412</button>
+      <button class="chip" aria-pressed="false">Dinheiro</button>
+    </div>
+    <button class="btn-primary" id="btnAddSave" style="margin-top:20px">Registrar</button>
+    <button class="alt" id="btnAddCancel">Cancelar</button>
   </div>
 </div>
 
@@ -1162,6 +1424,30 @@
     showToast("R$ 500 movidos para a reserva de emergência");
   });
 
+  /* ---------- lançamento rápido ---------- */
+  const addSheet = $("#addSheet");
+  const openAdd = () => { addSheet.classList.add("open"); $("#addValue").focus(); };
+  $("#fabAdd").addEventListener("click", openAdd);
+  $("#cmdAdd").addEventListener("click", () => { closeCmdk(); openAdd(); });
+  $("#btnAddCancel").addEventListener("click", () => addSheet.classList.remove("open"));
+  addSheet.addEventListener("click", e => { if (e.target === addSheet) addSheet.classList.remove("open"); });
+  $$("#addCats .chip, #addPay .chip").forEach(ch => ch.addEventListener("click", () => {
+    $$(".chip", ch.parentElement).forEach(c => c.setAttribute("aria-pressed", "false"));
+    ch.setAttribute("aria-pressed", "true");
+  }));
+  $("#btnAddSave").addEventListener("click", () => {
+    const val = $("#addValue").value.trim() || "R$ 0,00";
+    const cat = $('#addCats .chip[aria-pressed="true"]').textContent;
+    addSheet.classList.remove("open");
+    $("#addValue").value = "";
+    showToast(`Despesa de ${val.startsWith("R$") ? val : "R$ " + val} registrada em ${cat}`);
+  });
+  addEventListener("keydown", e => {
+    if (e.key.toLowerCase() === "n" && document.body.classList.contains("logged")
+        && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)
+        && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); openAdd(); }
+  });
+
   const btnEnv = $("#btnEnvelope");
   if (btnEnv) btnEnv.addEventListener("click", e => {
     e.target.textContent = "Envelope ativo ✓";
@@ -1203,7 +1489,7 @@
   $("#cmdTheme").addEventListener("click", () => { toggleTheme(); closeCmdk(); });
   addEventListener("keydown", e => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openCmdk(); }
-    if (e.key === "Escape") { closeCmdk(); sheet.classList.remove("open"); guardSheet.classList.remove("open"); }
+    if (e.key === "Escape") { closeCmdk(); sheet.classList.remove("open"); guardSheet.classList.remove("open"); addSheet.classList.remove("open"); }
   });
 
   /* ---------- gráficos (SVG gerado) ---------- */
