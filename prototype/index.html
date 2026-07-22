@@ -467,6 +467,25 @@
   .privacy-note { display: flex; gap: 7px; align-items: center; justify-content: center;
     color: var(--ink-3); font-size: 12px; margin-top: 14px; }
 
+  /* copiloto (chat) */
+  .chat { display: flex; flex-direction: column; height: calc(100vh - 210px); min-height: 440px; }
+  .chat-log { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 6px 2px; }
+  .msg { max-width: 78%; padding: 11px 14px; border-radius: 15px; font-size: 14px; line-height: 1.5; }
+  .msg.bot { align-self: flex-start; background: var(--card-raised); border: 1px solid var(--ring);
+    border-bottom-left-radius: 5px; }
+  .msg.me { align-self: flex-end; background: var(--accent); color: var(--accent-ink);
+    border-bottom-right-radius: 5px; }
+  .msg .fig { display: block; font-size: 23px; font-weight: 750; letter-spacing: -.02em; margin: 5px 0; }
+  .msg .barrow { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; margin-top: 8px; }
+  .chat-suggest { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 4px; }
+  .chat-input { display: flex; gap: 8px; margin-top: 8px; }
+  .chat-input input { flex: 1; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--baseline);
+    background: var(--card-raised); color: var(--ink); font: inherit; }
+  .chat-input input:focus { border-color: var(--accent); outline: none; }
+  .chat-input button { padding: 0 20px; border-radius: 12px; background: var(--accent);
+    color: var(--accent-ink); font-weight: 700; }
+  .typing { align-self: flex-start; color: var(--ink-3); font-size: 13px; padding: 4px 2px; }
+
   /* responsivo */
   @media (max-width: 980px) {
     body.logged .app { grid-template-columns: 1fr; }
@@ -532,6 +551,10 @@
     <button class="nav-btn" data-nav="dash" aria-current="page">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="10" rx="2"/><rect x="13" y="3" width="8" height="6" rx="2"/><rect x="13" y="11" width="8" height="10" rx="2"/><rect x="3" y="15" width="8" height="6" rx="2"/></svg>
       Dashboard
+    </button>
+    <button class="nav-btn" data-nav="cop">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"/><path d="M18 14l.8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8L18 14z"/></svg>
+      Copiloto
     </button>
     <button class="nav-btn" data-nav="orc">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3a9 9 0 1 0 9 9h-9V3z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15V3.5z"/></svg>
@@ -809,6 +832,22 @@
         </div>
       </div>
       </div><!-- /demoDash -->
+    </section>
+
+    <!-- ============ COPILOTO ============ -->
+    <section class="view" id="view-cop" aria-label="Copiloto financeiro">
+      <div class="view-h">
+        <h1>Copiloto ✨</h1>
+        <span class="sub">Pergunte em português — respondo com os seus próprios números</span>
+      </div>
+      <div class="card chat">
+        <div class="chat-log" id="copLog"></div>
+        <div class="chat-suggest" id="copSuggest"></div>
+        <div class="chat-input">
+          <input id="copInput" placeholder="Ex.: quanto posso gastar hoje?" autocomplete="off" aria-label="Pergunta ao copiloto">
+          <button id="copSend">Enviar</button>
+        </div>
+      </div>
     </section>
 
     <!-- ============ ORÇAMENTO ============ -->
@@ -1331,6 +1370,7 @@
   <div class="cmdk" role="dialog" aria-label="Paleta de comandos">
     <input id="cmdkInput" placeholder="Digite um comando ou pesquise…" autocomplete="off">
     <button class="item" data-nav="dash">📊 &nbsp;Ir para o Dashboard</button>
+    <button class="item" data-nav="cop">✨ &nbsp;Perguntar ao Copiloto</button>
     <button class="item" id="cmdAdd">➕ &nbsp;Registrar despesa</button>
     <button class="item" data-nav="orc">🥧 &nbsp;Abrir Orçamento mensal</button>
     <button class="item" data-nav="metas">🎯 &nbsp;Ver Metas</button>
@@ -1932,5 +1972,109 @@
   function drawAll() { drawWealth(); drawFlow(); drawCats(); }
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawAll);
   addEventListener("resize", () => { clearTimeout(drawAll._t); drawAll._t = setTimeout(drawAll, 150); });
+
+  /* ============ COPILOTO ============ */
+  const copLog = $("#copLog"), copInput = $("#copInput");
+  const SUGG = ["Quanto posso gastar hoje?", "Estou gastando muito com alimentação?",
+    "Quanto economizei este mês?", "Para onde vai meu dinheiro?", "Como está minha saúde financeira?",
+    "Quanto guardar por mês para juntar R$ 6.000 até dezembro?"];
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const norm = s => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const daysLeft = () => { const d = new Date(); const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); return Math.max(1, last - d.getDate() + 1); };
+
+  function copSnap() {
+    const real = store.d.mode === "real" && (store.d.tx.length || store.d.accounts.length);
+    if (real) return { real: true, saldo: totalSaldo(), rec: monthIn(), des: monthOut(), cats: byCategory(), goals: store.d.goals };
+    return { real: false, saldo: 6842.10, rec: 9450, des: 6038,
+      cats: [["Moradia", 2180], ["Mercado", 1240], ["Restaurantes", 680], ["Transporte", 540], ["Lazer", 480], ["Saúde", 320], ["Assinaturas", 265]],
+      goals: [{ name: "Reserva de emergência", target: 30000, current: 21600 }, { name: "Viagem — Chile 2027", target: 12000, current: 3720 }] };
+  }
+
+  function answer(qRaw) {
+    const n = norm(qRaw), s = copSnap();
+    const src = s.real ? "" : ` <span style="color:var(--ink-3)">(dados de demonstração — ative "Meus dados" para usar os seus)</span>`;
+    const totalCat = s.cats.reduce((a, [, v]) => a + v, 0) || 1;
+
+    if (/(gastar hoje|posso gastar|quanto.*gastar)/.test(n)) {
+      const sobra = Math.max(0, s.rec - s.des), dl = daysLeft();
+      return `Pelo que sobra do mês, seu ritmo seguro é de cerca de:<span class="fig">${brl(sobra / dl)}/dia</span>São ${brl(sobra)} disponíveis ÷ ${dl} dia(s) até virar o mês. Contas fixas que ainda vão cair reduzem isso — por isso eu recomendo deixar uma folga.${src}`;
+    }
+    if (/(economizei|economia|sobrou|poupei|guardei este mes)/.test(n)) {
+      const eco = s.rec - s.des, pct = s.rec ? Math.round(eco / s.rec * 100) : 0;
+      return `Este mês você ${eco >= 0 ? "economizou" : "gastou a mais"}:<span class="fig" style="color:${eco >= 0 ? "var(--good-text)" : "var(--critical)"}">${brl(Math.abs(eco))}</span>${eco >= 0 ? `Isso é ${pct}% da sua renda — ${pct >= 20 ? "acima do ideal de 20%, excelente." : "dá pra subir aumentando a sobra."}` : "Suas despesas superaram as receitas. Vale rever as maiores categorias."}${src}`;
+    }
+    if (/(saude financeira|saude das (minhas )?financas|minha saude financeira|como (eu )?estou|meu score|minha nota|minhas financas)/.test(n)) {
+      const eco = s.rec - s.des, taxa = s.rec ? eco / s.rec : 0;
+      const res = s.goals.find(g => /reserva/i.test(g.name));
+      let pts = 50; if (taxa >= 0.2) pts += 22; else if (taxa >= 0.1) pts += 10; else if (taxa < 0) pts -= 15;
+      if (res && res.current >= res.target * 0.5) pts += 16;
+      pts = Math.max(5, Math.min(100, pts));
+      return `Sua saúde financeira agora:<span class="fig">${pts}/100</span>Taxa de poupança do mês: ${Math.round(taxa * 100)}%. ${taxa >= 0.2 ? "Você guarda um quinto ou mais da renda — padrão de quem constrói patrimônio." : taxa >= 0 ? "Positivo, mas dá pra melhorar a sobra mensal." : "Atenção: mês no vermelho."}${res ? ` Sua reserva está em ${Math.round(res.current / res.target * 100)}% da meta.` : ""}${src}`;
+    }
+    const catKey = ["aliment", "mercado", "restaurante", "transporte", "lazer", "saude", "moradia", "assinatura"].find(c => n.includes(c));
+    if (catKey || /(gastando muito|gasto muito|muito com)/.test(n)) {
+      const map = { aliment: ["Mercado", "Restaurantes"], mercado: ["Mercado"], restaurante: ["Restaurantes"], transporte: ["Transporte"], lazer: ["Lazer"], saude: ["Saúde"], moradia: ["Moradia"], assinatura: ["Assinaturas"] };
+      const names = map[catKey];
+      if (names) {
+        const val = s.cats.filter(([c]) => names.includes(c)).reduce((a, [, v]) => a + v, 0);
+        const share = Math.round(val / totalCat * 100);
+        return `Em ${names.join(" + ")} você gastou:<span class="fig">${brl(val)}</span>Representa ${share}% das suas despesas do mês. ${share > 25 ? "É uma fatia alta — vale definir um teto para essa categoria no Orçamento." : "Está numa faixa saudável, pode seguir tranquilo."}${src}`;
+      }
+      const [c, v] = s.cats[0], share = Math.round(v / totalCat * 100);
+      return `Sua maior despesa é ${c}, com ${brl(v)} (${share}% do mês). ${share > 30 ? "Concentrar tanto numa categoria só é um sinal de atenção." : "Sua distribuição está equilibrada."}${src}`;
+    }
+    if (/(onde vai|para onde|maiores gastos|categorias|no que (eu )?gast)/.test(n)) {
+      const top = s.cats.slice(0, 4), maxV = top[0][1];
+      const bars = top.map(([c, v]) => `<div class="barrow"><span>${c}</span><b class="num money">${brl(v)}</b></div><div class="limit-bar"><i style="width:${Math.round(v / maxV * 100)}%;background:var(--s1)"></i></div>`).join("");
+      return `Para onde seu dinheiro foi este mês:${bars}<div style="margin-top:10px">Essas 4 categorias somam ${brl(top.reduce((a, [, v]) => a + v, 0))}.</div>${src}`;
+    }
+    if (/(juntar|guardar|viajar|preciso.*para|quanto.*por mes|meta)/.test(n)) {
+      const vm = n.replace(/\./g, "").match(/(\d{3,})/);
+      const alvo = vm ? parseInt(vm[1], 10) : 6000;
+      const mIdx = MESES_L.findIndex(m => n.includes(m.slice(0, 4)));
+      const now = new Date(); let months = 5;
+      if (mIdx >= 0) { let dd = mIdx - now.getMonth(); if (dd <= 0) dd += 12; months = dd; }
+      return `Para juntar ${brl(alvo)} em ${months} ${months > 1 ? "meses" : "mês"}, você precisa separar:<span class="fig">${brl(alvo / months)}/mês</span>Posso transformar isso numa meta com aporte automático, se quiser.${src}`;
+    }
+    if (/(investir|investimento|onde aplicar|aplicar dinheiro)/.test(n)) {
+      const res = s.goals.find(g => /reserva/i.test(g.name));
+      const pronto = res ? res.current >= res.target * 0.8 : false;
+      return `${pronto ? "Sua reserva está quase completa — dá pra investir com mais tranquilidade." : "Antes de buscar rentabilidade, complete a reserva de emergência: é o colchão que evita dívida cara num imprevisto."} Um ponto de partida comum e de baixo risco no Brasil: Tesouro Selic e CDBs de liquidez diária para a reserva; depois, diversificar aos poucos. Isto é educação financeira, não recomendação de investimento.${src}`;
+    }
+    if (/(patrimonio|20 anos|no futuro|crescer|juros compostos|aposentadoria)/.test(n)) {
+      const aporte = (s.rec - s.des) > 0 ? (s.rec - s.des) : 500;
+      const r = 0.007, fv = aporte * ((Math.pow(1 + r, 240) - 1) / r);
+      return `Investindo ${brl(aporte)}/mês a ~0,7% ao mês, em 20 anos os juros compostos levariam você a cerca de:<span class="fig">${brl(fv)}</span>O motor aqui é o tempo e a consistência, não o valor de partida. Comece cedo, mantenha o hábito.${src}`;
+    }
+    return `Ainda estou evoluindo, mas já respondo sobre: <b>quanto você pode gastar hoje</b>, <b>quanto economizou</b>, <b>para onde vai seu dinheiro</b>, se está <b>gastando muito numa categoria</b>, sua <b>saúde financeira</b> e <b>simulações de metas</b>. Toque numa sugestão abaixo. ✨`;
+  }
+
+  function copAdd(who, html) {
+    const m = document.createElement("div"); m.className = "msg " + who; m.innerHTML = html;
+    copLog.appendChild(m); copLog.scrollTop = copLog.scrollHeight; return m;
+  }
+  function copAsk(q) {
+    if (!q.trim()) return;
+    copAdd("me", esc(q));
+    copInput.value = "";
+    const t = document.createElement("div"); t.className = "typing"; t.textContent = "Copiloto está pensando…";
+    copLog.appendChild(t); copLog.scrollTop = copLog.scrollHeight;
+    setTimeout(() => { t.remove(); copAdd("bot", answer(q)); }, 480);
+  }
+  $("#copSuggest").innerHTML = SUGG.map(q => `<button class="chip">${q}</button>`).join("");
+  $$("#copSuggest .chip").forEach(b => b.addEventListener("click", () => copAsk(b.textContent)));
+  $("#copSend").addEventListener("click", () => copAsk(copInput.value));
+  copInput.addEventListener("keydown", e => { if (e.key === "Enter") copAsk(copInput.value); });
+  function copWelcome() {
+    copLog.innerHTML = "";
+    const s = copSnap(), eco = s.rec - s.des;
+    copAdd("bot", "Oi, Genis 👋 Sou seu copiloto financeiro. Pergunte em português que eu respondo com os seus próprios números — sem planilha, sem jargão.");
+    copAdd("bot", `Leitura rápida de agora: ${eco >= 0 ? `você está <b class="num money">${brl(eco)}</b> positivo no mês` : `atenção — você está <b class="num money">${brl(-eco)}</b> no vermelho este mês`}. Toque numa pergunta pra começar. 👇`);
+  }
+  copWelcome();
+  // atualiza a leitura de boas-vindas ao abrir o Copiloto, se ainda não houver conversa
+  $$('[data-nav="cop"]').forEach(b => b.addEventListener("click", () => {
+    if (!copLog.querySelector(".msg.me")) copWelcome();
+  }));
 })();
 </script>
