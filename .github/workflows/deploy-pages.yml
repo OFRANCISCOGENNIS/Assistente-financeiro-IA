@@ -28,10 +28,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configurar Pages (habilita se necessário)
+      - name: Configurar Pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - name: Publicar apenas o protótipo
         uses: actions/upload-pages-artifact@v3
