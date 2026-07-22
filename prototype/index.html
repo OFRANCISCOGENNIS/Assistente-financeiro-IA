@@ -216,6 +216,21 @@
   .score-impact { display: inline-block; margin-top: 6px; font-size: 11.5px; font-weight: 650;
     color: var(--critical); }
 
+  /* contas fixas — pagas x a pagar */
+  .paid-ic { width: 19px; height: 19px; border-radius: 50%; background: var(--good);
+    color: #fff; display: grid; place-items: center; flex: none; font-size: 11px; font-weight: 800; }
+  .pending-ic { width: 19px; height: 19px; border-radius: 50%; border: 1.5px solid var(--baseline);
+    flex: none; }
+  .row-item.paid .t { color: var(--ink-2); }
+  .fixed-sum { padding-bottom: 12px; border-bottom: 1px solid var(--ring); margin-bottom: 4px; }
+
+  /* insights do agente */
+  .insight { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--ring);
+    font-size: 13px; align-items: flex-start; }
+  .insight:last-child { border-bottom: none; }
+  .insight .em { font-size: 16px; flex: none; line-height: 1.3; }
+  .insight .act-inline { margin-top: 6px; display: flex; gap: 8px; flex-wrap: wrap; }
+
   /* guardião — banner nível 1 */
   .guardian-banner { display: flex; align-items: center; gap: 12px; margin-top: 16px;
     padding: 11px 16px; border-radius: 10px; font-size: 13.5px;
@@ -552,6 +567,79 @@
 
       <div class="grid g-1-1">
         <div class="card">
+          <h2>Contas fixas do mês</h2>
+          <p class="hint">Julho · o que já saiu e o que ainda falta</p>
+          <div class="fixed-sum">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:7px">
+              <span class="num money" style="font-size:19px; font-weight:700">R$ 484,80
+                <span style="font-size:13px; color:var(--ink-3); font-weight:500">de R$ 2.463,80 pagos</span></span>
+              <span style="font-size:12.5px; color:var(--ink-2); font-weight:600">4 de 6 contas</span>
+            </div>
+            <div class="limit-bar"><i style="width:20%; background:var(--good)"></i></div>
+            <div class="d" style="margin-top:7px; color:var(--ink-3)">Faltam
+              <b class="num money" style="color:var(--ink-2)">R$ 1.979,00</b> — nenhuma atrasada.</div>
+          </div>
+          <div class="row-list">
+            <div class="row-item paid">
+              <span class="paid-ic">✓</span>
+              <div class="grow"><div class="t">Internet — fibra</div><div class="d">pago em 05/07</div></div>
+              <span class="num money">R$ 99,90</span>
+            </div>
+            <div class="row-item paid">
+              <span class="paid-ic">✓</span>
+              <div class="grow"><div class="t">Energia</div><div class="d">pago em 08/07 · débito automático</div></div>
+              <span class="num money">R$ 210,00</span>
+            </div>
+            <div class="row-item paid">
+              <span class="paid-ic">✓</span>
+              <div class="grow"><div class="t">Água</div><div class="d">pago em 10/07</div></div>
+              <span class="num money">R$ 95,00</span>
+            </div>
+            <div class="row-item paid">
+              <span class="paid-ic">✓</span>
+              <div class="grow"><div class="t">Celular</div><div class="d">pago em 12/07 · débito automático</div></div>
+              <span class="num money">R$ 79,90</span>
+            </div>
+            <div class="row-item">
+              <span class="pending-ic"></span>
+              <div class="grow"><div class="t">Academia</div><div class="d">vence 28/07</div></div>
+              <span class="num money">R$ 129,00</span><span class="pill warn">6 dias</span>
+            </div>
+            <div class="row-item">
+              <span class="pending-ic"></span>
+              <div class="grow"><div class="t">Aluguel</div><div class="d">vence 30/07 · débito automático</div></div>
+              <span class="num money">R$ 1.850,00</span><span class="pill ok">agendado</span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>O que seu agente notou</h2>
+          <p class="hint">Leituras de hoje, sem você precisar pedir</p>
+          <div class="insight">
+            <span class="em">📉</span>
+            <div>Você já gastou <b class="num money">R$ 680</b> em <b>restaurantes</b> este mês — 22% acima da sua média. No ritmo atual, julho fecha em <b class="num money">R$ 820</b>.</div>
+          </div>
+          <div class="insight">
+            <span class="em">🔁</span>
+            <div>Achei um gasto novo que se repete: <b>AppFit R$ 39,90</b> em junho e julho. Quer que eu marque como recorrente?
+              <span class="act-inline"><button class="btn-mini">Marcar recorrente</button><button class="btn-mini alt">Ignorar</button></span>
+            </div>
+          </div>
+          <div class="insight">
+            <span class="em">✅</span>
+            <div>Suas contas fixas estão <b>todas no azul</b>: <b class="num money">R$ 485</b> já pagos e nada atrasado — faltam só academia e aluguel.</div>
+          </div>
+          <div class="insight">
+            <span class="em">💰</span>
+            <div>Você fechou o mês com <b class="num money">R$ 3.412</b> de sobra. Quero mover <b class="num money">R$ 500</b> para a reserva automaticamente?
+              <span class="act-inline"><button class="btn-mini" id="btnMoveReserve">Mover R$ 500</button><button class="btn-mini alt">Agora não</button></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid g-1-1">
+        <div class="card">
           <h2>Próximos vencimentos</h2>
           <p class="hint">Próximos 10 dias</p>
           <div class="row-list">
@@ -823,6 +911,11 @@
   $("#btnCancelSub").addEventListener("click", e => {
     e.target.closest(".alert").remove();
     showToast("Assinatura StreamMax cancelada — R$ 658,80/ano de volta no seu bolso");
+  });
+  const btnMove = $("#btnMoveReserve");
+  if (btnMove) btnMove.addEventListener("click", e => {
+    e.target.closest(".insight").remove();
+    showToast("R$ 500 movidos para a reserva de emergência");
   });
   const guardSheet = $("#guardSheet");
   $("#btnExport").addEventListener("click", () => guardSheet.classList.add("open"));
