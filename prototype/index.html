@@ -493,6 +493,26 @@
     color: var(--accent-ink); font-weight: 700; }
   .typing { align-self: flex-start; color: var(--ink-3); font-size: 13px; padding: 4px 2px; }
 
+  /* relatórios */
+  .rel-toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 16px 0 2px; }
+  .rel-toolbar .spacer { flex: 1; }
+  .rel-print-head { display: none; }
+
+  /* contas a pagar */
+  .bill-add { display: flex; justify-content: center; margin-top: 12px; }
+
+  @media print {
+    .sidebar, .topbar, .fab, .mode-switch, .rel-toolbar, .chat-suggest, .chat-input,
+    .guardian-banner, .del, [data-aporte], .btn-ghost { display: none !important; }
+    body.logged .app { display: block !important; }
+    .main { min-width: 0; }
+    .view { display: none !important; }
+    .view.active { display: block !important; max-width: none; padding: 0; }
+    .rel-print-head { display: block; margin-bottom: 14px; }
+    .card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
+    @page { margin: 1.4cm; }
+  }
+
   /* responsivo */
   @media (max-width: 980px) {
     body.logged .app { grid-template-columns: 1fr; }
@@ -574,6 +594,10 @@
     <button class="nav-btn" data-nav="inv">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 17l5-5 4 3 6-7 3 3"/></svg>
       Investimentos
+    </button>
+    <button class="nav-btn" data-nav="rel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-3"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8 12h8M8 16h5"/></svg>
+      Relatórios
     </button>
     <button class="nav-btn" data-nav="pj">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/></svg>
@@ -1177,6 +1201,25 @@
       </div><!-- /demoInv -->
     </section>
 
+    <!-- ============ RELATÓRIOS ============ -->
+    <section class="view" id="view-rel" aria-label="Relatórios">
+      <div class="view-h">
+        <h1>Relatórios</h1>
+        <span class="sub">Suas compras, entradas e saídas — prontos para exportar</span>
+        <div class="mode-switch" role="group" aria-label="Modo de dados">
+          <button data-mode="demo" aria-pressed="true">Demonstração</button>
+          <button data-mode="real" aria-pressed="false">Meus dados</button>
+        </div>
+      </div>
+      <div class="rel-toolbar">
+        <div class="chip-row" id="relPeriods" style="margin:0"></div>
+        <span class="spacer"></span>
+        <button class="btn-ghost safe" id="relCsv">Baixar CSV</button>
+        <button class="btn-ghost safe" id="relPdf">Imprimir / PDF</button>
+      </div>
+      <div id="relBody"></div>
+    </section>
+
     <!-- ============ EMPRESA (MEI) ============ -->
     <section class="view" id="view-pj" aria-label="Empresa">
       <div class="view-h">
@@ -1403,6 +1446,7 @@
     <button class="item" data-nav="orc">🥧 &nbsp;Abrir Orçamento mensal</button>
     <button class="item" data-nav="metas">🎯 &nbsp;Ver Metas</button>
     <button class="item" data-nav="inv">📈 &nbsp;Ver Investimentos</button>
+    <button class="item" data-nav="rel">📄 &nbsp;Abrir Relatórios</button>
     <button class="item" data-nav="pj">🏢 &nbsp;Abrir Empresa (MEI)</button>
     <button class="item" data-nav="sec">🛡️ &nbsp;Abrir Central de Segurança</button>
     <button class="item" id="cmdDiscreet">👁️ &nbsp;Alternar modo discreto</button>
@@ -1522,6 +1566,30 @@
   </div>
 </div>
 
+<!-- adicionar conta fixa -->
+<div class="sheet-veil" id="billSheet">
+  <div class="sheet" role="dialog" aria-label="Adicionar conta fixa">
+    <h2>Conta fixa</h2>
+    <p style="margin-bottom:2px">Contas recorrentes do mês — aluguel, luz, internet, assinaturas…</p>
+    <div class="field">
+      <label for="billName">Nome</label>
+      <input id="billName" type="text" placeholder="Ex.: Aluguel" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="billAmount">Valor</label>
+      <input id="billAmount" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="billDay">Vence no dia</label>
+      <input id="billDay" type="number" min="1" max="31" placeholder="10">
+    </div>
+    <span class="fieldset-label">Categoria</span>
+    <div class="chip-row" id="billCats"></div>
+    <button class="btn-primary" id="btnBillSave" style="margin-top:18px">Salvar conta</button>
+    <button class="alt" id="btnBillCancel">Cancelar</button>
+  </div>
+</div>
+
 <!-- guardião — bloqueio consultivo (nível 3) -->
 <div class="sheet-veil" id="guardSheet">
   <div class="sheet" role="dialog" aria-label="Confirmação de exportação sensível">
@@ -1618,7 +1686,7 @@
   const uid = () => "id" + Math.random().toString(36).slice(2, 9);
 
   const store = {
-    d: { mode: "demo", accounts: [], tx: [], goals: [], budgets: {}, investments: [] },
+    d: { mode: "demo", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [] },
     load() { try { const r = localStorage.getItem(KEY); if (r) this.d = Object.assign(this.d, JSON.parse(r)); } catch (e) {} },
     save() { try { localStorage.setItem(KEY, JSON.stringify(this.d)); } catch (e) {} },
   };
@@ -1723,6 +1791,23 @@
           <div class="cta-row" style="margin-top:12px"><button class="btn-mini alt" data-act="addGoal">+ Meta</button></div>
         </div>
       </div>
+      <div class="grid" style="margin-top:16px">
+        <div class="card">
+          <div style="display:flex; align-items:baseline"><h2>Contas do mês</h2>
+            <button class="btn-mini alt" data-act="addBill" style="margin-left:auto">+ Conta fixa</button></div>
+          <p class="hint">${(() => { const b = d.bills || []; const p = b.filter(x => (x.paidMonths || []).includes(thisMonth())); return `${p.length} de ${b.length} pagas · ${brl(p.reduce((a, x) => a + x.amount, 0))} de ${brl(b.reduce((a, x) => a + x.amount, 0))}`; })()}</p>
+          <div class="row-list">
+            ${(d.bills || []).length ? d.bills.map(b => { const paid = (b.paidMonths || []).includes(thisMonth());
+              return `<div class="row-item ${paid ? "paid" : ""}">
+                <span class="${paid ? "paid-ic" : "pending-ic"}">${paid ? "✓" : ""}</span>
+                <div class="grow"><div class="t">${b.name}</div><div class="d">vence dia ${b.dueDay}${b.category ? " · " + b.category : ""}</div></div>
+                <span class="num money">${brl(b.amount)}</span>
+                ${paid ? `<span class="pill ok">pago</span>` : `<button class="btn-ghost safe" data-pay="${b.id}">Pagar</button>`}
+                <button class="del" data-del-bill="${b.id}" aria-label="Excluir">✕</button></div>`;
+            }).join("") : `<p class="hint">Nenhuma conta fixa. Cadastre as recorrentes (aluguel, luz, internet…) e marque como pagas em um toque.</p>`}
+          </div>
+        </div>
+      </div>
       <div class="privacy-note">🔒 Seus dados ficam só neste navegador ·
         <button id="btnReset" style="color:var(--critical); font-weight:650; text-decoration:underline">Apagar tudo</button></div>`;
 
@@ -1733,13 +1818,28 @@
       store.d.goals = store.d.goals.filter(g => g.id !== b.dataset.delGoal); store.save(); renderReal();
     }));
     $$("[data-act]", realDash).forEach(b => b.addEventListener("click", () => ACT[b.dataset.act]()));
+    $$("[data-pay]", realDash).forEach(b => b.addEventListener("click", () => payBill(b.dataset.pay)));
+    $$("[data-del-bill]", realDash).forEach(b => b.addEventListener("click", () => {
+      store.d.bills = store.d.bills.filter(x => x.id !== b.dataset.delBill); store.save(); renderReal();
+    }));
     const rb = $("#btnReset");
     if (rb) rb.addEventListener("click", () => {
       if (confirm("Apagar todos os seus dados deste navegador? Não dá para desfazer.")) {
-        store.d.accounts = []; store.d.tx = []; store.d.goals = []; store.save(); renderReal();
+        store.d.accounts = []; store.d.tx = []; store.d.goals = []; store.d.bills = []; store.d.budgets = {}; store.d.investments = [];
+        store.save(); applyMode();
         showToast("Seus dados foram apagados");
       }
     });
+  }
+  function payBill(id) {
+    const b = store.d.bills.find(x => x.id === id); if (!b) return;
+    b.paidMonths = b.paidMonths || [];
+    if (!b.paidMonths.includes(thisMonth())) b.paidMonths.push(thisMonth());
+    const acct = store.d.accounts[0];
+    store.d.tx.push({ id: uid(), type: "out", amount: b.amount, category: b.category || "Contas", account: acct ? acct.name : "", date: todayISO() });
+    if (acct) acct.balance -= b.amount;
+    store.save(); renderReal(); renderRel();
+    showToast(`${b.name} paga — ${brl(b.amount)}`);
   }
   const fmtDate = iso => { if (!iso) return ""; const [y, m, dd] = iso.split("-"); return dd + "/" + m; };
 
@@ -1934,6 +2034,122 @@
     sl.addEventListener("input", updSim); updSim();
   }
 
+  /* ---------- Relatórios (compras, entradas, saídas) ---------- */
+  const REL_PERIODS = [["mes", "Este mês"], ["ant", "Mês passado"], ["3m", "Últimos 3 meses"]];
+  let relPeriod = "mes";
+  function monthKey(offset) { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - offset); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); }
+  function relRange() {
+    if (relPeriod === "mes") return [monthKey(0)];
+    if (relPeriod === "ant") return [monthKey(1)];
+    return [monthKey(0), monthKey(1), monthKey(2)];
+  }
+  function relTx() {
+    const keys = relRange();
+    return store.d.tx.filter(t => keys.includes((t.date || "").slice(0, 7)));
+  }
+  function groupBy(list, type) {
+    const m = {}; list.filter(t => t.type === type).forEach(t => m[t.category] = (m[t.category] || 0) + t.amount);
+    return Object.entries(m).sort((a, b) => b[1] - a[1]);
+  }
+  function relData() {
+    const real = store.d.mode === "real" && store.d.tx.length;
+    if (real) {
+      const tx = relTx();
+      return { real: true, tx,
+        entradas: groupBy(tx, "in"), saidas: groupBy(tx, "out"),
+        totIn: tx.filter(t => t.type === "in").reduce((a, t) => a + t.amount, 0),
+        totOut: tx.filter(t => t.type === "out").reduce((a, t) => a + t.amount, 0),
+        top: [...tx].sort((a, b) => b.amount - a.amount).slice(0, 6) };
+    }
+    const saidas = [["Moradia", 2180], ["Mercado", 1240], ["Restaurantes", 680], ["Transporte", 540], ["Lazer", 480], ["Saúde", 320], ["Assinaturas", 265]];
+    const entradas = [["Salário", 8500], ["Freelance", 700], ["Rendimentos", 250]];
+    return { real: false, tx: [], entradas, saidas,
+      totIn: 9450, totOut: 5705,
+      top: [["Aluguel", 1850], ["Mercado — compra do mês", 720], ["Fatura Nubank", 680], ["Combustível", 310], ["Farmácia", 190], ["Streaming anual", 168]].map(([c, v]) => ({ category: c, amount: v, type: "out", date: monthKey(0) + "-10" })) };
+  }
+  function seriesTx(n) {
+    const out = [];
+    for (let i = n - 1; i >= 0; i--) {
+      const k = monthKey(i);
+      const rec = store.d.tx.filter(t => t.type === "in" && (t.date || "").slice(0, 7) === k).reduce((a, t) => a + t.amount, 0);
+      const des = store.d.tx.filter(t => t.type === "out" && (t.date || "").slice(0, 7) === k).reduce((a, t) => a + t.amount, 0);
+      out.push([MESES_L[parseInt(k.slice(5)) - 1].slice(0, 3), rec, des]);
+    }
+    return out;
+  }
+  function renderRel() {
+    const relBody = $("#relBody"); if (!relBody) return;
+    $("#relPeriods").innerHTML = REL_PERIODS.map(([k, l]) => `<button class="chip" data-period="${k}" aria-pressed="${k === relPeriod}">${l}</button>`).join("");
+    $$("#relPeriods .chip").forEach(b => b.addEventListener("click", () => { relPeriod = b.dataset.period; renderRel(); }));
+    const d = relData(), eco = d.totIn - d.totOut, taxa = d.totIn ? Math.round(eco / d.totIn * 100) : 0;
+    const maxOut = d.saidas.length ? d.saidas[0][1] : 1, maxIn = d.entradas.length ? d.entradas[0][1] : 1;
+    const series = d.real ? seriesTx(6) : [["fev", 8600, 6300], ["mar", 8600, 5900], ["abr", 9100, 6800], ["mai", 8800, 6100], ["jun", 8990, 5850], ["jul", 9450, 5705]];
+    const maxSer = Math.max(1, ...series.map(s => Math.max(s[1], s[2])));
+    const periodLabel = REL_PERIODS.find(p => p[0] === relPeriod)[1];
+    const note = d.real ? "" : ` <span style="color:var(--ink-3)">(exemplo — ative “Meus dados”)</span>`;
+    relBody.innerHTML = `
+      <div class="rel-print-head"><h1 style="margin:0">Relatório financeiro — ${periodLabel}</h1>
+        <div style="color:#555">Assistente Financeiro IA</div></div>
+      <div class="grid g-tiles">
+        <div class="card tile"><div class="label">Entradas${note}</div>
+          <div class="value num money tx-in">${brl(d.totIn)}</div></div>
+        <div class="card tile"><div class="label">Saídas</div>
+          <div class="value num money">${brl(d.totOut)}</div></div>
+        <div class="card tile"><div class="label">Resultado</div>
+          <div class="value num money" style="color:${eco >= 0 ? "var(--good-text)" : "var(--critical)"}">${brl(eco)}</div></div>
+        <div class="card tile"><div class="label">Taxa de poupança</div>
+          <div class="value num">${taxa}%</div>
+          <div class="delta"><span class="vs">${taxa >= 20 ? "acima do ideal (20%)" : taxa >= 0 ? "dá pra melhorar" : "no vermelho"}</span></div></div>
+      </div>
+      <div class="grid g-1-1">
+        <div class="card"><h2>Compras — saídas por categoria</h2><p class="hint">${periodLabel}</p>
+          ${d.saidas.map(([c, v]) => `<div class="budget-row"><div class="b-head"><span class="cat">${c}</span>
+            <span class="pct num money">${brl(v)}</span></div>
+            <div class="limit-bar"><i style="width:${Math.round(v / maxOut * 100)}%; background:var(--s1)"></i></div>
+            <div class="b-sub"><span>${Math.round(v / (d.totOut || 1) * 100)}% das saídas</span></div></div>`).join("") || `<p class="hint">Sem despesas no período.</p>`}
+        </div>
+        <div class="card"><h2>Entrada de caixa — por origem</h2><p class="hint">${periodLabel}</p>
+          ${d.entradas.map(([c, v]) => `<div class="budget-row"><div class="b-head"><span class="cat">${c}</span>
+            <span class="pct num money tx-in">${brl(v)}</span></div>
+            <div class="limit-bar"><i style="width:${Math.round(v / maxIn * 100)}%; background:var(--good)"></i></div>
+            <div class="b-sub"><span>${Math.round(v / (d.totIn || 1) * 100)}% das entradas</span></div></div>`).join("") || `<p class="hint">Sem receitas no período.</p>`}
+        </div>
+      </div>
+      <div class="grid g-2-1">
+        <div class="card"><h2>Comparativo dos últimos 6 meses</h2><p class="hint">Entradas × saídas</p>
+          <div style="display:flex; align-items:flex-end; gap:10px; height:150px; margin-top:8px">
+            ${series.map(([m, r, s]) => `<div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; height:100%; justify-content:flex-end">
+              <div style="display:flex; gap:3px; align-items:flex-end; height:100%">
+                <div title="Entradas ${brl(r)}" style="width:12px; background:var(--s1); border-radius:3px 3px 0 0; height:${Math.round(r / maxSer * 100)}%"></div>
+                <div title="Saídas ${brl(s)}" style="width:12px; background:var(--s2); border-radius:3px 3px 0 0; height:${Math.round(s / maxSer * 100)}%"></div>
+              </div><span style="font-size:11px; color:var(--ink-3)">${m}</span></div>`).join("")}
+          </div>
+          <div class="legend"><span><span class="sw" style="background:var(--s1)"></span>Entradas</span>
+            <span><span class="sw" style="background:var(--s2)"></span>Saídas</span></div>
+        </div>
+        <div class="card"><h2>Maiores lançamentos</h2><p class="hint">${periodLabel}</p>
+          <div class="row-list mini-list">
+            ${d.top.map(t => `<div class="row-item"><span class="cat-dot" style="background:${t.type === "in" ? "var(--good)" : "var(--s1)"}"></span>
+              <div class="grow"><div class="t">${t.category}</div><div class="d">${fmtDate(t.date)}</div></div>
+              <span class="num ${t.type === "in" ? "tx-in" : "tx-out"}">${t.type === "in" ? "+" : "−"}${brl(t.amount)}</span></div>`).join("") || `<p class="hint">Nada no período.</p>`}
+          </div>
+        </div>
+      </div>`;
+  }
+  function relDownloadCsv() {
+    const d = relData();
+    if (!d.real) { showToast("Ative “Meus dados” para exportar seus lançamentos"); return; }
+    const rows = [["Data", "Tipo", "Categoria", "Conta", "Valor"]];
+    [...d.tx].sort((a, b) => (a.date).localeCompare(b.date)).forEach(t =>
+      rows.push([t.date, t.type === "in" ? "Receita" : "Despesa", t.category, t.account || "", String(t.amount).replace(".", ",")]));
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\n");
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "relatorio-financeiro.csv";
+    document.body.appendChild(a); a.click(); a.remove();
+    showToast("CSV exportado");
+  }
+
   /* ---------- modo demonstração / meus dados ---------- */
   const demoDash = $("#demoDash");
   function toggleReal(demoId, realId) {
@@ -1958,12 +2174,16 @@
       $("#dashGreeting").textContent = "Bom dia, Genis";
       $("#dashSub").textContent = "Terça, 22 de julho de 2026 · dados sincronizados há 2 min";
     }
+    renderRel();
   }
   $$(".mode-switch button").forEach(b => b.addEventListener("click", () => {
     store.d.mode = b.dataset.mode; store.save(); applyMode();
     if (store.d.mode === "real" && !store.d.accounts.length && !store.d.tx.length)
       showToast("Modo Meus dados — comece adicionando uma conta");
   }));
+  $("#relCsv").addEventListener("click", relDownloadCsv);
+  $("#relPdf").addEventListener("click", () => window.print());
+  $$('[data-nav="rel"]').forEach(b => b.addEventListener("click", renderRel));
 
   /* ---------- lançamento rápido ---------- */
   const addSheet = $("#addSheet");
@@ -1990,6 +2210,8 @@
   }));
   const openAdd = () => {
     if (store.d.mode !== "real") { store.d.mode = "real"; store.save(); applyMode(); }
+    addType = "out";
+    $$("#addType button").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.type === "out")));
     refreshAddSheet();
     $("#addDate").value = todayISO();
     $("#addValue").value = "";
@@ -2106,7 +2328,31 @@
     showToast(`${brl(v)} guardados em "${g.name}"`);
   });
 
-  const ACT = { addAcct: openAcct, addTx: openAdd, addGoal: openGoal };
+  /* ---------- adicionar conta fixa ---------- */
+  const billSheet = $("#billSheet");
+  let billCat = "Moradia";
+  const BILL_CATS = ["Moradia", "Água", "Energia", "Internet", "Telefonia", "Streaming", "Assinaturas", "Educação", "Saúde", "Outros"];
+  function openBill() {
+    $("#billName").value = ""; $("#billAmount").value = ""; $("#billDay").value = ""; billCat = BILL_CATS[0];
+    $("#billCats").innerHTML = BILL_CATS.map((c, i) => `<button class="chip" aria-pressed="${i === 0}">${c}</button>`).join("");
+    $$("#billCats .chip").forEach(ch => ch.addEventListener("click", () => {
+      $$("#billCats .chip").forEach(x => x.setAttribute("aria-pressed", "false"));
+      ch.setAttribute("aria-pressed", "true"); billCat = ch.textContent;
+    }));
+    billSheet.classList.add("open"); $("#billName").focus();
+  }
+  $("#btnBillCancel").addEventListener("click", () => billSheet.classList.remove("open"));
+  billSheet.addEventListener("click", e => { if (e.target === billSheet) billSheet.classList.remove("open"); });
+  $("#btnBillSave").addEventListener("click", () => {
+    const name = $("#billName").value.trim(), amount = parseNum($("#billAmount").value);
+    const day = Math.max(1, Math.min(31, parseInt($("#billDay").value, 10) || 1));
+    if (!name || amount <= 0) { $("#billName").focus(); return; }
+    store.d.bills.push({ id: uid(), name, amount, dueDay: day, category: billCat, recurring: true, paidMonths: [] });
+    store.save(); billSheet.classList.remove("open"); renderReal();
+    showToast(`Conta "${name}" cadastrada`);
+  });
+
+  const ACT = { addAcct: openAcct, addTx: openAdd, addGoal: openGoal, addBill: openBill };
   applyMode();
 
   const btnEnv = $("#btnEnvelope");
@@ -2150,7 +2396,7 @@
   $("#cmdTheme").addEventListener("click", () => { toggleTheme(); closeCmdk(); });
   addEventListener("keydown", e => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openCmdk(); }
-    if (e.key === "Escape") { closeCmdk(); [sheet, guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet].forEach(s => s && s.classList.remove("open")); }
+    if (e.key === "Escape") { closeCmdk(); [sheet, guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet].forEach(s => s && s.classList.remove("open")); }
   });
 
   /* ---------- gráficos (SVG gerado) ---------- */
