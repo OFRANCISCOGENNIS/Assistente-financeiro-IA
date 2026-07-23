@@ -36,9 +36,10 @@ O copiloto **v0** é um **motor de regras determinístico**: interpreta a pergun
 1. ✅ **Copiloto v1**: intenções de gasto/economia/categoria/score/meta/financiamento; "criar meta a partir da resposta" em um toque.
 2. ✅ **Ligar Orçamento/Metas/Investimentos/Relatórios ao "Meus dados"** — modo real global; só Empresa/MEI segue demo.
 3. **Dashboard personalizável** (drag & drop de widgets, layout salvo no localStorage). *(pendente)*
-4. **Calendário financeiro** (vencimentos, salários, faturas) no lugar de listas. *(pendente)*
+4. ✅ **Calendário financeiro** (grade mensal com contas, salários e lançamentos; navegação de mês; clique no dia lista os eventos).
 5. ✅ **Score financeiro dinâmico** (topbar calcula da taxa de poupança, reserva, contas em dia, investimentos e saldo). Falta: histórico plotável.
 6. **Gamificação** (níveis, sequências, missões) sobre os dados reais. *(pendente)*
+12. ✅ **Acessibilidade** — alto contraste, texto grande (zoom) e cores para daltonismo, persistidos; foco por teclado já existente.
 7. ✅ **Exportação real** de relatório PDF (print) e CSV a partir dos dados do usuário.
 8. ✅ **PWA** (instalável, ícone, offline via service worker).
 9. ✅ **Planejar** — simuladores de financiamento (parcela/juros/total) e FIRE (número + tempo).

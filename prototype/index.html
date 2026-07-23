@@ -493,6 +493,37 @@
     color: var(--accent-ink); font-weight: 700; }
   .typing { align-self: flex-start; color: var(--ink-3); font-size: 13px; padding: 4px 2px; }
 
+  /* calendário */
+  .cal-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .cal-head h2 { margin: 0; font-size: 16px; text-transform: capitalize; }
+  .cal-head .spacer { flex: 1; }
+  .cal-nav { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--ring);
+    display: grid; place-items: center; color: var(--ink-2); font-size: 15px; }
+  .cal-nav:hover { border-color: var(--accent); color: var(--accent); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .cal-dow { text-align: center; font-size: 11px; font-weight: 700; color: var(--ink-3);
+    text-transform: uppercase; letter-spacing: .04em; padding-bottom: 2px; }
+  .cal-cell { min-height: 66px; border: 1px solid var(--ring); border-radius: 9px; padding: 6px;
+    display: flex; flex-direction: column; gap: 4px; align-items: flex-start; text-align: left; background: var(--card); }
+  .cal-cell.empty { border: none; background: transparent; }
+  .cal-cell:not(.empty):hover { border-color: var(--accent); }
+  .cal-cell[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+  .cal-cell.today .cal-n { background: var(--accent); color: var(--accent-ink); }
+  .cal-n { font-size: 12.5px; font-weight: 650; width: 22px; height: 22px; border-radius: 50%;
+    display: grid; place-items: center; }
+  .cal-dots { display: flex; flex-wrap: wrap; gap: 3px; }
+  .cal-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .cal-amt { font-size: 10.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; margin-top: auto; }
+
+  /* acessibilidade */
+  body.hc { --ring: color-mix(in srgb, var(--ink) 42%, transparent);
+    --grid: color-mix(in srgb, var(--ink) 28%, transparent);
+    --baseline: color-mix(in srgb, var(--ink) 52%, transparent); --ink-2: var(--ink); }
+  body.hc button:focus-visible, body.hc input:focus-visible { outline-width: 3px; }
+  body.big { zoom: 1.15; }
+  body.cvd { --good: #2f8fd0; --good-text: #1f6fa8; --critical: #e8710a; }
+  body.cvd .cal-dot.bill, body.cvd .pill.due { filter: none; }
+
   /* relatórios */
   .rel-toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 16px 0 2px; }
   .rel-toolbar .spacer { flex: 1; }
@@ -595,6 +626,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 17l5-5 4 3 6-7 3 3"/></svg>
       Investimentos
     </button>
+    <button class="nav-btn" data-nav="cal">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
+      Calendário
+    </button>
     <button class="nav-btn" data-nav="plan">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
       Planejar
@@ -633,6 +668,9 @@
             stroke-linecap="round" stroke-dasharray="78.5" stroke-dashoffset="18.8"/>
         </svg>
         Score <b class="num" id="scoreNum">76</b>
+      </button>
+      <button class="icon-btn" id="btnA11y" title="Acessibilidade" aria-label="Acessibilidade">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="4" r="1.6"/><path d="M4 8h16M12 8v6m0 0l-3 6m3-6l3 6"/></svg>
       </button>
       <button class="icon-btn" id="btnDiscreet" aria-pressed="false" title="Modo discreto — ocultar valores">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -1205,6 +1243,34 @@
       </div><!-- /demoInv -->
     </section>
 
+    <!-- ============ CALENDÁRIO ============ -->
+    <section class="view" id="view-cal" aria-label="Calendário financeiro">
+      <div class="view-h">
+        <h1>Calendário</h1>
+        <span class="sub">Contas, salários e lançamentos no mês</span>
+        <div class="mode-switch" role="group" aria-label="Modo de dados">
+          <button data-mode="demo" aria-pressed="true">Demonstração</button>
+          <button data-mode="real" aria-pressed="false">Meus dados</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="cal-head">
+          <h2 id="calTitle">mês</h2><span class="spacer"></span>
+          <button class="cal-nav" id="calPrev" aria-label="Mês anterior">◀</button>
+          <button class="cal-nav" id="calToday" title="Hoje" aria-label="Hoje" style="width:auto; padding:0 12px; font-size:13px; font-weight:650">Hoje</button>
+          <button class="cal-nav" id="calNext" aria-label="Próximo mês">▶</button>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="legend" style="margin-top:12px">
+          <span><span class="sw" style="background:var(--good)"></span>Entradas</span>
+          <span><span class="sw" style="background:var(--s1)"></span>Despesas</span>
+          <span><span class="sw" style="background:var(--critical)"></span>Conta a pagar</span>
+          <span><span class="sw" style="background:var(--ink-3)"></span>Conta paga</span>
+        </div>
+      </div>
+      <div class="card" id="calDayCard" style="margin-top:16px"></div>
+    </section>
+
     <!-- ============ PLANEJAR ============ -->
     <section class="view" id="view-plan" aria-label="Planejamento financeiro">
       <div class="view-h">
@@ -1497,6 +1563,7 @@
       <button class="item" id="cmdAdd" data-kw="/despesa /receita /lancar gasto">➕ &nbsp;Registrar lançamento</button>
       <button class="item" data-nav="orc" data-kw="/orcamento limites">🥧 &nbsp;Abrir Orçamento mensal</button>
       <button class="item" data-nav="metas" data-kw="/meta objetivos">🎯 &nbsp;Ver Metas</button>
+      <button class="item" data-nav="cal" data-kw="/calendario agenda vencimentos">📅 &nbsp;Abrir Calendário</button>
       <button class="item" data-nav="plan" data-kw="/planejar simular financiar fire">📈 &nbsp;Abrir Planejar</button>
       <button class="item" data-nav="inv" data-kw="/investimento carteira">💹 &nbsp;Ver Investimentos</button>
       <button class="item" data-nav="rel" data-kw="/relatorio compras entradas">📄 &nbsp;Abrir Relatórios</button>
@@ -1642,6 +1709,24 @@
     <div class="chip-row" id="billCats"></div>
     <button class="btn-primary" id="btnBillSave" style="margin-top:18px">Salvar conta</button>
     <button class="alt" id="btnBillCancel">Cancelar</button>
+  </div>
+</div>
+
+<!-- acessibilidade -->
+<div class="sheet-veil" id="a11ySheet">
+  <div class="sheet" role="dialog" aria-label="Acessibilidade" style="text-align:left">
+    <h2 style="text-align:center">Acessibilidade</h2>
+    <p style="text-align:center">Ajuste a interface ao seu conforto. Fica salvo neste navegador.</p>
+    <div class="switch-row"><div class="grow"><div class="t">Alto contraste</div>
+      <div class="d">Bordas e textos mais fortes</div></div>
+      <button class="sw-toggle" role="switch" aria-checked="false" data-a11y="hc" aria-label="Alto contraste"></button></div>
+    <div class="switch-row"><div class="grow"><div class="t">Texto grande</div>
+      <div class="d">Amplia toda a interface em 15%</div></div>
+      <button class="sw-toggle" role="switch" aria-checked="false" data-a11y="big" aria-label="Texto grande"></button></div>
+    <div class="switch-row"><div class="grow"><div class="t">Cores para daltonismo</div>
+      <div class="d">Troca verde/vermelho por azul/laranja</div></div>
+      <button class="sw-toggle" role="switch" aria-checked="false" data-a11y="cvd" aria-label="Cores para daltonismo"></button></div>
+    <button class="btn-primary" id="btnA11yClose" style="margin-top:18px">Concluir</button>
   </div>
 </div>
 
@@ -2229,6 +2314,92 @@
   $$(".plan-in").forEach(inp => inp.addEventListener("input", () => { planFin(); planFire(); }));
   planFin(); planFire();
 
+  /* ---------- Calendário financeiro ---------- */
+  const DOW = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+  let calOffset = 0, calSel = null;
+  function calEvents(year, month) {
+    // retorna { day: [{kind, label, amount}] } para o mês exibido
+    const ev = {};
+    const push = (d, o) => { (ev[d] = ev[d] || []).push(o); };
+    const real = store.d.mode === "real" && (store.d.tx.length || store.d.bills.length);
+    const key = year + "-" + String(month + 1).padStart(2, "0");
+    if (real) {
+      store.d.tx.filter(t => (t.date || "").slice(0, 7) === key).forEach(t =>
+        push(+t.date.slice(8, 10), { kind: t.type === "in" ? "in" : "out", label: t.category, amount: (t.type === "in" ? "+" : "−") + brl(t.amount) }));
+      (store.d.bills || []).forEach(b => {
+        const paid = (b.paidMonths || []).includes(key);
+        push(Math.min(b.dueDay, new Date(year, month + 1, 0).getDate()),
+          { kind: paid ? "paid" : "bill", label: b.name + (paid ? " (pago)" : " · vence"), amount: brl(b.amount) });
+      });
+    } else if (calOffset === 0) {
+      [[5, "in", "Salário", "+R$ 8.500,00"], [10, "bill", "Aluguel · vence", "R$ 1.850,00"],
+       [12, "out", "Mercado", "−R$ 420,00"], [15, "out", "Combustível", "−R$ 180,00"],
+       [18, "in", "Freelance", "+R$ 700,00"], [25, "bill", "Fatura Nubank · vence", "R$ 2.315,44"],
+       [28, "out", "Restaurante", "−R$ 96,00"], [30, "bill", "Internet · vence", "R$ 99,90"]]
+        .forEach(([d, k, l, a]) => push(d, { kind: k, label: l, amount: a }));
+    }
+    return ev;
+  }
+  function renderCal() {
+    const grid = $("#calGrid"); if (!grid) return;
+    const base = new Date(); const year = base.getFullYear(), month = base.getMonth() + calOffset;
+    const dt = new Date(year, month, 1);
+    const y = dt.getFullYear(), m = dt.getMonth();
+    $("#calTitle").textContent = MESES_L[m] + " " + y;
+    const ev = calEvents(y, m);
+    const first = new Date(y, m, 1).getDay(), days = new Date(y, m + 1, 0).getDate();
+    const today = new Date(); const isThisMonth = (y === today.getFullYear() && m === today.getMonth());
+    const dotColor = { in: "var(--good)", out: "var(--s1)", bill: "var(--critical)", paid: "var(--ink-3)" };
+    let html = DOW.map(d => `<div class="cal-dow">${d}</div>`).join("");
+    for (let i = 0; i < first; i++) html += `<div class="cal-cell empty"></div>`;
+    for (let d = 1; d <= days; d++) {
+      const list = ev[d] || [];
+      const dots = [...new Set(list.map(o => o.kind))].map(k => `<span class="cal-dot" style="background:${dotColor[k]}"></span>`).join("");
+      const net = list.reduce((a, o) => a + (o.amount.startsWith("+") ? 1 : o.amount.startsWith("−") ? -1 : 0), 0);
+      html += `<button class="cal-cell${isThisMonth && d === today.getDate() ? " today" : ""}" data-day="${d}" aria-pressed="${calSel === d}">
+        <span class="cal-n">${d}</span><span class="cal-dots">${dots}</span>
+        ${list.length ? `<span class="cal-amt">${list.length} evento${list.length > 1 ? "s" : ""}</span>` : ""}</button>`;
+    }
+    grid.innerHTML = html;
+    $$(".cal-cell[data-day]", grid).forEach(c => c.addEventListener("click", () => { calSel = +c.dataset.day; renderCal(); }));
+    const card = $("#calDayCard");
+    if (calSel && ev[calSel]) {
+      card.style.display = "";
+      card.innerHTML = `<h2>${calSel} de ${MESES_L[m]}</h2><div class="row-list mini-list">${ev[calSel].map(o =>
+        `<div class="row-item"><span class="cal-dot" style="background:${dotColor[o.kind]}; width:9px; height:9px"></span>
+          <div class="grow"><div class="t">${o.label}</div></div>
+          <span class="num money">${o.amount}</span></div>`).join("")}</div>`;
+    } else {
+      card.style.display = "none";
+    }
+  }
+  $("#calPrev").addEventListener("click", () => { calOffset--; calSel = null; renderCal(); });
+  $("#calNext").addEventListener("click", () => { calOffset++; calSel = null; renderCal(); });
+  $("#calToday").addEventListener("click", () => { calOffset = 0; calSel = null; renderCal(); });
+  $$('[data-nav="cal"]').forEach(b => b.addEventListener("click", renderCal));
+
+  /* ---------- Acessibilidade ---------- */
+  const A11Y_KEY = "afia:a11y";
+  let a11y = { hc: false, big: false, cvd: false };
+  try { const r = localStorage.getItem(A11Y_KEY); if (r) a11y = Object.assign(a11y, JSON.parse(r)); } catch (e) {}
+  function applyA11y() {
+    document.body.classList.toggle("hc", a11y.hc);
+    document.body.classList.toggle("big", a11y.big);
+    document.body.classList.toggle("cvd", a11y.cvd);
+    $$('[data-a11y]').forEach(t => t.setAttribute("aria-checked", String(a11y[t.dataset.a11y])));
+  }
+  const a11ySheet = $("#a11ySheet");
+  $("#btnA11y").addEventListener("click", () => { applyA11y(); a11ySheet.classList.add("open"); });
+  $("#btnA11yClose").addEventListener("click", () => a11ySheet.classList.remove("open"));
+  a11ySheet.addEventListener("click", e => { if (e.target === a11ySheet) a11ySheet.classList.remove("open"); });
+  $$('[data-a11y]').forEach(t => t.addEventListener("click", () => {
+    a11y[t.dataset.a11y] = !a11y[t.dataset.a11y];
+    try { localStorage.setItem(A11Y_KEY, JSON.stringify(a11y)); } catch (e) {}
+    applyA11y();
+    if (typeof drawAll === "function") drawAll();
+  }));
+  applyA11y();
+
   /* ---------- modo demonstração / meus dados ---------- */
   const demoDash = $("#demoDash");
   function toggleReal(demoId, realId) {
@@ -2272,6 +2443,7 @@
       $("#dashSub").textContent = "Terça, 22 de julho de 2026 · dados sincronizados há 2 min";
     }
     renderRel();
+    renderCal();
     updateScoreChip();
   }
   $$(".mode-switch button").forEach(b => b.addEventListener("click", () => {
@@ -2511,7 +2683,7 @@
   $("#cmdExport").addEventListener("click", () => { closeCmdk(); relDownloadCsv(); });
   addEventListener("keydown", e => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openCmdk(); }
-    if (e.key === "Escape") { closeCmdk(); [sheet, guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet].forEach(s => s && s.classList.remove("open")); }
+    if (e.key === "Escape") { closeCmdk(); [sheet, guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, a11ySheet].forEach(s => s && s.classList.remove("open")); }
   });
 
   /* ---------- gráficos (SVG gerado) ---------- */
