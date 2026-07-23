@@ -204,6 +204,12 @@
   .pill.warn { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--ink); }
   .pill.ok   { background: color-mix(in srgb, var(--good) 15%, transparent); color: var(--good-text); }
   .pill.due  { background: color-mix(in srgb, var(--critical) 14%, transparent); color: var(--critical); }
+  .mchip { font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 99px; margin-left: 6px; white-space: nowrap; vertical-align: middle; }
+  .mchip.up   { background: color-mix(in srgb, var(--critical) 13%, transparent); color: var(--critical); }
+  .mchip.down { background: color-mix(in srgb, var(--good) 15%, transparent); color: var(--good-text); }
+  .mchip.flat, .mchip.new { background: color-mix(in srgb, var(--ink) 8%, transparent); color: var(--ink-3); }
+  .card.flash { animation: cardflash 1.2s ease; }
+  @keyframes cardflash { 0%, 100% { box-shadow: var(--shadow); } 30% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 55%, transparent); } }
   .cat-dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
 
   .limit-bar { height: 6px; border-radius: 4px; background: var(--grid); overflow: hidden; margin-top: 6px; }
@@ -1843,6 +1849,8 @@
   const inMonth = t => (t.date || "").slice(0, 7) === thisMonth();
 
   /* ---------- cálculos ---------- */
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const daysLeft = () => { const d = new Date(); const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); return Math.max(1, last - d.getDate() + 1); };
   const totalSaldo = () => store.d.accounts.reduce((s, a) => s + a.balance, 0);
   const monthIn = () => store.d.tx.filter(t => t.type === "in" && inMonth(t)).reduce((s, t) => s + t.amount, 0);
   const monthOut = () => store.d.tx.filter(t => t.type === "out" && inMonth(t)).reduce((s, t) => s + t.amount, 0);
@@ -1850,6 +1858,30 @@
     const m = {};
     store.d.tx.filter(t => t.type === "out" && inMonth(t)).forEach(t => { m[t.category] = (m[t.category] || 0) + t.amount; });
     return Object.entries(m).sort((a, b) => b[1] - a[1]);
+  };
+  const prevMonthKey = () => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 1); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); };
+  const catTotalsFor = key => {
+    const m = {};
+    store.d.tx.filter(t => t.type === "out" && (t.date || "").slice(0, 7) === key).forEach(t => { m[t.category] = (m[t.category] || 0) + t.amount; });
+    return m;
+  };
+  // contas fixas ainda não pagas neste mês
+  const pendingBills = () => (store.d.bills || []).filter(b => !(b.paidMonths || []).includes(thisMonth()));
+  // contas vencendo em até `dias` (ou já vencidas), não pagas
+  const billsDueSoon = (dias = 3) => {
+    const hoje = new Date().getDate();
+    return pendingBills().map(b => ({ ...b, atrasada: b.dueDay < hoje, faltam: b.dueDay - hoje }))
+      .filter(b => b.atrasada || b.faltam <= dias).sort((a, b) => a.dueDay - b.dueDay);
+  };
+  // projeção de saldo até o fim do mês (determinística, sem IA)
+  const forecast = () => {
+    const saldo = totalSaldo(), des = monthOut();
+    const dia = new Date().getDate(), diasRest = daysLeft() - 1; // dias que ainda faltam correr
+    const pend = pendingBills().reduce((a, b) => a + b.amount, 0);
+    const ritmoDia = dia > 0 ? des / dia : 0;      // média diária gasta até agora
+    const gastoProj = ritmoDia * diasRest;          // gasto discricionário estimado no ritmo atual
+    const projetado = saldo - pend - gastoProj;
+    return { saldo, pend, ritmoDia, gastoProj, diasRest, projetado };
   };
 
   /* ---------- render do painel real ---------- */
@@ -1873,7 +1905,36 @@
     const saldo = totalSaldo(), rec = monthIn(), des = monthOut(), eco = rec - des;
     const cats = byCategory(), maxCat = cats.length ? cats[0][1] : 1;
     const recentes = [...d.tx].sort((a, b) => (b.date + b.id).localeCompare(a.date + a.id)).slice(0, 8);
-    realDash.innerHTML = `
+    const prevCats = catTotalsFor(prevMonthKey());
+    const due = billsDueSoon(3), fc = forecast();
+    // banner de contas vencendo / vencidas
+    const alertBanner = due.length ? `
+      <div class="alert ${due.some(b => b.atrasada) ? "critical" : "warn"}" style="margin-bottom:16px">
+        <span class="ic">${due.some(b => b.atrasada) ? "🔴" : "⏰"}</span>
+        <div><b>${due.some(b => b.atrasada) ? "Contas vencidas ou vencendo" : "Contas vencendo em breve"}:</b>
+          ${due.map(b => `${esc(b.name)} (${b.atrasada ? "venceu dia " + b.dueDay : b.faltam <= 0 ? "vence hoje" : "vence dia " + b.dueDay}, ${brl(b.amount)})`).join(" · ")}.
+          <button class="btn-mini alt" data-act="scrollBills" style="margin-top:8px">Ver contas do mês</button></div>
+      </div>` : "";
+    // card de projeção de saldo
+    const fcPos = fc.projetado >= 0;
+    const forecastCard = `
+      <div class="grid" style="margin-bottom:16px"><div class="card">
+        <div style="display:flex; align-items:baseline"><h2>Previsão de saldo — fim de ${MESES_L[new Date().getMonth()]}</h2></div>
+        <p class="hint">No ritmo atual, sem IA — só a sua própria conta</p>
+        <div style="display:flex; flex-wrap:wrap; gap:18px; align-items:flex-end; margin-top:4px">
+          <div><div class="label" style="font-size:12px; color:var(--ink-3)">Saldo projetado</div>
+            <div class="value num money" style="font-size:30px; color:${fcPos ? "var(--good-text)" : "var(--critical)"}">${brl(fc.projetado)}</div></div>
+          <div style="flex:1; min-width:220px; font-size:13px; color:var(--ink-2); line-height:1.7">
+            Saldo hoje <b class="num money">${brl(fc.saldo)}</b><br>
+            <span class="op">−</span> Contas a pagar pendentes <b class="num money">${brl(fc.pend)}</b><br>
+            <span class="op">−</span> Gasto estimado (${brl(fc.ritmoDia)}/dia × ${fc.diasRest} dia${fc.diasRest === 1 ? "" : "s"}) <b class="num money">${brl(fc.gastoProj)}</b>
+          </div>
+        </div>
+        ${fcPos
+          ? `<div class="hint" style="margin-top:10px; color:var(--good-text)">✓ No ritmo atual você fecha o mês no positivo. Bom trabalho.</div>`
+          : `<div class="alert critical" style="margin-top:12px"><span class="ic">⚠️</span><div><b>Risco de ficar negativo</b> antes do fim do mês. Segure gastos não essenciais ${brl(-fc.projetado)} ou antecipe uma entrada.</div></div>`}
+      </div></div>`;
+    realDash.innerHTML = alertBanner + forecastCard + `
       <div class="grid g-tiles">
         <div class="card tile"><div class="label">Saldo total</div>
           <div class="value num money">${brl(saldo)}</div>
@@ -1889,11 +1950,18 @@
       <div class="grid g-2-1">
         <div class="card">
           <h2>Gastos por categoria</h2>
-          <p class="hint">${MESES_L[new Date().getMonth()]} · do que você registrou</p>
-          ${cats.length ? cats.map(([c, v]) => `
-            <div class="budget-row"><div class="b-head"><span class="cat">${c}</span>
+          <p class="hint">${MESES_L[new Date().getMonth()]} · variação vs. mês passado</p>
+          ${cats.length ? cats.map(([c, v]) => {
+            const prev = prevCats[c] || 0;
+            const dpct = prev > 0 ? Math.round((v - prev) / prev * 100) : null;
+            const badge = dpct === null ? (prev === 0 ? `<span class="mchip new">novo</span>` : "")
+              : dpct === 0 ? `<span class="mchip flat">estável</span>`
+              : dpct > 0 ? `<span class="mchip up" title="${brl(prev)} no mês passado">▲ ${dpct}%</span>`
+              : `<span class="mchip down" title="${brl(prev)} no mês passado">▼ ${-dpct}%</span>`;
+            return `<div class="budget-row"><div class="b-head"><span class="cat">${c} ${badge}</span>
               <span class="pct num money">${brl(v)}</span></div>
-              <div class="limit-bar"><i style="width:${Math.max(6, v / maxCat * 100)}%; background:var(--s1)"></i></div></div>`).join("")
+              <div class="limit-bar"><i style="width:${Math.max(6, v / maxCat * 100)}%; background:var(--s1)"></i></div></div>`;
+          }).join("")
             : `<p class="hint">Nenhuma despesa registrada este mês ainda.</p>`}
         </div>
         <div class="card">
@@ -1932,7 +2000,7 @@
         </div>
       </div>
       <div class="grid" style="margin-top:16px">
-        <div class="card">
+        <div class="card" id="billsCard">
           <div style="display:flex; align-items:baseline"><h2>Contas do mês</h2>
             <button class="btn-mini alt" data-act="addBill" style="margin-left:auto">+ Conta fixa</button></div>
           <p class="hint">${(() => { const b = d.bills || []; const p = b.filter(x => (x.paidMonths || []).includes(thisMonth())); return `${p.length} de ${b.length} pagas · ${brl(p.reduce((a, x) => a + x.amount, 0))} de ${brl(b.reduce((a, x) => a + x.amount, 0))}`; })()}</p>
@@ -2622,7 +2690,8 @@
     showToast(`Conta "${name}" cadastrada`);
   });
 
-  const ACT = { addAcct: openAcct, addTx: openAdd, addGoal: openGoal, addBill: openBill };
+  const scrollBills = () => { const c = $("#billsCard"); if (c) { c.scrollIntoView({ behavior: "smooth", block: "center" }); c.classList.add("flash"); setTimeout(() => c.classList.remove("flash"), 1200); } };
+  const ACT = { addAcct: openAcct, addTx: openAdd, addGoal: openGoal, addBill: openBill, scrollBills };
   applyMode();
 
   const btnEnv = $("#btnEnvelope");
@@ -2841,14 +2910,13 @@
 
   /* ============ COPILOTO ============ */
   const copLog = $("#copLog"), copInput = $("#copInput");
-  const SUGG = ["Quanto posso gastar hoje?", "Quais contas ainda faltam pagar?",
-    "Quanto entrou de caixa este mês?", "Quanto comprei este mês?",
-    "Estou gastando muito com alimentação?", "Quanto economizei este mês?",
-    "Para onde vai meu dinheiro?", "Como está minha saúde financeira?",
+  const SUGG = ["Quanto posso gastar hoje?", "Vou fechar o mês no positivo?",
+    "Quais contas ainda faltam pagar?", "Quanto entrou de caixa este mês?",
+    "Quanto comprei este mês?", "Estou gastando muito com alimentação?",
+    "Quanto economizei este mês?", "Para onde vai meu dinheiro?",
+    "Como está minha saúde financeira?",
     "Quanto guardar por mês para juntar R$ 6.000 até dezembro?"];
-  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const norm = s => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  const daysLeft = () => { const d = new Date(); const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); return Math.max(1, last - d.getDate() + 1); };
 
   function copSnap() {
     const real = store.d.mode === "real" && (store.d.tx.length || store.d.accounts.length);
@@ -2872,6 +2940,11 @@
     if (/(gastar hoje|posso gastar|quanto.*gastar)/.test(n)) {
       const sobra = Math.max(0, s.rec - s.des), dl = daysLeft();
       return `Pelo que sobra do mês, seu ritmo seguro é de cerca de:<span class="fig">${brl(sobra / dl)}/dia</span>São ${brl(sobra)} disponíveis ÷ ${dl} dia(s) até virar o mês. Contas fixas que ainda vão cair reduzem isso — por isso eu recomendo deixar uma folga.${src}`;
+    }
+    if (/(fim do mes|final do mes|fechar o mes|vou fechar|previsao|projecao|saldo no fim|ficar negativo|risco de|sobra ate o fim|chegar no fim)/.test(n)) {
+      const f = s.real ? forecast() : { saldo: 6842.10, pend: 2415.34, ritmoDia: 268, gastoProj: 268 * 6, diasRest: 6, projetado: 6842.10 - 2415.34 - 268 * 6 };
+      const pos = f.projetado >= 0;
+      return `Projeção para o fim de ${MESES_L[new Date().getMonth()]} (no seu ritmo atual, sem IA):<span class="fig" style="color:${pos ? "var(--good-text)" : "var(--critical)"}">${brl(f.projetado)}</span>Parto do saldo de ${brl(f.saldo)}, tiro ${brl(f.pend)} de contas ainda a pagar e ${brl(f.gastoProj)} de gasto estimado (${brl(f.ritmoDia)}/dia × ${f.diasRest} dia${f.diasRest === 1 ? "" : "s"}). ${pos ? "Você fecha o mês no positivo. ✓" : `⚠️ Há risco de ficar negativo — segure ${brl(-f.projetado)} em gastos não essenciais ou antecipe uma entrada.`}${src}`;
     }
     if (/(economizei|economia|sobrou|poupei|guardei este mes)/.test(n)) {
       const eco = s.rec - s.des, pct = s.rec ? Math.round(eco / s.rec * 100) : 0;

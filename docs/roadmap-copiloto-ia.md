@@ -38,6 +38,9 @@ O copiloto **v0** é um **motor de regras determinístico**: interpreta a pergun
 3. **Dashboard personalizável** (drag & drop de widgets, layout salvo no localStorage). *(pendente)*
 4. ✅ **Calendário financeiro** (grade mensal com contas, salários e lançamentos; navegação de mês; clique no dia lista os eventos).
 5. ✅ **Score financeiro dinâmico** (topbar calcula da taxa de poupança, reserva, contas em dia, investimentos e saldo). Falta: histórico plotável.
+13. ✅ **Previsão de saldo até o fim do mês** (determinística): saldo hoje − contas pendentes − gasto estimado no ritmo atual; card no dashboard + intenção no copiloto, com alerta de risco de ficar negativo.
+14. ✅ **Alertas de contas vencendo/vencidas** (até 3 dias) em banner no topo do dashboard, com atalho para as contas do mês.
+15. ✅ **Comparação mês a mês por categoria** (▲/▼ % vs. mês anterior) nos gastos do dashboard.
 6. **Gamificação** (níveis, sequências, missões) sobre os dados reais. *(pendente)*
 12. ✅ **Acessibilidade** — alto contraste, texto grande (zoom) e cores para daltonismo, persistidos; foco por teclado já existente.
 7. ✅ **Exportação real** de relatório PDF (print) e CSV a partir dos dados do usuário.
