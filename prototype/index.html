@@ -1,5 +1,12 @@
 <title>Assistente Financeiro IA — Protótipo</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b6e55">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Assistente">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" href="icon-192.png">
 <style>
   /* ============ TOKENS ============ */
   :root {
@@ -972,9 +979,15 @@
     <section class="view" id="view-metas" aria-label="Metas financeiras">
       <div class="view-h">
         <h1>Metas</h1>
-        <span class="sub">4 metas ativas · simule aportes e veja quando você chega lá</span>
+        <span class="sub">Simule aportes e veja quando você chega lá</span>
+        <div class="mode-switch" role="group" aria-label="Modo de dados">
+          <button data-mode="demo" aria-pressed="true">Demonstração</button>
+          <button data-mode="real" aria-pressed="false">Meus dados</button>
+        </div>
       </div>
 
+      <div id="realMetas" hidden></div>
+      <div id="demoMetas">
       <div class="grid g-tiles">
         <div class="card tile">
           <div class="label">Total guardado</div>
@@ -1054,6 +1067,7 @@
           </div>
         </div>
       </div>
+      </div><!-- /demoMetas -->
     </section>
 
     <!-- ============ INVESTIMENTOS ============ -->
@@ -1494,6 +1508,20 @@
   </div>
 </div>
 
+<!-- aportar em meta -->
+<div class="sheet-veil" id="aporteSheet">
+  <div class="sheet" role="dialog" aria-label="Aportar em meta">
+    <h2 id="aporteTitle">Aportar</h2>
+    <p style="margin-bottom:2px">Adicione um valor ao que você já guardou nesta meta.</p>
+    <div class="field">
+      <label for="aporteValue">Valor do aporte</label>
+      <input id="aporteValue" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
+    </div>
+    <button class="btn-primary" id="btnAporteSave" style="margin-top:18px">Guardar</button>
+    <button class="alt" id="btnAporteCancel">Cancelar</button>
+  </div>
+</div>
+
 <!-- guardião — bloqueio consultivo (nível 3) -->
 <div class="sheet-veil" id="guardSheet">
   <div class="sheet" role="dialog" aria-label="Confirmação de exportação sensível">
@@ -1826,6 +1854,86 @@
     }));
   }
 
+  /* ---------- Metas (Meus dados) ---------- */
+  const realMetas = $("#realMetas");
+  let simGoalId = null;
+  function renderMetas() {
+    if (!realMetas) return;
+    const gs = store.d.goals;
+    if (!gs.length) {
+      realMetas.innerHTML = `<div class="card empty"><div class="big">🎯</div>
+        <h2>Defina seu primeiro objetivo</h2>
+        <p>Comprar algo, viajar, montar a reserva… Crie uma meta e eu simulo quanto guardar por mês e quando você chega lá.</p>
+        <div class="cta-row"><button class="btn-mini" id="metaAddBtn">Criar meta</button></div></div>`;
+      $("#metaAddBtn").addEventListener("click", openGoal);
+      return;
+    }
+    const totalCur = gs.reduce((a, g) => a + g.current, 0);
+    const totalTgt = gs.reduce((a, g) => a + g.target, 0);
+    if (!gs.find(g => g.id === simGoalId)) simGoalId = gs[0].id;
+    const sg = gs.find(g => g.id === simGoalId);
+    realMetas.innerHTML = `
+      <div class="grid g-tiles">
+        <div class="card tile"><div class="label">Total guardado</div>
+          <div class="value num money">${brl(totalCur)}</div></div>
+        <div class="card tile"><div class="label">Soma das metas</div>
+          <div class="value num money">${brl(totalTgt)}</div>
+          <div class="delta"><span class="vs">${gs.length} objetivo(s)</span></div></div>
+        <div class="card tile"><div class="label">Progresso geral</div>
+          <div class="value num">${totalTgt ? Math.round(totalCur / totalTgt * 100) : 0}%</div></div>
+        <div class="card tile"><div class="label">Falta juntar</div>
+          <div class="value num money">${brl(Math.max(0, totalTgt - totalCur))}</div></div>
+      </div>
+      <div class="grid g-2-1">
+        <div class="card">
+          <div style="display:flex; align-items:baseline; gap:8px">
+            <h2>Simulador</h2>
+            <select id="simSelect" style="margin-left:auto; font:inherit; font-size:13px; padding:4px 8px; border-radius:8px; border:1px solid var(--ring); background:var(--card); color:var(--ink)">
+              ${gs.map(g => `<option value="${g.id}" ${g.id === simGoalId ? "selected" : ""}>${g.name}</option>`).join("")}
+            </select>
+          </div>
+          <p class="hint">Arraste o aporte e veja a data de conclusão</p>
+          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:4px">
+            <span class="value num money" style="font-size:22px; font-weight:700">${brl(sg.current)}</span>
+            <span class="hint" style="margin:0">de ${brl(sg.target)} · ${sg.target ? Math.round(sg.current / sg.target * 100) : 0}%</span>
+          </div>
+          <div class="limit-bar" style="margin-top:8px"><i style="width:${Math.min(100, sg.target ? sg.current / sg.target * 100 : 0)}%; background:var(--accent)"></i></div>
+          <div style="margin-top:16px">
+            <div class="sim-label"><span>Aporte mensal</span><b id="mSimVal" class="num money">R$ 300</b></div>
+            <input type="range" id="mSimSlider" min="50" max="3000" step="50" value="300" aria-label="Aporte mensal">
+          </div>
+          <div class="sim-out" id="mSimOut"></div>
+        </div>
+        <div class="card">
+          <div style="display:flex; align-items:baseline"><h2>Todas as metas</h2>
+            <button class="btn-mini alt" id="metaAddBtn" style="margin-left:auto">+ Meta</button></div>
+          <div class="row-list mini-list">
+            ${gs.map(g => `<div class="row-item">
+              <div class="grow"><div class="t">${g.name}</div>
+                <div class="limit-bar"><i style="width:${Math.min(100, g.target ? g.current / g.target * 100 : 0)}%; background:var(--accent)"></i></div>
+                <div class="d num money">${brl(g.current)} de ${brl(g.target)} · ${g.target ? Math.round(g.current / g.target * 100) : 0}%</div></div>
+              <button class="btn-ghost safe" data-aporte="${g.id}">Aportar</button>
+              <button class="del" data-del-goal="${g.id}" aria-label="Excluir">✕</button></div>`).join("")}
+          </div>
+        </div>
+      </div>`;
+    $("#metaAddBtn").addEventListener("click", openGoal);
+    $("#simSelect").addEventListener("change", e => { simGoalId = e.target.value; renderMetas(); });
+    $$("[data-del-goal]", realMetas).forEach(b => b.addEventListener("click", () => {
+      store.d.goals = store.d.goals.filter(g => g.id !== b.dataset.delGoal); store.save(); renderMetas(); renderReal();
+    }));
+    $$("[data-aporte]", realMetas).forEach(b => b.addEventListener("click", () => openAporte(b.dataset.aporte)));
+    const sl = $("#mSimSlider"), out = $("#mSimOut");
+    const updSim = () => {
+      const ap = +sl.value; $("#mSimVal").textContent = "R$ " + ap.toLocaleString("pt-BR");
+      const falta = Math.max(0, sg.target - sg.current);
+      if (falta <= 0) { out.innerHTML = "🎉 Meta concluída!"; return; }
+      const months = Math.ceil(falta / ap), idx = new Date().getMonth() + months;
+      out.innerHTML = `Faltam <b class="num money">${brl(falta)}</b> · concluída em <b>${MESES_L[idx % 12].slice(0, 3)}/${new Date().getFullYear() + Math.floor(idx / 12)}</b> (${months} ${months > 1 ? "meses" : "mês"})`;
+    };
+    sl.addEventListener("input", updSim); updSim();
+  }
+
   /* ---------- modo demonstração / meus dados ---------- */
   const demoDash = $("#demoDash");
   function toggleReal(demoId, realId) {
@@ -1839,9 +1947,10 @@
     toggleReal("demoDash", "realDash");
     toggleReal("demoOrc", "realOrc");
     toggleReal("demoInv", "realInv");
+    toggleReal("demoMetas", "realMetas");
     $$(".mode-switch button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === store.d.mode)));
     if (real) {
-      renderReal(); renderOrc(); renderInv();
+      renderReal(); renderOrc(); renderInv(); renderMetas();
       $("#dashGreeting").textContent = "Seu painel";
       const now = new Date();
       $("#dashSub").textContent = `${now.getDate()} de ${MESES_L[now.getMonth()]} de ${now.getFullYear()} · dados neste navegador`;
@@ -1932,7 +2041,7 @@
     const name = $("#goalName").value.trim();
     if (!name) { $("#goalName").focus(); return; }
     store.d.goals.push({ id: uid(), name, target: parseNum($("#goalTarget").value), current: parseNum($("#goalCurrent").value) });
-    store.save(); goalSheet.classList.remove("open"); renderReal();
+    store.save(); goalSheet.classList.remove("open"); renderReal(); renderMetas();
     showToast(`Meta "${name}" criada`);
   });
 
@@ -1974,6 +2083,27 @@
     store.d.investments.push({ id: uid(), name, klass: invClass, value });
     store.save(); invSheet.classList.remove("open"); renderInv();
     showToast(`${name} adicionado à carteira`);
+  });
+
+  /* ---------- aportar em meta ---------- */
+  const aporteSheet = $("#aporteSheet");
+  let aporteGoalId = null;
+  function openAporte(id) {
+    aporteGoalId = id;
+    const g = store.d.goals.find(x => x.id === id);
+    $("#aporteTitle").textContent = "Aportar em " + (g ? g.name : "meta");
+    $("#aporteValue").value = "";
+    aporteSheet.classList.add("open"); $("#aporteValue").focus();
+  }
+  $("#btnAporteCancel").addEventListener("click", () => aporteSheet.classList.remove("open"));
+  aporteSheet.addEventListener("click", e => { if (e.target === aporteSheet) aporteSheet.classList.remove("open"); });
+  $("#btnAporteSave").addEventListener("click", () => {
+    const v = parseNum($("#aporteValue").value);
+    const g = store.d.goals.find(x => x.id === aporteGoalId);
+    if (!g || v <= 0) { $("#aporteValue").focus(); return; }
+    g.current += v; store.save(); aporteSheet.classList.remove("open");
+    renderMetas(); renderReal();
+    showToast(`${brl(v)} guardados em "${g.name}"`);
   });
 
   const ACT = { addAcct: openAcct, addTx: openAdd, addGoal: openGoal };
@@ -2020,7 +2150,7 @@
   $("#cmdTheme").addEventListener("click", () => { toggleTheme(); closeCmdk(); });
   addEventListener("keydown", e => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openCmdk(); }
-    if (e.key === "Escape") { closeCmdk(); [sheet, guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet].forEach(s => s && s.classList.remove("open")); }
+    if (e.key === "Escape") { closeCmdk(); [sheet, guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet].forEach(s => s && s.classList.remove("open")); }
   });
 
   /* ---------- gráficos (SVG gerado) ---------- */
@@ -2275,7 +2405,7 @@
     const target = parseFloat(b.dataset.copGoal);
     if (store.d.mode !== "real") { store.d.mode = "real"; store.save(); applyMode(); }
     store.d.goals.push({ id: uid(), name: b.dataset.copName || "Nova meta", target, current: 0 });
-    store.save(); renderReal();
+    store.save(); renderReal(); renderMetas();
     b.disabled = true; b.textContent = "Meta criada ✓"; b.style.opacity = ".7";
     showToast(`Meta “${b.dataset.copName}” de ${brl(target)} criada`);
   });
@@ -2290,5 +2420,12 @@
   $$('[data-nav="cop"]').forEach(b => b.addEventListener("click", () => {
     if (!copLog.querySelector(".msg.me")) copWelcome();
   }));
+
+  /* ---------- PWA: registro do service worker (protegido) ---------- */
+  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+    addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    });
+  }
 })();
 </script>
