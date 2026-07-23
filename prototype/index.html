@@ -372,6 +372,8 @@
     font-size: 12.5px; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
   .btn-ghost:hover { border-color: var(--critical); color: var(--critical); }
   .btn-ghost.safe:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-ghost.danger { border-color: color-mix(in srgb, var(--critical) 40%, var(--ring)); color: var(--critical); }
+  .btn-ghost.danger:hover { border-color: var(--critical); background: color-mix(in srgb, var(--critical) 10%, transparent); }
 
   .tl { list-style: none; margin: 0; padding: 0; }
   .tl li { position: relative; padding: 0 0 16px 22px; font-size: 13px; }
@@ -695,6 +697,7 @@
           <button data-mode="demo" aria-pressed="true">Demonstração</button>
           <button data-mode="real" aria-pressed="false">Meus dados</button>
         </div>
+        <button class="btn-ghost danger" id="btnClearData" hidden title="Apagar ou zerar seus dados deste navegador">🗑️ Limpar dados</button>
       </div>
 
       <!-- painel com dados reais (localStorage) -->
@@ -1578,6 +1581,7 @@
       <button class="item" data-nav="sec" data-kw="/seguranca score">🛡️ &nbsp;Abrir Central de Segurança</button>
       <button class="item" id="cmdDiscreet" data-kw="/discreto ocultar">👁️ &nbsp;Alternar modo discreto</button>
       <button class="item" id="cmdTheme" data-kw="/tema escuro claro">🌗 &nbsp;Alternar tema claro/escuro</button>
+      <button class="item" id="cmdClear" data-kw="/limpar zerar apagar dados reset">🗑️ &nbsp;Limpar / zerar meus dados</button>
     </div>
     <div class="foot">Digite <b>/</b> para comandos · Enter seleciona · Esc fecha</div>
   </div>
@@ -1715,6 +1719,20 @@
     <div class="chip-row" id="billCats"></div>
     <button class="btn-primary" id="btnBillSave" style="margin-top:18px">Salvar conta</button>
     <button class="alt" id="btnBillCancel">Cancelar</button>
+  </div>
+</div>
+
+<!-- limpar / zerar dados -->
+<div class="sheet-veil" id="clearSheet">
+  <div class="sheet" role="dialog" aria-label="Limpar dados">
+    <h2>Limpar seus dados</h2>
+    <p style="margin-bottom:6px">Seus dados ficam só neste navegador. Escolha o que fazer:</p>
+    <div id="clearSummary" class="hint" style="margin:0 0 14px"></div>
+    <button class="btn-ghost danger" id="btnClearAll" style="width:100%; justify-content:center; margin-bottom:10px">🗑️ Apagar tudo (zerar de vez)</button>
+    <p class="hint" style="margin:0 0 16px">Remove contas, lançamentos, metas, contas fixas, investimentos e orçamentos. Não dá para desfazer.</p>
+    <button class="btn-ghost safe" id="btnBackDemo" style="width:100%; justify-content:center; margin-bottom:10px">👁️ Ver só a demonstração</button>
+    <p class="hint" style="margin:0 0 16px">Volta para o modo Demonstração <b>sem apagar</b> nada — seus dados continuam salvos e voltam quando você clicar em “Meus dados”.</p>
+    <button class="alt" id="btnClearCancel">Cancelar</button>
   </div>
 </div>
 
@@ -2031,15 +2049,36 @@
       store.d.bills = store.d.bills.filter(x => x.id !== b.dataset.delBill); store.save(); renderReal();
     }));
     const rb = $("#btnReset");
-    if (rb) rb.addEventListener("click", () => {
-      if (confirm("Apagar todos os seus dados deste navegador? Não dá para desfazer.")) {
-        store.d.accounts = []; store.d.tx = []; store.d.goals = []; store.d.bills = []; store.d.budgets = {}; store.d.investments = [];
-        store.save(); applyMode();
-        showToast("Seus dados foram apagados");
-      }
-    });
+    if (rb) rb.addEventListener("click", openClear);
     updateScoreChip();
   }
+  function resetAllData() {
+    store.d.accounts = []; store.d.tx = []; store.d.goals = []; store.d.bills = []; store.d.budgets = {}; store.d.investments = [];
+    store.save(); applyMode();
+    showToast("Seus dados foram apagados");
+  }
+  const clearSheet = $("#clearSheet");
+  function openClear() {
+    const d = store.d;
+    const n = d.accounts.length + d.tx.length + d.goals.length + (d.bills || []).length + (d.investments || []).length;
+    $("#clearSummary").innerHTML = n
+      ? `Hoje você tem <b>${d.tx.length}</b> lançamento(s), <b>${d.accounts.length}</b> conta(s), <b>${d.goals.length}</b> meta(s) e <b>${(d.bills || []).length}</b> conta(s) fixa(s) salvos.`
+      : `Você ainda não tem dados salvos neste navegador.`;
+    clearSheet.classList.add("open");
+  }
+  $("#btnClearData").addEventListener("click", openClear);
+  $("#btnClearCancel").addEventListener("click", () => clearSheet.classList.remove("open"));
+  clearSheet.addEventListener("click", e => { if (e.target === clearSheet) clearSheet.classList.remove("open"); });
+  $("#btnClearAll").addEventListener("click", () => {
+    if (confirm("Apagar TODOS os seus dados deste navegador? Não dá para desfazer.")) {
+      resetAllData(); clearSheet.classList.remove("open");
+    }
+  });
+  $("#btnBackDemo").addEventListener("click", () => {
+    store.d.mode = "demo"; store.save(); applyMode();
+    clearSheet.classList.remove("open");
+    showToast("Voltou para a demonstração — seus dados continuam salvos");
+  });
   function payBill(id) {
     const b = store.d.bills.find(x => x.id === id); if (!b) return;
     b.paidMonths = b.paidMonths || [];
@@ -2501,6 +2540,7 @@
     toggleReal("demoInv", "realInv");
     toggleReal("demoMetas", "realMetas");
     $$(".mode-switch button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === store.d.mode)));
+    const bc = $("#btnClearData"); if (bc) bc.hidden = !real;
     if (real) {
       renderReal(); renderOrc(); renderInv(); renderMetas();
       $("#dashGreeting").textContent = "Seu painel";
@@ -2750,9 +2790,10 @@
   $("#cmdDiscreet").addEventListener("click", () => { setDiscreet(!isDiscreet()); closeCmdk(); });
   $("#cmdTheme").addEventListener("click", () => { toggleTheme(); closeCmdk(); });
   $("#cmdExport").addEventListener("click", () => { closeCmdk(); relDownloadCsv(); });
+  $("#cmdClear").addEventListener("click", () => { closeCmdk(); openClear(); });
   addEventListener("keydown", e => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openCmdk(); }
-    if (e.key === "Escape") { closeCmdk(); [sheet, guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, a11ySheet].forEach(s => s && s.classList.remove("open")); }
+    if (e.key === "Escape") { closeCmdk(); [sheet, guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, a11ySheet, clearSheet].forEach(s => s && s.classList.remove("open")); }
   });
 
   /* ---------- gráficos (SVG gerado) ---------- */
