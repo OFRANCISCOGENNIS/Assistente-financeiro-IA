@@ -33,14 +33,17 @@ O copiloto **v0** é um **motor de regras determinístico**: interpreta a pergun
 
 ### Fase A — Aprofundar no protótipo (sem backend, alto valor)
 
-1. **Copiloto v1**: mais intenções (dívidas, cartões, comparativo mês a mês), respostas com mini-gráfico, e "criar meta a partir da resposta" em um toque.
-2. **Ligar Orçamento/Investimentos/Empresa ao "Meus dados"** — hoje o modo real cobre o dashboard; estender para as demais telas calcularem dos lançamentos do usuário.
-3. **Dashboard personalizável** (drag & drop de widgets, layout salvo no localStorage).
-4. **Calendário financeiro** (vencimentos, salários, faturas) no lugar de listas.
-5. **Score financeiro completo** com histórico plotável e "como subir a nota".
-6. **Gamificação** (níveis, sequências, missões) sobre os dados reais.
-7. **Exportação real** de relatório PDF/CSV a partir dos dados do usuário.
-8. **PWA** (instalável, ícone, offline básico via service worker) — o protótipo já é praticamente isso.
+1. ✅ **Copiloto v1**: intenções de gasto/economia/categoria/score/meta/financiamento; "criar meta a partir da resposta" em um toque.
+2. ✅ **Ligar Orçamento/Metas/Investimentos/Relatórios ao "Meus dados"** — modo real global; só Empresa/MEI segue demo.
+3. **Dashboard personalizável** (drag & drop de widgets, layout salvo no localStorage). *(pendente)*
+4. **Calendário financeiro** (vencimentos, salários, faturas) no lugar de listas. *(pendente)*
+5. ✅ **Score financeiro dinâmico** (topbar calcula da taxa de poupança, reserva, contas em dia, investimentos e saldo). Falta: histórico plotável.
+6. **Gamificação** (níveis, sequências, missões) sobre os dados reais. *(pendente)*
+7. ✅ **Exportação real** de relatório PDF (print) e CSV a partir dos dados do usuário.
+8. ✅ **PWA** (instalável, ícone, offline via service worker).
+9. ✅ **Planejar** — simuladores de financiamento (parcela/juros/total) e FIRE (número + tempo).
+10. ✅ **Contas a pagar** — cadastro, pagas × pendentes, pagar gera despesa e baixa saldo.
+11. ✅ **Comandos "/"** no Ctrl+K (/despesa, /meta, /planejar, /relatorio, /exportar…).
 
 ### Fase B — Exige backend + IA (o salto de produto)
 

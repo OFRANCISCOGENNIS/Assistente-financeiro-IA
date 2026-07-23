@@ -595,6 +595,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 17l5-5 4 3 6-7 3 3"/></svg>
       Investimentos
     </button>
+    <button class="nav-btn" data-nav="plan">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+      Planejar
+    </button>
     <button class="nav-btn" data-nav="rel">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-3"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8 12h8M8 16h5"/></svg>
       Relatórios
@@ -622,13 +626,13 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
         Pesquisar ou executar comando… <kbd>Ctrl K</kbd>
       </button>
-      <button class="score-chip" data-nav="sec" title="Financial Health Score — abrir Central de Segurança">
+      <button class="score-chip" data-nav="sec" title="Score financeiro — como você está indo">
         <svg viewBox="0 0 32 32" aria-hidden="true">
           <circle cx="16" cy="16" r="12.5" fill="none" stroke="var(--grid)" stroke-width="4"/>
-          <circle cx="16" cy="16" r="12.5" fill="none" stroke="var(--accent)" stroke-width="4"
+          <circle id="scoreRing" cx="16" cy="16" r="12.5" fill="none" stroke="var(--accent)" stroke-width="4"
             stroke-linecap="round" stroke-dasharray="78.5" stroke-dashoffset="18.8"/>
         </svg>
-        Score <b class="num">76</b>
+        Score <b class="num" id="scoreNum">76</b>
       </button>
       <button class="icon-btn" id="btnDiscreet" aria-pressed="false" title="Modo discreto — ocultar valores">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -1201,6 +1205,53 @@
       </div><!-- /demoInv -->
     </section>
 
+    <!-- ============ PLANEJAR ============ -->
+    <section class="view" id="view-plan" aria-label="Planejamento financeiro">
+      <div class="view-h">
+        <h1>Planejar ✨</h1>
+        <span class="sub">Simule decisões grandes antes de tomá-las</span>
+      </div>
+
+      <div class="grid g-1-1">
+        <div class="card">
+          <h2>Vale a pena financiar?</h2>
+          <p class="hint">Carro, imóvel ou qualquer compra parcelada</p>
+          <div class="field"><label>Valor do bem</label>
+            <input class="plan-in" id="fVal" type="text" inputmode="decimal" value="R$ 60.000"></div>
+          <div style="display:flex; gap:12px">
+            <div class="field" style="flex:1"><label>Entrada</label>
+              <input class="plan-in" id="fDown" type="text" inputmode="decimal" value="R$ 12.000"></div>
+            <div class="field" style="flex:1"><label>Prazo (meses)</label>
+              <input class="plan-in" id="fN" type="number" value="48"></div>
+          </div>
+          <div class="field"><label>Juros ao mês (%)</label>
+            <input class="plan-in" id="fRate" type="text" inputmode="decimal" value="1,8"></div>
+          <div class="sim-out" id="fOut" style="margin-top:14px"></div>
+        </div>
+
+        <div class="card">
+          <h2>Independência financeira (FIRE)</h2>
+          <p class="hint">Quanto você precisa juntar para viver de renda</p>
+          <div class="field"><label>Gasto mensal desejado</label>
+            <input class="plan-in" id="rSpend" type="text" inputmode="decimal" value="R$ 5.000"></div>
+          <div style="display:flex; gap:12px">
+            <div class="field" style="flex:1"><label>Aporte mensal</label>
+              <input class="plan-in" id="rContrib" type="text" inputmode="decimal" value="R$ 2.000"></div>
+            <div class="field" style="flex:1"><label>Rendimento real a.a. (%)</label>
+              <input class="plan-in" id="rRate" type="text" inputmode="decimal" value="5"></div>
+          </div>
+          <div class="field"><label>Já investido hoje</label>
+            <input class="plan-in" id="rStart" type="text" inputmode="decimal" value="R$ 20.000"></div>
+          <div class="sim-out" id="rOut" style="margin-top:14px"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h2>Outros planos</h2>
+        <p class="hint">Em breve: casamento, filho, intercâmbio, troca de emprego e aposentadoria por idade — todos recalculando sobre os seus dados. Enquanto isso, pergunte ao <b>Copiloto</b>: “vale a pena financiar um carro?” ou “quanto preciso para viajar em dezembro?”.</p>
+      </div>
+    </section>
+
     <!-- ============ RELATÓRIOS ============ -->
     <section class="view" id="view-rel" aria-label="Relatórios">
       <div class="view-h">
@@ -1439,19 +1490,23 @@
 <!-- command palette -->
 <div class="cmdk-veil" id="cmdkVeil">
   <div class="cmdk" role="dialog" aria-label="Paleta de comandos">
-    <input id="cmdkInput" placeholder="Digite um comando ou pesquise…" autocomplete="off">
-    <button class="item" data-nav="dash">📊 &nbsp;Ir para o Dashboard</button>
-    <button class="item" data-nav="cop">✨ &nbsp;Perguntar ao Copiloto</button>
-    <button class="item" id="cmdAdd">➕ &nbsp;Registrar despesa</button>
-    <button class="item" data-nav="orc">🥧 &nbsp;Abrir Orçamento mensal</button>
-    <button class="item" data-nav="metas">🎯 &nbsp;Ver Metas</button>
-    <button class="item" data-nav="inv">📈 &nbsp;Ver Investimentos</button>
-    <button class="item" data-nav="rel">📄 &nbsp;Abrir Relatórios</button>
-    <button class="item" data-nav="pj">🏢 &nbsp;Abrir Empresa (MEI)</button>
-    <button class="item" data-nav="sec">🛡️ &nbsp;Abrir Central de Segurança</button>
-    <button class="item" id="cmdDiscreet">👁️ &nbsp;Alternar modo discreto</button>
-    <button class="item" id="cmdTheme">🌗 &nbsp;Alternar tema claro/escuro</button>
-    <div class="foot">Enter para selecionar · Esc para fechar</div>
+    <input id="cmdkInput" placeholder="Digite / para comandos, ou pesquise…" autocomplete="off">
+    <div id="cmdkList">
+      <button class="item" data-nav="dash" data-kw="/dashboard inicio">📊 &nbsp;Ir para o Dashboard</button>
+      <button class="item" data-nav="cop" data-kw="/copiloto ia chat">✨ &nbsp;Perguntar ao Copiloto</button>
+      <button class="item" id="cmdAdd" data-kw="/despesa /receita /lancar gasto">➕ &nbsp;Registrar lançamento</button>
+      <button class="item" data-nav="orc" data-kw="/orcamento limites">🥧 &nbsp;Abrir Orçamento mensal</button>
+      <button class="item" data-nav="metas" data-kw="/meta objetivos">🎯 &nbsp;Ver Metas</button>
+      <button class="item" data-nav="plan" data-kw="/planejar simular financiar fire">📈 &nbsp;Abrir Planejar</button>
+      <button class="item" data-nav="inv" data-kw="/investimento carteira">💹 &nbsp;Ver Investimentos</button>
+      <button class="item" data-nav="rel" data-kw="/relatorio compras entradas">📄 &nbsp;Abrir Relatórios</button>
+      <button class="item" id="cmdExport" data-kw="/exportar csv">⬇️ &nbsp;Exportar CSV</button>
+      <button class="item" data-nav="pj" data-kw="/empresa mei">🏢 &nbsp;Abrir Empresa (MEI)</button>
+      <button class="item" data-nav="sec" data-kw="/seguranca score">🛡️ &nbsp;Abrir Central de Segurança</button>
+      <button class="item" id="cmdDiscreet" data-kw="/discreto ocultar">👁️ &nbsp;Alternar modo discreto</button>
+      <button class="item" id="cmdTheme" data-kw="/tema escuro claro">🌗 &nbsp;Alternar tema claro/escuro</button>
+    </div>
+    <div class="foot">Digite <b>/</b> para comandos · Enter seleciona · Esc fecha</div>
   </div>
 </div>
 
@@ -1830,6 +1885,7 @@
         showToast("Seus dados foram apagados");
       }
     });
+    updateScoreChip();
   }
   function payBill(id) {
     const b = store.d.bills.find(x => x.id === id); if (!b) return;
@@ -2150,6 +2206,29 @@
     showToast("CSV exportado");
   }
 
+  /* ---------- Planejar (simuladores) ---------- */
+  function planFin() {
+    if (!$("#fVal")) return;
+    const val = parseNum($("#fVal").value), down = parseNum($("#fDown").value);
+    const n = Math.max(1, parseInt($("#fN").value, 10) || 1), i = parseNum($("#fRate").value) / 100;
+    const P = Math.max(0, val - down);
+    const pmt = i > 0 ? P * i / (1 - Math.pow(1 + i, -n)) : P / n;
+    const totalFin = down + pmt * n, juros = totalFin - val, pctMais = val ? Math.round(juros / val * 100) : 0;
+    $("#fOut").innerHTML = `Parcela de <b class="num money">${brl(pmt)}</b>/mês por ${n} meses.<span class="fig">${brl(totalFin)}</span>total pago — <b class="num money">${brl(juros)}</b> só de juros (${pctMais}% acima do valor à vista). ${pctMais > 30 ? "⚠️ Juros pesados: se conseguir, dê uma entrada maior ou junte e compre à vista." : "Se cabe no orçamento e a taxa é competitiva, pode fazer sentido."}`;
+  }
+  function planFire() {
+    if (!$("#rSpend")) return;
+    const spend = parseNum($("#rSpend").value), contrib = parseNum($("#rContrib").value);
+    const rate = parseNum($("#rRate").value) / 100, start = parseNum($("#rStart").value);
+    const fireNum = spend * 12 * 25, rM = Math.pow(1 + rate, 1 / 12) - 1;
+    let bal = start, months = 0;
+    while (bal < fireNum && months < 1200) { bal = bal * (1 + rM) + contrib; months++; }
+    const years = Math.floor(months / 12), mo = months % 12, reached = months < 1200;
+    $("#rOut").innerHTML = `Seu número FIRE: <span class="fig">${brl(fireNum)}</span>${reached ? `No ritmo atual você chega lá em <b>${years} ano(s)${mo ? ` e ${mo} m` : ""}</b> — aí ${brl(spend)}/mês saem só do rendimento (regra dos 4%).` : "Com esses valores levaria mais de 100 anos: aumente o aporte ou o rendimento."}`;
+  }
+  $$(".plan-in").forEach(inp => inp.addEventListener("input", () => { planFin(); planFire(); }));
+  planFin(); planFire();
+
   /* ---------- modo demonstração / meus dados ---------- */
   const demoDash = $("#demoDash");
   function toggleReal(demoId, realId) {
@@ -2157,6 +2236,24 @@
     const dEl = $("#" + demoId), rEl = $("#" + realId);
     if (dEl) dEl.hidden = real;
     if (rEl) rEl.hidden = !real;
+  }
+  function computeScore() {
+    if (store.d.mode !== "real" || !store.d.tx.length) return 76;
+    const rec = monthIn(), des = monthOut(), taxa = rec ? (rec - des) / rec : 0;
+    let s = 50;
+    if (taxa >= 0.2) s += 18; else if (taxa >= 0.1) s += 9; else if (taxa < 0) s -= 15;
+    const res = store.d.goals.find(g => /reserva/i.test(g.name));
+    if (res && res.target) { const r = res.current / res.target; if (r >= 0.8) s += 16; else if (r >= 0.5) s += 10; else if (r >= 0.2) s += 5; }
+    const bills = store.d.bills || [];
+    if (bills.length && bills.every(b => (b.paidMonths || []).includes(thisMonth()))) s += 8;
+    if ((store.d.investments || []).length) s += 6;
+    if (totalSaldo() > 0) s += 6;
+    return Math.max(5, Math.min(100, Math.round(s)));
+  }
+  function updateScoreChip() {
+    const s = computeScore();
+    const el = $("#scoreNum"); if (el) el.textContent = s;
+    const ring = $("#scoreRing"); if (ring) ring.setAttribute("stroke-dashoffset", (78.54 * (1 - s / 100)).toFixed(1));
   }
   function applyMode() {
     const real = store.d.mode === "real";
@@ -2175,6 +2272,7 @@
       $("#dashSub").textContent = "Terça, 22 de julho de 2026 · dados sincronizados há 2 min";
     }
     renderRel();
+    updateScoreChip();
   }
   $$(".mode-switch button").forEach(b => b.addEventListener("click", () => {
     store.d.mode = b.dataset.mode; store.save(); applyMode();
@@ -2386,14 +2484,31 @@
   });
   guardSheet.addEventListener("click", e => { if (e.target === guardSheet) guardSheet.classList.remove("open"); });
 
-  /* ---------- command palette ---------- */
+  /* ---------- command palette (com comandos "/") ---------- */
   const veil = $("#cmdkVeil");
-  const openCmdk = () => { veil.classList.add("open"); $("#cmdkInput").focus(); };
+  const cmdkInput = $("#cmdkInput");
+  const cmdItems = $$("#cmdkList .item");
+  function filterCmdk() {
+    const raw = cmdkInput.value.trim().toLowerCase();
+    const q = raw.replace(/^\//, "");
+    let first = null;
+    cmdItems.forEach(it => {
+      const hay = (it.textContent + " " + (it.dataset.kw || "")).toLowerCase();
+      const show = !q || hay.includes(q);
+      it.style.display = show ? "" : "none";
+      if (show && !first) first = it;
+    });
+    return first;
+  }
+  const openCmdk = () => { veil.classList.add("open"); cmdkInput.value = ""; filterCmdk(); cmdkInput.focus(); };
   const closeCmdk = () => veil.classList.remove("open");
   $("#openCmdk").addEventListener("click", openCmdk);
   veil.addEventListener("click", e => { if (e.target === veil) closeCmdk(); });
+  cmdkInput.addEventListener("input", filterCmdk);
+  cmdkInput.addEventListener("keydown", e => { if (e.key === "Enter") { const f = filterCmdk(); if (f) f.click(); } });
   $("#cmdDiscreet").addEventListener("click", () => { setDiscreet(!isDiscreet()); closeCmdk(); });
   $("#cmdTheme").addEventListener("click", () => { toggleTheme(); closeCmdk(); });
+  $("#cmdExport").addEventListener("click", () => { closeCmdk(); relDownloadCsv(); });
   addEventListener("keydown", e => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openCmdk(); }
     if (e.key === "Escape") { closeCmdk(); [sheet, guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet].forEach(s => s && s.classList.remove("open")); }
@@ -2626,7 +2741,10 @@
       const r = 0.007, fv = aporte * ((Math.pow(1 + r, 240) - 1) / r);
       return `Investindo ${brl(aporte)}/mês a ~0,7% ao mês, em 20 anos os juros compostos levariam você a cerca de:<span class="fig">${brl(fv)}</span>O motor aqui é o tempo e a consistência, não o valor de partida. Comece cedo, mantenha o hábito.${src}`;
     }
-    return `Ainda estou evoluindo, mas já respondo sobre: <b>quanto você pode gastar hoje</b>, <b>quanto economizou</b>, <b>para onde vai seu dinheiro</b>, se está <b>gastando muito numa categoria</b>, sua <b>saúde financeira</b> e <b>simulações de metas</b>. Toque numa sugestão abaixo. ✨`;
+    if (/(financiar|financiamento|vale a pena|parcelar|simule|simular|comprar (um |uma )?(carro|apart|imovel|casa))/.test(n)) {
+      return `Ótima decisão pra tomar com número na mão. Regra prática: financiar vale quando a parcela cabe com folga e a taxa é baixa; se os juros passam de ~30% do valor do bem, quase sempre compensa mais juntar e comprar à vista. Abra <b>Planejar → Vale a pena financiar?</b> que eu calculo a parcela, o total pago e os juros pro seu caso. 📊`;
+    }
+    return `Ainda estou evoluindo, mas já respondo sobre: <b>quanto você pode gastar hoje</b>, <b>quanto economizou</b>, <b>para onde vai seu dinheiro</b>, se está <b>gastando muito numa categoria</b>, sua <b>saúde financeira</b>, <b>simulações de metas</b> e <b>vale a pena financiar</b>. Toque numa sugestão abaixo. ✨`;
   }
 
   function copAdd(who, html) {
