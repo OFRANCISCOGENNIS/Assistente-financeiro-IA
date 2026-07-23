@@ -693,227 +693,11 @@
       <div class="view-h">
         <h1 id="dashGreeting">Bom dia, Genis</h1>
         <span class="sub" id="dashSub">Terça, 22 de julho de 2026 · dados sincronizados há 2 min</span>
-        <div class="mode-switch" role="group" aria-label="Modo de dados">
-          <button data-mode="demo" aria-pressed="true">Demonstração</button>
-          <button data-mode="real" aria-pressed="false">Meus dados</button>
-        </div>
         <button class="btn-ghost danger" id="btnClearData" hidden title="Apagar ou zerar seus dados deste navegador">🗑️ Limpar dados</button>
       </div>
 
-      <!-- painel com dados reais (localStorage) -->
       <div id="realDash" hidden></div>
 
-      <!-- painel de demonstração -->
-      <div id="demoDash">
-      <div class="guardian-banner" id="guardBanner" role="status">
-        <span aria-hidden="true">⚠️</span>
-        <div class="grow">
-          <span class="who">Guardião · aviso</span>
-          Atenção: você já usou <b>85% do orçamento de Lazer</b> e ainda faltam <b>9 dias</b> no mês.
-        </div>
-        <button class="btn-mini alt" data-nav="orc">Ver orçamento</button>
-        <button class="close" id="guardBannerClose" aria-label="Dispensar aviso">✕</button>
-      </div>
-
-      <div class="card safe-hero" style="margin-top:16px">
-        <div class="lead">
-          <div class="label" style="font-size:12.5px; color:var(--ink-2); font-weight:600">Disponível para gastar até o fim de julho</div>
-          <div class="value num money">R$ 1.740,00 <small>sem comprometer o mês</small></div>
-          <div class="hint" style="margin:0">O que sobra depois de reservar contas fixas, fatura, metas e recorrentes — não é o mesmo que o saldo.</div>
-        </div>
-        <div class="safe-break">
-          <div class="b-row"><span>Saldo disponível</span><b class="num money">R$ 6.842,10</b></div>
-          <div class="b-row"><span class="minus">− Contas fixas a pagar</span><span class="num money">R$ 1.979,00</span></div>
-          <div class="b-row"><span class="minus">− Fatura de cartão</span><span class="num money">R$ 2.315,44</span></div>
-          <div class="b-row"><span class="minus">− Aporte de metas</span><span class="num money">R$ 500,00</span></div>
-          <div class="b-row"><span class="minus">− Assinaturas e recorrentes</span><span class="num money">R$ 307,66</span></div>
-          <div class="b-row total"><span>Disponível para gastar</span><b class="num money">R$ 1.740,00</b></div>
-        </div>
-      </div>
-
-      <div class="grid g-tiles">
-        <div class="card tile">
-          <div class="label">Patrimônio total</div>
-          <div class="value num money">R$ 84.230,00</div>
-          <div class="delta up">▲ 2,4% <span class="vs">vs. junho</span></div>
-        </div>
-        <div class="card tile">
-          <div class="label">Saldo disponível</div>
-          <div class="value num money">R$ 6.842,10</div>
-          <div class="delta"><span class="vs">em 3 contas</span></div>
-        </div>
-        <div class="card tile">
-          <div class="label">Receitas do mês</div>
-          <div class="value num money">R$ 9.450,00</div>
-          <div class="delta up">▲ 5,1% <span class="vs">vs. junho</span></div>
-        </div>
-        <div class="card tile">
-          <div class="label">Despesas do mês</div>
-          <div class="value num money">R$ 6.038,00</div>
-          <div class="delta down">▲ 3,2% <span class="vs">vs. junho</span></div>
-        </div>
-      </div>
-
-      <div class="grid g-2-1">
-        <div class="card chart-box">
-          <h2>Evolução patrimonial</h2>
-          <p class="hint">Últimos 12 meses · inclui contas e investimentos</p>
-          <div id="chartWealth"></div>
-        </div>
-        <div class="card">
-          <h2>Economia do mês</h2>
-          <p class="hint">Receitas − despesas de julho</p>
-          <div class="tile">
-            <div class="value num money" style="color: var(--good-text)">R$ 3.412,00</div>
-            <div class="delta"><span class="vs">36% da renda — acima da sua meta de 30%</span></div>
-            <span class="streak">🔥 3 meses seguidos acima da meta</span>
-          </div>
-          <h2 style="margin-top:18px">Metas em andamento</h2>
-          <div class="row-list">
-            <div class="row-item">
-              <div class="grow"><div class="t">Reserva de emergência</div>
-                <div class="limit-bar"><i style="width:72%; background: var(--accent)"></i></div>
-                <div class="d num money">R$ 21.600 de R$ 30.000 · 72%</div></div>
-            </div>
-            <div class="row-item">
-              <div class="grow"><div class="t">Viagem — Chile 2027</div>
-                <div class="limit-bar"><i style="width:31%; background: var(--accent)"></i></div>
-                <div class="d num money">R$ 3.720 de R$ 12.000 · 31%</div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid g-1-1">
-        <div class="card chart-box">
-          <h2>Fluxo de caixa</h2>
-          <p class="hint">Receitas × despesas · últimos 6 meses</p>
-          <div id="chartFlow"></div>
-          <div class="legend">
-            <span><span class="sw" style="background: var(--s1)"></span>Receitas</span>
-            <span><span class="sw" style="background: var(--s2)"></span>Despesas</span>
-          </div>
-        </div>
-        <div class="card chart-box">
-          <h2>Gastos por categoria</h2>
-          <p class="hint">Julho · top 7 categorias</p>
-          <div id="chartCats"></div>
-        </div>
-      </div>
-
-      <div class="grid g-1-1">
-        <div class="card">
-          <h2>Contas do mês</h2>
-          <p class="hint">Julho · o que já saiu e o que ainda falta</p>
-          <div class="fixed-sum">
-            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:7px">
-              <span class="num money" style="font-size:19px; font-weight:700">R$ 484,80
-                <span style="font-size:13px; color:var(--ink-3); font-weight:500">de R$ 2.463,80 pagos</span></span>
-              <span style="font-size:12.5px; color:var(--ink-2); font-weight:600">4 de 6 contas</span>
-            </div>
-            <div class="limit-bar"><i style="width:20%; background:var(--good)"></i></div>
-            <div class="d" style="margin-top:7px; color:var(--ink-3)">Faltam
-              <b class="num money" style="color:var(--ink-2)">R$ 1.979,00</b> — nenhuma atrasada.</div>
-          </div>
-          <div class="row-list">
-            <div class="row-item paid">
-              <span class="paid-ic">✓</span>
-              <div class="grow"><div class="t">Internet — fibra</div><div class="d">pago em 05/07</div></div>
-              <span class="num money">R$ 99,90</span>
-            </div>
-            <div class="row-item paid">
-              <span class="paid-ic">✓</span>
-              <div class="grow"><div class="t">Energia</div><div class="d">pago em 08/07 · débito automático</div></div>
-              <span class="num money">R$ 210,00</span>
-            </div>
-            <div class="row-item paid">
-              <span class="paid-ic">✓</span>
-              <div class="grow"><div class="t">Água</div><div class="d">pago em 10/07</div></div>
-              <span class="num money">R$ 95,00</span>
-            </div>
-            <div class="row-item paid">
-              <span class="paid-ic">✓</span>
-              <div class="grow"><div class="t">Celular</div><div class="d">pago em 12/07 · débito automático</div></div>
-              <span class="num money">R$ 79,90</span>
-            </div>
-            <div class="row-item">
-              <span class="pending-ic"></span>
-              <div class="grow"><div class="t">Academia</div><div class="d">vence 28/07</div></div>
-              <span class="num money">R$ 129,00</span><span class="pill warn">6 dias</span>
-            </div>
-            <div class="row-item">
-              <span class="pending-ic"></span>
-              <div class="grow"><div class="t">Aluguel</div><div class="d">vence 30/07 · débito automático</div></div>
-              <span class="num money">R$ 1.850,00</span><span class="pill ok">agendado</span>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <h2>O que seu agente notou</h2>
-          <p class="hint">Leituras de hoje, sem você precisar pedir</p>
-          <div class="insight">
-            <span class="em">📉</span>
-            <div>Você já gastou <b class="num money">R$ 680</b> em <b>restaurantes</b> este mês — 22% acima da sua média. No ritmo atual, julho fecha em <b class="num money">R$ 820</b>.</div>
-          </div>
-          <div class="insight">
-            <span class="em">🔁</span>
-            <div>Achei um gasto novo que se repete: <b>AppFit R$ 39,90</b> em junho e julho. Quer que eu marque como recorrente?
-              <span class="act-inline"><button class="btn-mini">Marcar recorrente</button><button class="btn-mini alt">Ignorar</button></span>
-            </div>
-          </div>
-          <div class="insight">
-            <span class="em">✅</span>
-            <div>Suas contas fixas estão <b>todas no azul</b>: <b class="num money">R$ 485</b> já pagos e nada atrasado — faltam só academia e aluguel.</div>
-          </div>
-          <div class="insight">
-            <span class="em">💰</span>
-            <div>Você fechou o mês com <b class="num money">R$ 3.412</b> de sobra. Quero mover <b class="num money">R$ 500</b> para a reserva automaticamente?
-              <span class="act-inline"><button class="btn-mini" id="btnMoveReserve">Mover R$ 500</button><button class="btn-mini alt">Agora não</button></span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid g-1-1">
-        <div class="card">
-          <h2>Cartões</h2>
-          <p class="hint">Fatura aberta e limite</p>
-          <div class="row-list">
-            <div class="row-item">
-              <div class="grow"><div class="t">Nubank ····4412</div>
-                <div class="limit-bar"><i style="width:39%"></i></div>
-                <div class="d num money">R$ 2.315 de R$ 6.000 · fecha 28/07 · melhor dia de compra: 29</div></div>
-            </div>
-            <div class="row-item">
-              <div class="grow"><div class="t">Inter ····8067</div>
-                <div class="limit-bar"><i style="width:12%"></i></div>
-                <div class="d num money">R$ 486 de R$ 4.000 · fecha 04/08 · melhor dia de compra: 05</div></div>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <h2>Guardião</h2>
-          <p class="hint">Alertas de negligência priorizados por risco</p>
-          <div class="alert warn">
-            <span class="ic">⚠️</span>
-            <div>
-              <b>Alerta firme:</b> sua assinatura <b>StreamMax (R$ 54,90/mês)</b> não é usada há 3 meses.
-              Cancelar economizaria <b class="num money">R$ 658,80/ano</b> — o equivalente a 2 meses da meta Chile.
-              <i style="color:var(--ink-3)">(Confiança: 91%)</i>
-              <span class="score-impact">−4 pts no seu score enquanto não resolver</span>
-              <div class="cta-row">
-                <button class="btn-mini" id="btnCancelSub">Cancelar assinatura</button>
-                <button class="btn-mini alt">Manter</button>
-              </div>
-            </div>
-          </div>
-          <div class="alert info">
-            <span class="ic">💡</span>
-            <div>Gastos com <b>restaurantes</b> subiram 22% vs. sua média. Quer definir um teto mensal para a categoria?</div>
-          </div>
-        </div>
-      </div>
-      </div><!-- /demoDash -->
     </section>
 
     <!-- ============ COPILOTO ============ -->
@@ -937,117 +721,9 @@
       <div class="view-h">
         <h1>Orçamento</h1>
         <span class="sub">Limites por categoria e ritmo do mês</span>
-        <div class="mode-switch" role="group" aria-label="Modo de dados">
-          <button data-mode="demo" aria-pressed="true">Demonstração</button>
-          <button data-mode="real" aria-pressed="false">Meus dados</button>
-        </div>
       </div>
 
       <div id="realOrc" hidden></div>
-      <div id="demoOrc">
-      <div class="grid g-tiles">
-        <div class="card tile">
-          <div class="label">Orçamento total</div>
-          <div class="value num money">R$ 6.765,00</div>
-          <div class="delta"><span class="vs">8 categorias com limite</span></div>
-        </div>
-        <div class="card tile">
-          <div class="label">Você já usou</div>
-          <div class="value num">89%</div>
-          <div class="delta down">▲ <span class="vs">com 71% do mês passado — ritmo acima do ideal</span></div>
-        </div>
-        <div class="card tile">
-          <div class="label">Gasto até agora</div>
-          <div class="value num money">R$ 6.038,00</div>
-          <div class="delta"><span class="vs">restam R$ 727 no orçamento</span></div>
-        </div>
-        <div class="card tile">
-          <div class="label">Projeção do fim do mês</div>
-          <div class="value num money" style="color: var(--critical)">R$ 7.100,00</div>
-          <div class="delta down">R$ 335 <span class="vs">acima do limite, no ritmo atual</span></div>
-        </div>
-      </div>
-
-      <div class="grid g-2-1">
-        <div class="card">
-          <h2>Por categoria</h2>
-          <p class="hint">A marca vertical mostra onde o mês está (71%) — barra além dela = ritmo acelerado</p>
-          <div class="budget-row over">
-            <div class="b-head"><span class="cat">Restaurantes</span><span class="pct num">113%</span></div>
-            <div class="limit-bar pace-line"><i style="width:100%; background: var(--critical)"></i><span class="pace-mark" style="left:71%"></span></div>
-            <div class="b-sub"><span class="num money">R$ 680 de R$ 600</span><span class="num money">R$ 80 acima</span></div>
-          </div>
-          <div class="budget-row warn-b">
-            <div class="b-head"><span class="cat">Moradia</span><span class="pct num">99%</span></div>
-            <div class="limit-bar pace-line"><i style="width:99%; background: var(--accent)"></i><span class="pace-mark" style="left:71%"></span></div>
-            <div class="b-sub"><span class="num money">R$ 2.180 de R$ 2.200</span><span>fixa · paga no início do mês</span></div>
-          </div>
-          <div class="budget-row warn-b">
-            <div class="b-head"><span class="cat">Mercado</span><span class="pct num">89%</span></div>
-            <div class="limit-bar pace-line"><i style="width:89%; background: var(--warn)"></i><span class="pace-mark" style="left:71%"></span></div>
-            <div class="b-sub"><span class="num money">R$ 1.240 de R$ 1.400</span><span class="num money">R$ 160 restantes</span></div>
-          </div>
-          <div class="budget-row warn-b">
-            <div class="b-head"><span class="cat">Assinaturas</span><span class="pct num">88%</span></div>
-            <div class="limit-bar pace-line"><i style="width:88%; background: var(--warn)"></i><span class="pace-mark" style="left:71%"></span></div>
-            <div class="b-sub"><span class="num money">R$ 265 de R$ 300</span><span>inclui StreamMax sem uso</span></div>
-          </div>
-          <div class="budget-row warn-b">
-            <div class="b-head"><span class="cat">Lazer</span><span class="pct num">85%</span></div>
-            <div class="limit-bar pace-line"><i style="width:85%; background: var(--warn)"></i><span class="pace-mark" style="left:71%"></span></div>
-            <div class="b-sub"><span class="num money">R$ 480 de R$ 565</span><span>alvo do aviso do Guardião</span></div>
-          </div>
-          <div class="budget-row warn-b">
-            <div class="b-head"><span class="cat">Transporte</span><span class="pct num">77%</span></div>
-            <div class="limit-bar pace-line"><i style="width:77%; background: var(--warn)"></i><span class="pace-mark" style="left:71%"></span></div>
-            <div class="b-sub"><span class="num money">R$ 540 de R$ 700</span><span class="num money">R$ 160 restantes</span></div>
-          </div>
-          <div class="budget-row ok">
-            <div class="b-head"><span class="cat">Outros</span><span class="pct num">67%</span></div>
-            <div class="limit-bar pace-line"><i style="width:67%; background: var(--accent)"></i><span class="pace-mark" style="left:71%"></span></div>
-            <div class="b-sub"><span class="num money">R$ 333 de R$ 500</span><span>dentro do ritmo</span></div>
-          </div>
-          <div class="budget-row ok">
-            <div class="b-head"><span class="cat">Saúde</span><span class="pct num">64%</span></div>
-            <div class="limit-bar pace-line"><i style="width:64%; background: var(--accent)"></i><span class="pace-mark" style="left:71%"></span></div>
-            <div class="b-sub"><span class="num money">R$ 320 de R$ 500</span><span>dentro do ritmo</span></div>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>Guardião do orçamento</h2>
-          <p class="hint">Lendo o ritmo, não só o total</p>
-          <div class="alert warn">
-            <span class="ic">⚠️</span>
-            <div>
-              <b>Alerta firme:</b> <b>Restaurantes</b> estourou o limite em <b>13%</b> (R$ 80) com 9 dias
-              de mês pela frente. Cada refeição fora agora sai do orçamento de agosto.
-              <span class="score-impact">−3 pts no seu score enquanto não ajustar</span>
-              <div class="cta-row">
-                <button class="btn-mini">Ajustar limite</button>
-                <button class="btn-mini alt">Ver lançamentos</button>
-              </div>
-            </div>
-          </div>
-          <div class="alert info">
-            <span class="ic">📈</span>
-            <div>No ritmo atual, julho fecha em <b class="num money">R$ 7.100</b> — <b class="num money">R$ 335</b> acima
-              do orçamento. Reduzir <b>Mercado</b> e <b>Lazer</b> em 10% resolve.</div>
-          </div>
-          <div class="alert info">
-            <span class="ic">🔒</span>
-            <div><b>Modo envelope estrito</b> — trave categorias no limite: ao estourar, o app pede
-              confirmação consciente antes de registrar.
-              <span class="act-inline"><button class="btn-mini" id="btnEnvelope">Ativar para Restaurantes</button></span>
-            </div>
-          </div>
-          <h2 style="margin-top:18px">Como montamos seu orçamento</h2>
-          <p class="hint" style="margin-bottom:0">Limites sugeridos pela sua média de 6 meses, ajustáveis
-            a qualquer momento. Template 50/30/20 disponível como ponto de partida — sem promessas
-            milagrosas: o que muda comportamento é acompanhar o acumulado.</p>
-        </div>
-      </div>
-      </div><!-- /demoOrc -->
     </section>
 
     <!-- ============ METAS ============ -->
@@ -1055,94 +731,9 @@
       <div class="view-h">
         <h1>Metas</h1>
         <span class="sub">Simule aportes e veja quando você chega lá</span>
-        <div class="mode-switch" role="group" aria-label="Modo de dados">
-          <button data-mode="demo" aria-pressed="true">Demonstração</button>
-          <button data-mode="real" aria-pressed="false">Meus dados</button>
-        </div>
       </div>
 
       <div id="realMetas" hidden></div>
-      <div id="demoMetas">
-      <div class="grid g-tiles">
-        <div class="card tile">
-          <div class="label">Total guardado</div>
-          <div class="value num money">R$ 35.720,00</div>
-          <div class="delta up">▲ R$ 1.150 <span class="vs">este mês</span></div>
-        </div>
-        <div class="card tile">
-          <div class="label">Soma das metas</div>
-          <div class="value num money">R$ 110.000,00</div>
-          <div class="delta"><span class="vs">4 objetivos</span></div>
-        </div>
-        <div class="card tile">
-          <div class="label">Aporte mensal</div>
-          <div class="value num money">R$ 1.150,00</div>
-          <div class="delta"><span class="vs">12% da sua renda</span></div>
-        </div>
-        <div class="card tile">
-          <div class="label">Progresso geral</div>
-          <div class="value num">32%</div>
-          <div class="delta"><span class="vs">no rumo certo</span></div>
-        </div>
-      </div>
-
-      <div class="grid g-2-1">
-        <div class="card">
-          <h2>Simulador — Reserva de emergência 🛟</h2>
-          <p class="hint">Arraste o aporte e veja como muda a data de conclusão</p>
-          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:4px">
-            <span class="value num money" style="font-size:24px; font-weight:700">R$ 21.600</span>
-            <span class="hint" style="margin:0">de R$ 30.000 · 72%</span>
-          </div>
-          <div class="limit-bar" style="margin-top:8px"><i style="width:72%; background:var(--accent)"></i></div>
-          <div style="margin-top:18px">
-            <div class="sim-label"><span>Aporte mensal</span><b id="simVal" class="num money">R$ 500</b></div>
-            <input type="range" id="simSlider" min="200" max="1500" step="50" value="500" aria-label="Aporte mensal">
-          </div>
-          <div class="sim-out">
-            Faltam <b class="num money">R$ 8.400</b> · concluída em
-            <b id="simDate">dez/2027</b> (<span id="simMonths">17</span> meses no ritmo atual)
-          </div>
-        </div>
-        <div class="card">
-          <h2>Todas as metas</h2>
-          <p class="hint">Toque para simular cada uma</p>
-          <div class="row-list">
-            <div class="row-item">
-              <span style="font-size:20px">🛟</span>
-              <div class="grow"><div class="t">Reserva de emergência</div>
-                <div class="limit-bar"><i style="width:72%; background:var(--accent)"></i></div>
-                <div class="d num money">R$ 21.600 de R$ 30.000 · 72% · aporte R$ 500/mês</div></div>
-            </div>
-            <div class="row-item">
-              <span style="font-size:20px">✈️</span>
-              <div class="grow"><div class="t">Viagem — Chile 2027</div>
-                <div class="limit-bar"><i style="width:31%; background:var(--accent)"></i></div>
-                <div class="d num money">R$ 3.720 de R$ 12.000 · 31% · aporte R$ 400/mês</div></div>
-            </div>
-            <div class="row-item">
-              <span style="font-size:20px">💻</span>
-              <div class="grow"><div class="t">MacBook novo</div>
-                <div class="limit-bar"><i style="width:30%; background:var(--accent)"></i></div>
-                <div class="d num money">R$ 2.400 de R$ 8.000 · 30% · aporte R$ 250/mês</div></div>
-            </div>
-            <div class="row-item">
-              <span style="font-size:20px">🏠</span>
-              <div class="grow"><div class="t">Entrada do apê</div>
-                <div class="limit-bar"><i style="width:13%; background:var(--warn)"></i></div>
-                <div class="d num money">R$ 8.000 de R$ 60.000 · 13% · sem aporte há 3 meses</div></div>
-              <span class="pill warn">parada</span>
-            </div>
-          </div>
-          <div class="alert warn" style="margin-top:14px">
-            <span class="ic">⚠️</span>
-            <div><b>Guardião:</b> "Entrada do apê" parou em 13% — sem aporte há 3 meses, a data prevista escorregou para 2032. Retomar com <b class="num money">R$ 600/mês</b> recupera o prazo.
-              <div class="cta-row"><button class="btn-mini">Retomar aportes</button><button class="btn-mini alt">Redefinir meta</button></div>
-            </div>
-          </div>
-        </div>
-      </div>
-      </div><!-- /demoMetas -->
     </section>
 
     <!-- ============ INVESTIMENTOS ============ -->
@@ -1150,106 +741,9 @@
       <div class="view-h">
         <h1>Investimentos</h1>
         <span class="sub">Carteira consolidada</span>
-        <div class="mode-switch" role="group" aria-label="Modo de dados">
-          <button data-mode="demo" aria-pressed="true">Demonstração</button>
-          <button data-mode="real" aria-pressed="false">Meus dados</button>
-        </div>
       </div>
 
       <div id="realInv" hidden></div>
-      <div id="demoInv">
-      <div class="grid g-tiles">
-        <div class="card tile">
-          <div class="label">Total investido</div>
-          <div class="value num money">R$ 61.300,00</div>
-          <div class="delta up">▲ R$ 1.870 <span class="vs">este mês</span></div>
-        </div>
-        <div class="card tile">
-          <div class="label">Rentabilidade 12 meses</div>
-          <div class="value num pos">+11,2%</div>
-          <div class="delta"><span class="vs">CDI no período: +10,4%</span></div>
-        </div>
-        <div class="card tile">
-          <div class="label">Dividendos em julho</div>
-          <div class="value num money">R$ 142,00</div>
-          <div class="delta"><span class="vs">FIIs · reinvestidos</span></div>
-        </div>
-        <div class="card tile">
-          <div class="label">Aporte do mês</div>
-          <div class="value num money">R$ 1.150,00</div>
-          <div class="delta"><span class="vs">automático, no dia do salário</span></div>
-        </div>
-      </div>
-
-      <div class="grid g-2-1">
-        <div class="card">
-          <h2>Posições</h2>
-          <p class="hint">Por classe · rentabilidade em 12 meses</p>
-          <div class="row-list">
-            <div class="row-item">
-              <span class="cat-dot" style="background: var(--s1)"></span>
-              <div class="grow"><div class="t">Tesouro Selic 2029</div><div class="d">renda fixa · liquidez diária · reserva de emergência mora aqui</div></div>
-              <span class="num money">R$ 21.600</span><span class="pos num">+10,9%</span>
-            </div>
-            <div class="row-item">
-              <span class="cat-dot" style="background: var(--s2)"></span>
-              <div class="grow"><div class="t">CDB 110% CDI — Banco Inter</div><div class="d">renda fixa · vence 2027</div></div>
-              <span class="num money">R$ 12.400</span><span class="pos num">+11,4%</span>
-            </div>
-            <div class="row-item">
-              <span class="cat-dot" style="background: var(--s3, #1baf7a)"></span>
-              <div class="grow"><div class="t">FIIs — 4 fundos</div><div class="d">HGLG11, MXRF11 e outros · DY 12m: 9,8%</div></div>
-              <span class="num money">R$ 9.800</span><span class="pos num">+8,7%</span>
-            </div>
-            <div class="row-item">
-              <span class="cat-dot" style="background: var(--s4, #eda100)"></span>
-              <div class="grow"><div class="t">Ações Brasil — 6 papéis</div><div class="d">via corretora · B3</div></div>
-              <span class="num money">R$ 8.900</span><span class="pos num">+14,2%</span>
-            </div>
-            <div class="row-item">
-              <span class="cat-dot" style="background: var(--s5, #e87ba4)"></span>
-              <div class="grow"><div class="t">ETF Exterior — IVVB11</div><div class="d">S&amp;P 500 em reais</div></div>
-              <span class="num money">R$ 5.200</span><span class="pos num">+16,8%</span>
-            </div>
-            <div class="row-item">
-              <span class="cat-dot" style="background: var(--s7, #4a3aa7)"></span>
-              <div class="grow"><div class="t">Cripto — BTC e ETH</div><div class="d">em exchange · alta volatilidade</div></div>
-              <span class="num money">R$ 3.400</span><span class="neg num">−4,1%</span>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <h2>Alocação</h2>
-          <p class="hint">Como sua carteira está dividida</p>
-          <div class="alloc-bar" role="img" aria-label="Alocação: renda fixa 55%, FIIs 16%, ações 15%, exterior 8%, cripto 6%">
-            <i style="width:35%; background: var(--s1)" title="Tesouro 35%"></i>
-            <i style="width:20%; background: var(--s2)" title="CDB 20%"></i>
-            <i style="width:16%; background: #1baf7a" title="FIIs 16%"></i>
-            <i style="width:15%; background: #eda100" title="Ações 15%"></i>
-            <i style="width:8%; background: #e87ba4" title="Exterior 8%"></i>
-            <i style="width:6%; background: #4a3aa7" title="Cripto 6%"></i>
-          </div>
-          <div class="alloc-legend">
-            <span><span class="sw" style="background: var(--s1)"></span>Tesouro 35%</span>
-            <span><span class="sw" style="background: var(--s2)"></span>CDB 20%</span>
-            <span><span class="sw" style="background:#1baf7a"></span>FIIs 16%</span>
-            <span><span class="sw" style="background:#eda100"></span>Ações 15%</span>
-            <span><span class="sw" style="background:#e87ba4"></span>Exterior 8%</span>
-            <span><span class="sw" style="background:#4a3aa7"></span>Cripto 6%</span>
-          </div>
-          <h2 style="margin-top:18px">Guardião da carteira</h2>
-          <div class="alert info">
-            <span class="ic">🧭</span>
-            <div><b>55% em renda fixa</b> — coerente com seu perfil moderado e com a reserva
-              dentro da meta. Sua carteira rendeu <b class="pos">+0,8 p.p. acima do CDI</b> em 12 meses.</div>
-          </div>
-          <div class="alert info">
-            <span class="ic">⚖️</span>
-            <div>Cripto está em <b>6%</b> da carteira (teto que você definiu: 8%). Nenhum rebalanceamento necessário.</div>
-          </div>
-        </div>
-      </div>
-      </div><!-- /demoInv -->
     </section>
 
     <!-- ============ CALENDÁRIO ============ -->
@@ -1257,10 +751,6 @@
       <div class="view-h">
         <h1>Calendário</h1>
         <span class="sub">Contas, salários e lançamentos no mês</span>
-        <div class="mode-switch" role="group" aria-label="Modo de dados">
-          <button data-mode="demo" aria-pressed="true">Demonstração</button>
-          <button data-mode="real" aria-pressed="false">Meus dados</button>
-        </div>
       </div>
       <div class="card">
         <div class="cal-head">
@@ -1332,10 +822,6 @@
       <div class="view-h">
         <h1>Relatórios</h1>
         <span class="sub">Suas compras, entradas e saídas — prontos para exportar</span>
-        <div class="mode-switch" role="group" aria-label="Modo de dados">
-          <button data-mode="demo" aria-pressed="true">Demonstração</button>
-          <button data-mode="real" aria-pressed="false">Meus dados</button>
-        </div>
       </div>
       <div class="rel-toolbar">
         <div class="chip-row" id="relPeriods" style="margin:0"></div>
@@ -1350,7 +836,11 @@
     <section class="view" id="view-pj" aria-label="Empresa">
       <div class="view-h">
         <h1>Empresa — MEI</h1>
-        <span class="sub">Genis Design ME · julho · separado das suas finanças pessoais</span>
+        <span class="sub">Módulo empresarial · separado das suas finanças pessoais</span>
+      </div>
+      <div class="alert info" style="margin-bottom:16px">
+        <span class="ic">ℹ️</span>
+        <div>Esta tela é um <b>exemplo ilustrativo</b> do módulo empresarial (DRE, ponto de equilíbrio, radar do Guardião). O lançamento de dados reais da empresa ainda não está disponível — o foco atual é a pessoa física.</div>
       </div>
 
       <div class="grid g-tiles">
@@ -1730,8 +1220,6 @@
     <div id="clearSummary" class="hint" style="margin:0 0 14px"></div>
     <button class="btn-ghost danger" id="btnClearAll" style="width:100%; justify-content:center; margin-bottom:10px">🗑️ Apagar tudo (zerar de vez)</button>
     <p class="hint" style="margin:0 0 16px">Remove contas, lançamentos, metas, contas fixas, investimentos e orçamentos. Não dá para desfazer.</p>
-    <button class="btn-ghost safe" id="btnBackDemo" style="width:100%; justify-content:center; margin-bottom:10px">👁️ Ver só a demonstração</button>
-    <p class="hint" style="margin:0 0 16px">Volta para o modo Demonstração <b>sem apagar</b> nada — seus dados continuam salvos e voltam quando você clicar em “Meus dados”.</p>
     <button class="alt" id="btnClearCancel">Cancelar</button>
   </div>
 </div>
@@ -1831,16 +1319,8 @@
     clearTimeout(showToast._t);
     showToast._t = setTimeout(() => toast.classList.remove("show"), 3200);
   }
-  $("#guardBannerClose").addEventListener("click", () => $("#guardBanner").classList.add("hidden"));
-  $("#btnCancelSub").addEventListener("click", e => {
-    e.target.closest(".alert").remove();
-    showToast("Assinatura StreamMax cancelada — R$ 658,80/ano de volta no seu bolso");
-  });
-  const btnMove = $("#btnMoveReserve");
-  if (btnMove) btnMove.addEventListener("click", e => {
-    e.target.closest(".insight").remove();
-    showToast("R$ 500 movidos para a reserva de emergência");
-  });
+  const gbc = $("#guardBannerClose");
+  if (gbc) gbc.addEventListener("click", () => $("#guardBanner").classList.add("hidden"));
 
   /* ============ MEUS DADOS (localStorage) ============ */
   const KEY = "afia:v1";
@@ -1850,8 +1330,8 @@
   const uid = () => "id" + Math.random().toString(36).slice(2, 9);
 
   const store = {
-    d: { mode: "demo", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [] },
-    load() { try { const r = localStorage.getItem(KEY); if (r) this.d = Object.assign(this.d, JSON.parse(r)); } catch (e) {} },
+    d: { mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [] },
+    load() { try { const r = localStorage.getItem(KEY); if (r) this.d = Object.assign(this.d, JSON.parse(r)); } catch (e) {} this.d.mode = "real"; },
     save() { try { localStorage.setItem(KEY, JSON.stringify(this.d)); } catch (e) {} },
   };
   store.load();
@@ -2074,11 +1554,6 @@
       resetAllData(); clearSheet.classList.remove("open");
     }
   });
-  $("#btnBackDemo").addEventListener("click", () => {
-    store.d.mode = "demo"; store.save(); applyMode();
-    clearSheet.classList.remove("open");
-    showToast("Voltou para a demonstração — seus dados continuam salvos");
-  });
   function payBill(id) {
     const b = store.d.bills.find(x => x.id === id); if (!b) return;
     b.paidMonths = b.paidMonths || [];
@@ -2300,20 +1775,12 @@
     return Object.entries(m).sort((a, b) => b[1] - a[1]);
   }
   function relData() {
-    const real = store.d.mode === "real" && store.d.tx.length;
-    if (real) {
-      const tx = relTx();
-      return { real: true, tx,
-        entradas: groupBy(tx, "in"), saidas: groupBy(tx, "out"),
-        totIn: tx.filter(t => t.type === "in").reduce((a, t) => a + t.amount, 0),
-        totOut: tx.filter(t => t.type === "out").reduce((a, t) => a + t.amount, 0),
-        top: [...tx].sort((a, b) => b.amount - a.amount).slice(0, 6) };
-    }
-    const saidas = [["Moradia", 2180], ["Mercado", 1240], ["Restaurantes", 680], ["Transporte", 540], ["Lazer", 480], ["Saúde", 320], ["Assinaturas", 265]];
-    const entradas = [["Salário", 8500], ["Freelance", 700], ["Rendimentos", 250]];
-    return { real: false, tx: [], entradas, saidas,
-      totIn: 9450, totOut: 5705,
-      top: [["Aluguel", 1850], ["Mercado — compra do mês", 720], ["Fatura Nubank", 680], ["Combustível", 310], ["Farmácia", 190], ["Streaming anual", 168]].map(([c, v]) => ({ category: c, amount: v, type: "out", date: monthKey(0) + "-10" })) };
+    const tx = relTx();
+    return { real: true, tx,
+      entradas: groupBy(tx, "in"), saidas: groupBy(tx, "out"),
+      totIn: tx.filter(t => t.type === "in").reduce((a, t) => a + t.amount, 0),
+      totOut: tx.filter(t => t.type === "out").reduce((a, t) => a + t.amount, 0),
+      top: [...tx].sort((a, b) => b.amount - a.amount).slice(0, 6) };
   }
   function seriesTx(n) {
     const out = [];
@@ -2327,14 +1794,25 @@
   }
   function renderRel() {
     const relBody = $("#relBody"); if (!relBody) return;
+    if (!store.d.tx.length) {
+      relBody.innerHTML = `
+        <div class="card empty">
+          <div class="big">📄</div>
+          <h2>Seus relatórios aparecem aqui</h2>
+          <p>Assim que você registrar lançamentos, monto os relatórios de compras, entradas e saídas — prontos para exportar em CSV ou PDF.</p>
+          <div class="cta-row"><button class="btn-mini" data-nav="dash">Ir para o Dashboard</button></div>
+        </div>`;
+      $$("[data-nav]", relBody).forEach(b => b.addEventListener("click", () => go(b.dataset.nav)));
+      return;
+    }
     $("#relPeriods").innerHTML = REL_PERIODS.map(([k, l]) => `<button class="chip" data-period="${k}" aria-pressed="${k === relPeriod}">${l}</button>`).join("");
     $$("#relPeriods .chip").forEach(b => b.addEventListener("click", () => { relPeriod = b.dataset.period; renderRel(); }));
     const d = relData(), eco = d.totIn - d.totOut, taxa = d.totIn ? Math.round(eco / d.totIn * 100) : 0;
     const maxOut = d.saidas.length ? d.saidas[0][1] : 1, maxIn = d.entradas.length ? d.entradas[0][1] : 1;
-    const series = d.real ? seriesTx(6) : [["fev", 8600, 6300], ["mar", 8600, 5900], ["abr", 9100, 6800], ["mai", 8800, 6100], ["jun", 8990, 5850], ["jul", 9450, 5705]];
+    const series = seriesTx(6);
     const maxSer = Math.max(1, ...series.map(s => Math.max(s[1], s[2])));
     const periodLabel = REL_PERIODS.find(p => p[0] === relPeriod)[1];
-    const note = d.real ? "" : ` <span style="color:var(--ink-3)">(exemplo — ative “Meus dados”)</span>`;
+    const note = "";
     relBody.innerHTML = `
       <div class="rel-print-head"><h1 style="margin:0">Relatório financeiro — ${periodLabel}</h1>
         <div style="color:#555">Assistente Financeiro IA</div></div>
@@ -2386,7 +1864,7 @@
   }
   function relDownloadCsv() {
     const d = relData();
-    if (!d.real) { showToast("Ative “Meus dados” para exportar seus lançamentos"); return; }
+    if (!d.tx.length) { showToast("Registre lançamentos para exportar o relatório"); return; }
     const rows = [["Data", "Tipo", "Categoria", "Conta", "Valor"]];
     [...d.tx].sort((a, b) => (a.date).localeCompare(b.date)).forEach(t =>
       rows.push([t.date, t.type === "in" ? "Receita" : "Despesa", t.category, t.account || "", String(t.amount).replace(".", ",")]));
@@ -2428,23 +1906,14 @@
     // retorna { day: [{kind, label, amount}] } para o mês exibido
     const ev = {};
     const push = (d, o) => { (ev[d] = ev[d] || []).push(o); };
-    const real = store.d.mode === "real" && (store.d.tx.length || store.d.bills.length);
     const key = year + "-" + String(month + 1).padStart(2, "0");
-    if (real) {
-      store.d.tx.filter(t => (t.date || "").slice(0, 7) === key).forEach(t =>
-        push(+t.date.slice(8, 10), { kind: t.type === "in" ? "in" : "out", label: t.category, amount: (t.type === "in" ? "+" : "−") + brl(t.amount) }));
-      (store.d.bills || []).forEach(b => {
-        const paid = (b.paidMonths || []).includes(key);
-        push(Math.min(b.dueDay, new Date(year, month + 1, 0).getDate()),
-          { kind: paid ? "paid" : "bill", label: b.name + (paid ? " (pago)" : " · vence"), amount: brl(b.amount) });
-      });
-    } else if (calOffset === 0) {
-      [[5, "in", "Salário", "+R$ 8.500,00"], [10, "bill", "Aluguel · vence", "R$ 1.850,00"],
-       [12, "out", "Mercado", "−R$ 420,00"], [15, "out", "Combustível", "−R$ 180,00"],
-       [18, "in", "Freelance", "+R$ 700,00"], [25, "bill", "Fatura Nubank · vence", "R$ 2.315,44"],
-       [28, "out", "Restaurante", "−R$ 96,00"], [30, "bill", "Internet · vence", "R$ 99,90"]]
-        .forEach(([d, k, l, a]) => push(d, { kind: k, label: l, amount: a }));
-    }
+    store.d.tx.filter(t => (t.date || "").slice(0, 7) === key).forEach(t =>
+      push(+t.date.slice(8, 10), { kind: t.type === "in" ? "in" : "out", label: t.category, amount: (t.type === "in" ? "+" : "−") + brl(t.amount) }));
+    (store.d.bills || []).forEach(b => {
+      const paid = (b.paidMonths || []).includes(key);
+      push(Math.min(b.dueDay, new Date(year, month + 1, 0).getDate()),
+        { kind: paid ? "paid" : "bill", label: b.name + (paid ? " (pago)" : " · vence"), amount: brl(b.amount) });
+    });
     return ev;
   }
   function renderCal() {
@@ -2516,7 +1985,7 @@
     if (rEl) rEl.hidden = !real;
   }
   function computeScore() {
-    if (store.d.mode !== "real" || !store.d.tx.length) return 76;
+    if (!store.d.tx.length) return null;
     const rec = monthIn(), des = monthOut(), taxa = rec ? (rec - des) / rec : 0;
     let s = 50;
     if (taxa >= 0.2) s += 18; else if (taxa >= 0.1) s += 9; else if (taxa < 0) s -= 15;
@@ -2530,35 +1999,24 @@
   }
   function updateScoreChip() {
     const s = computeScore();
-    const el = $("#scoreNum"); if (el) el.textContent = s;
-    const ring = $("#scoreRing"); if (ring) ring.setAttribute("stroke-dashoffset", (78.54 * (1 - s / 100)).toFixed(1));
+    const el = $("#scoreNum"); if (el) el.textContent = s == null ? "—" : s;
+    const ring = $("#scoreRing"); if (ring) ring.setAttribute("stroke-dashoffset", (78.54 * (1 - (s == null ? 0 : s) / 100)).toFixed(1));
   }
   function applyMode() {
-    const real = store.d.mode === "real";
+    // O app opera sempre com os dados do usuário (localStorage). Sem modo demonstração.
     toggleReal("demoDash", "realDash");
     toggleReal("demoOrc", "realOrc");
     toggleReal("demoInv", "realInv");
     toggleReal("demoMetas", "realMetas");
-    $$(".mode-switch button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === store.d.mode)));
-    const bc = $("#btnClearData"); if (bc) bc.hidden = !real;
-    if (real) {
-      renderReal(); renderOrc(); renderInv(); renderMetas();
-      $("#dashGreeting").textContent = "Seu painel";
-      const now = new Date();
-      $("#dashSub").textContent = `${now.getDate()} de ${MESES_L[now.getMonth()]} de ${now.getFullYear()} · dados neste navegador`;
-    } else {
-      $("#dashGreeting").textContent = "Bom dia, Genis";
-      $("#dashSub").textContent = "Terça, 22 de julho de 2026 · dados sincronizados há 2 min";
-    }
+    const bc = $("#btnClearData"); if (bc) bc.hidden = false;
+    renderReal(); renderOrc(); renderInv(); renderMetas();
+    $("#dashGreeting").textContent = "Seu painel";
+    const now = new Date();
+    $("#dashSub").textContent = `${now.getDate()} de ${MESES_L[now.getMonth()]} de ${now.getFullYear()} · dados neste navegador`;
     renderRel();
     renderCal();
     updateScoreChip();
   }
-  $$(".mode-switch button").forEach(b => b.addEventListener("click", () => {
-    store.d.mode = b.dataset.mode; store.save(); applyMode();
-    if (store.d.mode === "real" && !store.d.accounts.length && !store.d.tx.length)
-      showToast("Modo Meus dados — comece adicionando uma conta");
-  }));
   $("#relCsv").addEventListener("click", relDownloadCsv);
   $("#relPdf").addEventListener("click", () => window.print());
   $$('[data-nav="rel"]').forEach(b => b.addEventListener("click", renderRel));
@@ -2831,7 +2289,7 @@
 
   /* linha — evolução patrimonial (série única: sem legenda) */
   function drawWealth() {
-    const host = $("#chartWealth"); host.innerHTML = "";
+    const host = $("#chartWealth"); if (!host) return; host.innerHTML = "";
     const W = 640, H = 240, P = { l: 46, r: 14, t: 12, b: 26 };
     const s = svgEl(W, H);
     s.setAttribute("aria-label", "Evolução patrimonial nos últimos 12 meses, de 68 mil a 84 mil reais");
@@ -2875,7 +2333,7 @@
 
   /* barras agrupadas — fluxo de caixa (2 séries: legenda no HTML) */
   function drawFlow() {
-    const host = $("#chartFlow"); host.innerHTML = "";
+    const host = $("#chartFlow"); if (!host) return; host.innerHTML = "";
     const W = 520, H = 230, P = { l: 40, r: 8, t: 12, b: 26 };
     const s = svgEl(W, H);
     s.setAttribute("aria-label", "Fluxo de caixa: receitas e despesas mensais dos últimos 6 meses");
@@ -2916,7 +2374,7 @@
 
   /* barras horizontais — gastos por categoria (magnitude: 1 matiz + rótulos diretos) */
   function drawCats() {
-    const host = $("#chartCats"); host.innerHTML = "";
+    const host = $("#chartCats"); if (!host) return; host.innerHTML = "";
     const W = 520, H = 232, P = { l: 108, r: 64, t: 6, b: 6 };
     const s = svgEl(W, H);
     s.setAttribute("aria-label", "Gastos de julho por categoria, de Moradia (2.180 reais) a Assinaturas (265 reais)");
@@ -2960,22 +2418,16 @@
   const norm = s => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
   function copSnap() {
-    const real = store.d.mode === "real" && (store.d.tx.length || store.d.accounts.length);
-    if (real) return { real: true, saldo: totalSaldo(), rec: monthIn(), des: monthOut(), cats: byCategory(), goals: store.d.goals,
+    return { real: true, has: !!(store.d.tx.length || store.d.accounts.length),
+      saldo: totalSaldo(), rec: monthIn(), des: monthOut(), cats: byCategory(), goals: store.d.goals,
       bills: (store.d.bills || []).map(b => ({ name: b.name, amount: b.amount, dueDay: b.dueDay, paid: (b.paidMonths || []).includes(thisMonth()) })),
       inList: store.d.tx.filter(t => t.type === "in" && inMonth(t)).map(t => ({ c: t.category, v: t.amount })) };
-    return { real: false, saldo: 6842.10, rec: 9450, des: 6038,
-      cats: [["Moradia", 2180], ["Mercado", 1240], ["Restaurantes", 680], ["Transporte", 540], ["Lazer", 480], ["Saúde", 320], ["Assinaturas", 265]],
-      goals: [{ name: "Reserva de emergência", target: 30000, current: 21600 }, { name: "Viagem — Chile 2027", target: 12000, current: 3720 }],
-      bills: [{ name: "Aluguel", amount: 1850, dueDay: 10, paid: true }, { name: "Fatura Nubank", amount: 2315.44, dueDay: 25, paid: false },
-        { name: "Internet", amount: 99.90, dueDay: 30, paid: false }, { name: "Energia", amount: 187.30, dueDay: 15, paid: true },
-        { name: "Streaming", amount: 55.80, dueDay: 20, paid: true }],
-      inList: [{ c: "Salário", v: 8500 }, { c: "Freelance", v: 700 }, { c: "Rendimentos", v: 250 }] };
   }
 
   function answer(qRaw) {
     const n = norm(qRaw), s = copSnap();
-    const src = s.real ? "" : ` <span style="color:var(--ink-3)">(dados de demonstração — ative "Meus dados" para usar os seus)</span>`;
+    const src = "";
+    if (!s.has) return `Ainda não tenho seus dados para calcular. Adicione uma conta e alguns lançamentos no <b>Dashboard</b> que eu passo a responder com os seus próprios números — quanto pode gastar hoje, se fecha o mês no positivo, para onde vai seu dinheiro e mais. 🌱`;
     const totalCat = s.cats.reduce((a, [, v]) => a + v, 0) || 1;
 
     if (/(gastar hoje|posso gastar|quanto.*gastar)/.test(n)) {
@@ -2983,7 +2435,7 @@
       return `Pelo que sobra do mês, seu ritmo seguro é de cerca de:<span class="fig">${brl(sobra / dl)}/dia</span>São ${brl(sobra)} disponíveis ÷ ${dl} dia(s) até virar o mês. Contas fixas que ainda vão cair reduzem isso — por isso eu recomendo deixar uma folga.${src}`;
     }
     if (/(fim do mes|final do mes|fechar o mes|vou fechar|previsao|projecao|saldo no fim|ficar negativo|risco de|sobra ate o fim|chegar no fim)/.test(n)) {
-      const f = s.real ? forecast() : { saldo: 6842.10, pend: 2415.34, ritmoDia: 268, gastoProj: 268 * 6, diasRest: 6, projetado: 6842.10 - 2415.34 - 268 * 6 };
+      const f = forecast();
       const pos = f.projetado >= 0;
       return `Projeção para o fim de ${MESES_L[new Date().getMonth()]} (no seu ritmo atual, sem IA):<span class="fig" style="color:${pos ? "var(--good-text)" : "var(--critical)"}">${brl(f.projetado)}</span>Parto do saldo de ${brl(f.saldo)}, tiro ${brl(f.pend)} de contas ainda a pagar e ${brl(f.gastoProj)} de gasto estimado (${brl(f.ritmoDia)}/dia × ${f.diasRest} dia${f.diasRest === 1 ? "" : "s"}). ${pos ? "Você fecha o mês no positivo. ✓" : `⚠️ Há risco de ficar negativo — segure ${brl(-f.projetado)} em gastos não essenciais ou antecipe uma entrada.`}${src}`;
     }
@@ -3104,7 +2556,11 @@
   function copWelcome() {
     copLog.innerHTML = "";
     const s = copSnap(), eco = s.rec - s.des;
-    copAdd("bot", "Oi, Genis 👋 Sou seu copiloto financeiro. Pergunte em português que eu respondo com os seus próprios números — sem planilha, sem jargão.");
+    copAdd("bot", "Oi 👋 Sou seu copiloto financeiro. Pergunte em português que eu respondo com os seus próprios números — sem planilha, sem jargão.");
+    if (!s.has) {
+      copAdd("bot", `Para começar, adicione uma conta e alguns lançamentos no <b>Dashboard</b>. Assim que houver dados, eu leio sua situação do mês aqui. 🌱`);
+      return;
+    }
     copAdd("bot", `Leitura rápida de agora: ${eco >= 0 ? `você está <b class="num money">${brl(eco)}</b> positivo no mês` : `atenção — você está <b class="num money">${brl(-eco)}</b> no vermelho este mês`}. Toque numa pergunta pra começar. 👇`);
   }
   copWelcome();

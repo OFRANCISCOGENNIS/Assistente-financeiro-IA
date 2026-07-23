@@ -7,16 +7,18 @@
 
 ## 1. Onde estamos (entregue no protótipo)
 
+> **Sem modo demonstração.** O protótipo opera **sempre com os dados do próprio usuário** (localStorage). Todas as telas de PF (Dashboard, Orçamento, Metas, Investimentos, Relatórios, Calendário) e o Copiloto abrem vazias, com convite para inserir os dados — sem números fictícios. Exceção: a tela **Empresa (MEI)** ainda é um exemplo ilustrativo (marcado como tal), pois não tem entrada de dados reais.
+
 | Área do super prompt | Estado |
 |---|---|
-| Dashboard financeiro | ✅ Demonstração + **modo "Meus dados"** (localStorage) |
+| Dashboard financeiro | ✅ **Só "Meus dados"** (localStorage) — sem demonstração |
 | Copiloto financeiro (conversa) | ✅ **v0 determinístico** — responde em PT com os números do usuário |
-| Score financeiro 0–100 | ✅ Central de Segurança + resposta do copiloto |
+| Score financeiro 0–100 | ✅ Central de Segurança + resposta do copiloto (neutro “—” sem dados) |
 | Insights / IA proativa | ✅ Guardião (3 níveis) + insights do agente no dashboard |
 | Orçamento por categoria | ✅ Tela com ritmo do mês e envelope estrito |
 | Metas + simulador | ✅ Slider recalcula data de conclusão |
 | Investimentos | ✅ Carteira, alocação, benchmark CDI |
-| Empresa (PJ/MEI) | ✅ DRE, ponto de equilíbrio, radar do Guardião |
+| Empresa (PJ/MEI) | ⚠️ Exemplo ilustrativo (DRE, ponto de equilíbrio, radar) — sem entrada de dados reais ainda |
 | Segurança | ✅ Passkey, MFA adaptativo, dispositivos, Open Finance |
 | Comandos rápidos | ✅ Ctrl+K + FAB de lançamento |
 | Lançamento em segundos | ✅ Sheet receita/despesa persistida |
