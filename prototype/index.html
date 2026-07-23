@@ -2841,8 +2841,10 @@
 
   /* ============ COPILOTO ============ */
   const copLog = $("#copLog"), copInput = $("#copInput");
-  const SUGG = ["Quanto posso gastar hoje?", "Estou gastando muito com alimentação?",
-    "Quanto economizei este mês?", "Para onde vai meu dinheiro?", "Como está minha saúde financeira?",
+  const SUGG = ["Quanto posso gastar hoje?", "Quais contas ainda faltam pagar?",
+    "Quanto entrou de caixa este mês?", "Quanto comprei este mês?",
+    "Estou gastando muito com alimentação?", "Quanto economizei este mês?",
+    "Para onde vai meu dinheiro?", "Como está minha saúde financeira?",
     "Quanto guardar por mês para juntar R$ 6.000 até dezembro?"];
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const norm = s => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -2850,10 +2852,16 @@
 
   function copSnap() {
     const real = store.d.mode === "real" && (store.d.tx.length || store.d.accounts.length);
-    if (real) return { real: true, saldo: totalSaldo(), rec: monthIn(), des: monthOut(), cats: byCategory(), goals: store.d.goals };
+    if (real) return { real: true, saldo: totalSaldo(), rec: monthIn(), des: monthOut(), cats: byCategory(), goals: store.d.goals,
+      bills: (store.d.bills || []).map(b => ({ name: b.name, amount: b.amount, dueDay: b.dueDay, paid: (b.paidMonths || []).includes(thisMonth()) })),
+      inList: store.d.tx.filter(t => t.type === "in" && inMonth(t)).map(t => ({ c: t.category, v: t.amount })) };
     return { real: false, saldo: 6842.10, rec: 9450, des: 6038,
       cats: [["Moradia", 2180], ["Mercado", 1240], ["Restaurantes", 680], ["Transporte", 540], ["Lazer", 480], ["Saúde", 320], ["Assinaturas", 265]],
-      goals: [{ name: "Reserva de emergência", target: 30000, current: 21600 }, { name: "Viagem — Chile 2027", target: 12000, current: 3720 }] };
+      goals: [{ name: "Reserva de emergência", target: 30000, current: 21600 }, { name: "Viagem — Chile 2027", target: 12000, current: 3720 }],
+      bills: [{ name: "Aluguel", amount: 1850, dueDay: 10, paid: true }, { name: "Fatura Nubank", amount: 2315.44, dueDay: 25, paid: false },
+        { name: "Internet", amount: 99.90, dueDay: 30, paid: false }, { name: "Energia", amount: 187.30, dueDay: 15, paid: true },
+        { name: "Streaming", amount: 55.80, dueDay: 20, paid: true }],
+      inList: [{ c: "Salário", v: 8500 }, { c: "Freelance", v: 700 }, { c: "Rendimentos", v: 250 }] };
   }
 
   function answer(qRaw) {
@@ -2876,6 +2884,34 @@
       if (res && res.current >= res.target * 0.5) pts += 16;
       pts = Math.max(5, Math.min(100, pts));
       return `Sua saúde financeira agora:<span class="fig">${pts}/100</span>Taxa de poupança do mês: ${Math.round(taxa * 100)}%. ${taxa >= 0.2 ? "Você guarda um quinto ou mais da renda — padrão de quem constrói patrimônio." : taxa >= 0 ? "Positivo, mas dá pra melhorar a sobra mensal." : "Atenção: mês no vermelho."}${res ? ` Sua reserva está em ${Math.round(res.current / res.target * 100)}% da meta.` : ""}${src}`;
+    }
+    if (/(conta.*pag|pagar conta|contas do mes|conta fixa|contas fixas|ja paguei|falta pagar|contas em aberto|boleto|vencer|vencimento)/.test(n)) {
+      const bills = s.bills || [];
+      if (!bills.length) return `Você ainda não cadastrou contas a pagar. Abra <b>Contas</b> e adicione as fixas (aluguel, luz, internet…) que eu passo a te avisar o que já foi pago e o que falta.${src}`;
+      const pagas = bills.filter(b => b.paid), abertas = bills.filter(b => !b.paid);
+      const totPagas = pagas.reduce((a, b) => a + b.amount, 0), totAbertas = abertas.reduce((a, b) => a + b.amount, 0);
+      const hoje = new Date().getDate();
+      const lista = abertas.sort((a, b) => a.dueDay - b.dueDay).map(b => {
+        const atrasada = b.dueDay < hoje;
+        return `<div class="barrow"><span>${esc(b.name)} · vence dia ${b.dueDay}${atrasada ? ` <span style="color:var(--critical)">⚠️ vencida</span>` : ""}</span><b class="num money">${brl(b.amount)}</b></div>`;
+      }).join("");
+      return `Suas contas de ${MESES_L[new Date().getMonth()]}:<span class="fig">${brl(totAbertas)} a pagar</span>${pagas.length} de ${bills.length} já pagas (${brl(totPagas)}). ${abertas.length ? `Ainda faltam ${abertas.length}:` : "Tudo em dia por aqui — parabéns! ✓"}${lista}${abertas.length ? `<button class="btn-mini" data-cop-nav="bill" style="margin-top:10px">Abrir Contas para pagar</button>` : ""}${src}`;
+    }
+    if (/(entrou|entrada de caixa|entradas|recebi|quanto ganh|minha renda|meu salario|recebimento|quanto.*recebi)/.test(n)) {
+      const inList = s.inList || [];
+      const byOrig = {}; inList.forEach(t => byOrig[t.c] = (byOrig[t.c] || 0) + t.v);
+      const orig = Object.entries(byOrig).sort((a, b) => b[1] - a[1]);
+      if (!s.rec) return `Ainda não registrei entradas neste mês. Assim que você lançar salário, freelance ou rendimentos, eu mostro de onde vem cada real.${src}`;
+      const maxV = orig.length ? orig[0][1] : 1;
+      const bars = orig.map(([c, v]) => `<div class="barrow"><span>${esc(c)}</span><b class="num money tx-in">${brl(v)}</b></div><div class="limit-bar"><i style="width:${Math.round(v / maxV * 100)}%;background:var(--good)"></i></div>`).join("");
+      return `Entrou no seu caixa este mês:<span class="fig" style="color:var(--good-text)">${brl(s.rec)}</span>${bars}<div style="margin-top:10px">${orig.length > 1 ? `${orig.length} fontes de renda — diversificar reduz o risco de depender de uma só.` : "Toda a renda vem de uma fonte só; uma renda extra dá mais segurança."}</div>${src}`;
+    }
+    if (/(minhas compras|o que (eu )?comprei|quanto comprei|comprei este mes|extrato de compras|minhas despesas|meus gastos do mes)/.test(n)) {
+      const top = s.cats.slice(0, 5), maxV = top.length ? top[0][1] : 1;
+      if (!s.des) return `Você ainda não tem despesas registradas neste mês. Cada compra que você lançar aparece aqui agrupada por categoria.${src}`;
+      const bars = top.map(([c, v]) => `<div class="barrow"><span>${esc(c)}</span><b class="num money">${brl(v)}</b></div><div class="limit-bar"><i style="width:${Math.round(v / maxV * 100)}%;background:var(--s1)"></i></div>`).join("");
+      const mediaDia = s.des / (new Date().getDate() || 1);
+      return `Suas compras deste mês somam:<span class="fig">${brl(s.des)}</span>${bars}<div style="margin-top:10px">Média de ${brl(mediaDia)}/dia até agora. Toque em <b>Relatórios</b> pra ver tudo e exportar em PDF/CSV.<button class="btn-mini" data-cop-nav="rel" style="margin-top:10px">Abrir Relatórios</button></div>${src}`;
     }
     const catKey = ["aliment", "mercado", "restaurante", "transporte", "lazer", "saude", "moradia", "assinatura"].find(c => n.includes(c));
     if (catKey || /(gastando muito|gasto muito|muito com)/.test(n)) {
@@ -2936,6 +2972,12 @@
   $("#copSend").addEventListener("click", () => copAsk(copInput.value));
   copInput.addEventListener("keydown", e => { if (e.key === "Enter") copAsk(copInput.value); });
   copLog.addEventListener("click", e => {
+    const nav = e.target.closest("[data-cop-nav]");
+    if (nav) {
+      const dest = nav.dataset.copNav === "bill" ? "dash" : nav.dataset.copNav;
+      const t = document.querySelector('.nav-btn[data-nav="' + dest + '"]'); if (t) t.click();
+      return;
+    }
     const b = e.target.closest("[data-cop-goal]");
     if (!b || b.disabled) return;
     const target = parseFloat(b.dataset.copGoal);

@@ -33,7 +33,7 @@ O copiloto **v0** é um **motor de regras determinístico**: interpreta a pergun
 
 ### Fase A — Aprofundar no protótipo (sem backend, alto valor)
 
-1. ✅ **Copiloto v1**: intenções de gasto/economia/categoria/score/meta/financiamento; "criar meta a partir da resposta" em um toque.
+1. ✅ **Copiloto v1**: intenções de gasto/economia/categoria/score/meta/financiamento; "criar meta a partir da resposta" em um toque. **Foco PF**: agora responde também **contas a pagar** (o que já foi pago × o que falta, com aviso de vencidas), **entrada de caixa** (renda por origem) e **compras do mês** (por categoria), com atalho para Relatórios.
 2. ✅ **Ligar Orçamento/Metas/Investimentos/Relatórios ao "Meus dados"** — modo real global; só Empresa/MEI segue demo.
 3. **Dashboard personalizável** (drag & drop de widgets, layout salvo no localStorage). *(pendente)*
 4. ✅ **Calendário financeiro** (grade mensal com contas, salários e lançamentos; navegação de mês; clique no dia lista os eventos).
