@@ -708,6 +708,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
       Dívidas
     </button>
+    <button class="nav-btn" data-nav="dividir">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.3"/><path d="M3 20a6 6 0 0 1 12 0M15.5 20a5 5 0 0 1 5.5-4.8"/></svg>
+      Dividir
+    </button>
     <button class="nav-btn" data-nav="metas">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
       Metas
@@ -856,6 +860,15 @@
       <div id="dividasBody"></div>
     </section>
 
+    <!-- ============ DIVIDIR CONTAS ============ -->
+    <section class="view" id="view-dividir" aria-label="Dividir contas">
+      <div class="view-h">
+        <h1>Dividir contas</h1>
+        <span class="sub">Racha despesas do grupo e veja quem paga quem pra acertar</span>
+      </div>
+      <div id="splitBody"></div>
+    </section>
+
     <!-- ============ CALENDÁRIO ============ -->
     <section class="view" id="view-cal" aria-label="Calendário financeiro">
       <div class="view-h">
@@ -972,6 +985,7 @@
       <button class="item" data-nav="gastos" data-kw="/gastos fixos mensais despesas contas">🧾 &nbsp;Abrir Gastos (fixos e mensais)</button>
       <button class="item" data-nav="cartoes" data-kw="/cartao cartoes fatura credito limite">💳 &nbsp;Abrir Cartões (faturas)</button>
       <button class="item" data-nav="dividas" data-kw="/divida dividas emprestimo quitar bola de neve avalanche">🧯 &nbsp;Abrir Dívidas (quitação)</button>
+      <button class="item" data-nav="dividir" data-kw="/dividir rachar rateio conta grupo casal splitwise">🤝 &nbsp;Abrir Dividir contas (rateio)</button>
       <button class="item" data-nav="metas" data-kw="/meta objetivos">🎯 &nbsp;Ver Metas</button>
       <button class="item" data-nav="cal" data-kw="/calendario agenda vencimentos">📅 &nbsp;Abrir Calendário</button>
       <button class="item" data-nav="plan" data-kw="/planejar simular financiar fire">📈 &nbsp;Abrir Planejar</button>
@@ -1023,6 +1037,7 @@
       <button class="more-item" data-nav="metas"><span class="mi-ic">🎯</span>Metas</button>
       <button class="more-item" data-nav="inv"><span class="mi-ic">💹</span>Investir</button>
       <button class="more-item" data-nav="dividas"><span class="mi-ic">🧯</span>Dívidas</button>
+      <button class="more-item" data-nav="dividir"><span class="mi-ic">🤝</span>Dividir</button>
       <button class="more-item" data-nav="cal"><span class="mi-ic">📅</span>Calendário</button>
       <button class="more-item" data-nav="plan"><span class="mi-ic">📈</span>Planejar</button>
       <button class="more-item" data-nav="rel"><span class="mi-ic">📄</span>Relatórios</button>
@@ -1194,6 +1209,26 @@
     </div>
     <button class="btn-primary" id="btnPjSave" style="margin-top:18px">Salvar</button>
     <button class="alt" id="btnPjCancel">Cancelar</button>
+  </div>
+</div>
+
+<!-- adicionar despesa do rateio -->
+<div class="sheet-veil" id="splitSheet">
+  <div class="sheet" role="dialog" aria-label="Adicionar despesa do grupo">
+    <h2>Despesa do grupo</h2>
+    <p style="margin-bottom:2px">O que foi gasto e quem pagou.</p>
+    <div class="field">
+      <label for="splitDesc">Descrição</label>
+      <input id="splitDesc" type="text" placeholder="Ex.: Jantar, Uber, Mercado" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="splitValue">Valor total</label>
+      <input id="splitValue" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
+    </div>
+    <span class="fieldset-label">Quem pagou</span>
+    <div class="chip-row" id="splitPayers"></div>
+    <button class="btn-primary" id="btnSplitSave" style="margin-top:18px">Adicionar despesa</button>
+    <button class="alt" id="btnSplitCancel">Cancelar</button>
   </div>
 </div>
 
@@ -1462,7 +1497,7 @@
   const uid = () => "id" + Math.random().toString(36).slice(2, 9);
 
   const store = {
-    d: { mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {}, cards: [], debts: [], customCats: { out: [], in: [] } },
+    d: { mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {}, cards: [], debts: [], customCats: { out: [], in: [] }, split: { people: [], expenses: [] } },
     load() { try { const r = localStorage.getItem(KEY); if (r) this.d = Object.assign(this.d, JSON.parse(r)); } catch (e) {} this.d.mode = "real"; },
     save() { try { localStorage.setItem(KEY, JSON.stringify(this.d)); } catch (e) {} },
   };
@@ -1667,7 +1702,7 @@
     updateScoreChip();
   }
   function resetAllData() {
-    store.d.accounts = []; store.d.tx = []; store.d.goals = []; store.d.bills = []; store.d.budgets = {}; store.d.investments = []; store.d.pj = {}; store.d.cards = []; store.d.debts = []; store.d.customCats = { out: [], in: [] };
+    store.d.accounts = []; store.d.tx = []; store.d.goals = []; store.d.bills = []; store.d.budgets = {}; store.d.investments = []; store.d.pj = {}; store.d.cards = []; store.d.debts = []; store.d.customCats = { out: [], in: [] }; store.d.split = { people: [], expenses: [] };
     store.save(); applyMode();
     showToast("Seus dados foram apagados");
   }
@@ -2065,7 +2100,7 @@
         const data = parsed && parsed.data ? parsed.data : parsed;
         if (!data || typeof data !== "object" || !Array.isArray(data.tx)) throw new Error("formato inválido");
         if (!confirm("Importar este backup substitui os dados atuais deste navegador. Continuar?")) { e.target.value = ""; return; }
-        store.d = Object.assign({ mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {}, cards: [], debts: [], customCats: { out: [], in: [] } }, data);
+        store.d = Object.assign({ mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {}, cards: [], debts: [], customCats: { out: [], in: [] }, split: { people: [], expenses: [] } }, data);
         store.d.mode = "real";
         store.save(); applyMode(); applyProfile();
         showToast("Backup importado com sucesso");
@@ -2076,6 +2111,120 @@
     };
     reader.readAsText(file);
   }
+
+  /* ---------- Dividir contas (rateio + acerto) ---------- */
+  function splitData() { const s = store.d.split || { people: [], expenses: [] }; s.people = s.people || []; s.expenses = s.expenses || []; return s; }
+  function settle(people, expenses) {
+    const paid = {}; people.forEach(p => paid[p] = 0);
+    let total = 0;
+    expenses.forEach(e => { if (paid[e.payer] != null) paid[e.payer] += e.amount; total += e.amount; });
+    const share = people.length ? total / people.length : 0;
+    const bal = people.map(p => ({ p, paid: paid[p] || 0, bal: (paid[p] || 0) - share }));
+    const debtors = bal.filter(b => b.bal < -0.01).map(b => ({ ...b })).sort((a, b) => a.bal - b.bal);
+    const creditors = bal.filter(b => b.bal > 0.01).map(b => ({ ...b })).sort((a, b) => b.bal - a.bal);
+    const txs = []; let i = 0, j = 0;
+    while (i < debtors.length && j < creditors.length) {
+      const amt = Math.min(-debtors[i].bal, creditors[j].bal);
+      if (amt > 0.01) txs.push({ from: debtors[i].p, to: creditors[j].p, amt });
+      debtors[i].bal += amt; creditors[j].bal -= amt;
+      if (Math.abs(debtors[i].bal) < 0.01) i++;
+      if (Math.abs(creditors[j].bal) < 0.01) j++;
+    }
+    return { total, share, bal, txs };
+  }
+  function renderSplit() {
+    const body = $("#splitBody"); if (!body) return;
+    const s = splitData();
+    const r = settle(s.people, s.expenses);
+    body.innerHTML = `
+      <div class="grid g-1-1">
+        <div class="card">
+          <h2>Pessoas no racha</h2>
+          <p class="hint">Quem está dividindo as contas</p>
+          <div style="display:flex; gap:8px; margin:8px 0">
+            <input id="splitPersonName" type="text" placeholder="Nome da pessoa" autocomplete="off"
+              style="flex:1; padding:9px 12px; border:1px solid var(--ring); border-radius:9px; background:var(--card); color:var(--ink)">
+            <button class="btn-mini" id="btnAddPerson">Adicionar</button>
+          </div>
+          <div class="chip-row" style="margin-top:4px">
+            ${s.people.length ? s.people.map(p => `<span class="chip" style="cursor:default">${esc(p)}
+              <button class="del" data-del-person="${encodeURIComponent(p)}" aria-label="Remover" style="margin-left:6px">✕</button></span>`).join("")
+              : `<span class="hint">Adicione pelo menos 2 pessoas.</span>`}
+          </div>
+          <div style="display:flex; align-items:baseline; margin-top:18px"><h2>Despesas</h2>
+            ${s.people.length >= 1 ? `<button class="btn-mini alt" id="btnAddSplitExp" style="margin-left:auto">+ Despesa</button>` : ""}</div>
+          <div class="row-list mini-list">
+            ${s.expenses.length ? s.expenses.map(e => `<div class="row-item">
+              <span class="cat-dot" style="background:var(--s1)"></span>
+              <div class="grow"><div class="t">${esc(e.desc || "Despesa")}</div><div class="d">pago por ${esc(e.payer)}</div></div>
+              <span class="num money">${brl(e.amount)}</span>
+              <button class="del" data-del-exp="${e.id}" aria-label="Excluir">✕</button></div>`).join("")
+              : `<p class="hint">Nenhuma despesa lançada ainda.</p>`}
+          </div>
+        </div>
+        <div class="card">
+          <h2>Acerto de contas</h2>
+          <p class="hint">${s.people.length ? `Total ${brl(r.total)} · ${brl(r.share)} por pessoa` : "Adicione pessoas e despesas"}</p>
+          ${s.people.length ? `
+          <div class="row-list mini-list" style="margin-top:6px">
+            ${r.bal.map(b => `<div class="row-item"><div class="grow"><div class="t">${esc(b.p)}</div>
+              <div class="d">pagou ${brl(b.paid)}</div></div>
+              <span class="num money" style="color:${b.bal >= 0 ? "var(--good-text)" : "var(--critical)"}">${b.bal >= 0 ? "recebe " : "deve "}${brl(Math.abs(b.bal))}</span></div>`).join("")}
+          </div>
+          <h2 style="margin-top:18px; font-size:15px">Como acertar</h2>
+          ${r.txs.length ? `<div class="row-list">${r.txs.map(t => `<div class="row-item">
+            <span class="cat-dot" style="background:var(--accent)"></span>
+            <div class="grow"><div class="t">${esc(t.from)} → ${esc(t.to)}</div></div>
+            <span class="num money">${brl(t.amt)}</span></div>`).join("")}</div>
+            <p class="hint" style="margin-top:10px">${r.txs.length} transferência(s) acertam tudo. 👌</p>`
+            : `<p class="hint">${s.expenses.length ? "Tudo quitado — ninguém deve nada. ✓" : "Lance as despesas para calcular o acerto."}</p>`}
+          ` : ""}
+        </div>
+      </div>`;
+    const inp = $("#splitPersonName");
+    const addP = () => {
+      const name = (inp.value || "").trim(); if (!name) return;
+      if (s.people.some(p => p.toLowerCase() === name.toLowerCase())) { showToast("Essa pessoa já está no racha"); return; }
+      s.people.push(name); store.d.split = s; store.save(); renderSplit();
+    };
+    $("#btnAddPerson").addEventListener("click", addP);
+    if (inp) inp.addEventListener("keydown", e => { if (e.key === "Enter") addP(); });
+    const be = $("#btnAddSplitExp"); if (be) be.addEventListener("click", openSplitExp);
+    $$("[data-del-person]", body).forEach(b => b.addEventListener("click", () => {
+      const name = decodeURIComponent(b.dataset.delPerson);
+      s.people = s.people.filter(p => p !== name);
+      s.expenses = s.expenses.filter(e => e.payer !== name);
+      store.d.split = s; store.save(); renderSplit();
+    }));
+    $$("[data-del-exp]", body).forEach(b => b.addEventListener("click", () => {
+      s.expenses = s.expenses.filter(e => e.id !== b.dataset.delExp);
+      store.d.split = s; store.save(); renderSplit();
+    }));
+  }
+  const splitSheet = $("#splitSheet");
+  let splitPayerSel = null;
+  function openSplitExp() {
+    const s = splitData();
+    if (!s.people.length) { showToast("Adicione pessoas primeiro"); return; }
+    splitPayerSel = s.people[0];
+    $("#splitPayers").innerHTML = s.people.map(p => `<button class="chip" data-p="${encodeURIComponent(p)}" aria-pressed="${p === splitPayerSel}">${esc(p)}</button>`).join("");
+    $$("#splitPayers .chip").forEach(ch => ch.addEventListener("click", () => {
+      splitPayerSel = decodeURIComponent(ch.dataset.p);
+      $$("#splitPayers .chip").forEach(x => x.setAttribute("aria-pressed", String(decodeURIComponent(x.dataset.p) === splitPayerSel)));
+    }));
+    $("#splitDesc").value = ""; $("#splitValue").value = "";
+    splitSheet.classList.add("open"); $("#splitDesc").focus();
+  }
+  $("#btnSplitCancel").addEventListener("click", () => splitSheet.classList.remove("open"));
+  splitSheet.addEventListener("click", e => { if (e.target === splitSheet) splitSheet.classList.remove("open"); });
+  $("#btnSplitSave").addEventListener("click", () => {
+    const s = splitData();
+    const amount = parseNum($("#splitValue").value);
+    if (amount <= 0 || !splitPayerSel) { $("#splitValue").focus(); return; }
+    s.expenses.push({ id: uid(), desc: $("#splitDesc").value.trim(), amount, payer: splitPayerSel });
+    store.d.split = s; store.save(); splitSheet.classList.remove("open"); renderSplit();
+    showToast(`Despesa de ${brl(amount)} adicionada`);
+  });
 
   /* ---------- Dívidas (bola de neve × avalanche) ---------- */
   // Simula a quitação: paga o mínimo de todas e joga o "extra" na 1ª da ordem da estratégia.
@@ -2840,6 +2989,7 @@
     renderGastos();
     renderCards();
     renderDividas();
+    renderSplit();
     renderPj();
     renderSec();
     renderProj();
@@ -2853,6 +3003,7 @@
   $$('[data-nav="gastos"]').forEach(b => b.addEventListener("click", renderGastos));
   $$('[data-nav="cartoes"]').forEach(b => b.addEventListener("click", renderCards));
   $$('[data-nav="dividas"]').forEach(b => b.addEventListener("click", renderDividas));
+  $$('[data-nav="dividir"]').forEach(b => b.addEventListener("click", renderSplit));
   $$('[data-nav="plan"]').forEach(b => b.addEventListener("click", renderProj));
   $$('[data-nav="pj"]').forEach(b => b.addEventListener("click", renderPj));
   $$('[data-nav="sec"]').forEach(b => b.addEventListener("click", renderSec));
@@ -3116,7 +3267,7 @@
   $("#cmdLock").addEventListener("click", () => { closeCmdk(); lockApp(); });
   addEventListener("keydown", e => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openCmdk(); }
-    if (e.key === "Escape") { closeCmdk(); [guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, pjSheet, profSheet, cardSheet, cardBuySheet, debtSheet, moreSheet, a11ySheet, clearSheet].forEach(s => s && s.classList.remove("open")); }
+    if (e.key === "Escape") { closeCmdk(); [guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, pjSheet, profSheet, cardSheet, cardBuySheet, debtSheet, splitSheet, moreSheet, a11ySheet, clearSheet].forEach(s => s && s.classList.remove("open")); }
   });
 
   /* ---------- gráficos (SVG gerado) ---------- */
