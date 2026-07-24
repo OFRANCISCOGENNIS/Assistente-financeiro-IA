@@ -626,6 +626,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3a9 9 0 1 0 9 9h-9V3z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15V3.5z"/></svg>
       Orçamento
     </button>
+    <button class="nav-btn" data-nav="gastos">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h13l3 3v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M7 9h8M7 13h8M7 17h5"/></svg>
+      Gastos
+    </button>
     <button class="nav-btn" data-nav="metas">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
       Metas
@@ -746,6 +750,15 @@
       <div id="realInv" hidden></div>
     </section>
 
+    <!-- ============ GASTOS (fixos + mensais) ============ -->
+    <section class="view" id="view-gastos" aria-label="Gastos mensais e fixos">
+      <div class="view-h">
+        <h1>Gastos</h1>
+        <span class="sub">Seus gastos fixos e os gastos do mês, separados</span>
+      </div>
+      <div id="gastosBody"></div>
+    </section>
+
     <!-- ============ CALENDÁRIO ============ -->
     <section class="view" id="view-cal" aria-label="Calendário financeiro">
       <div class="view-h">
@@ -838,94 +851,7 @@
         <h1>Empresa — MEI</h1>
         <span class="sub">Módulo empresarial · separado das suas finanças pessoais</span>
       </div>
-      <div class="alert info" style="margin-bottom:16px">
-        <span class="ic">ℹ️</span>
-        <div>Esta tela é um <b>exemplo ilustrativo</b> do módulo empresarial (DRE, ponto de equilíbrio, radar do Guardião). O lançamento de dados reais da empresa ainda não está disponível — o foco atual é a pessoa física.</div>
-      </div>
-
-      <div class="grid g-tiles">
-        <div class="card tile">
-          <div class="label">Faturamento de julho</div>
-          <div class="value num money">R$ 8.200,00</div>
-          <div class="delta up">▲ 9% <span class="vs">vs. junho</span></div>
-        </div>
-        <div class="card tile">
-          <div class="label">Resultado líquido</div>
-          <div class="value num money">R$ 700,00</div>
-          <div class="delta"><span class="vs">após custos e pró-labore</span></div>
-        </div>
-        <div class="card tile">
-          <div class="label">Capital de giro</div>
-          <div class="value num money">R$ 4.300,00</div>
-          <div class="delta down">21 dias <span class="vs">de operação — abaixo do ideal (30)</span></div>
-        </div>
-        <div class="card tile">
-          <div class="label">Teto MEI usado</div>
-          <div class="value num">67%</div>
-          <div class="delta"><span class="vs num money">R$ 54.300 de R$ 81.000 no ano</span></div>
-        </div>
-      </div>
-
-      <div class="grid g-1-1">
-        <div class="card">
-          <h2>DRE simplificada — julho</h2>
-          <p class="hint">Do faturamento ao que realmente sobra</p>
-          <div class="dre-row"><span>Receita de serviços</span><b class="num money">R$ 8.200,00</b></div>
-          <div class="dre-row sub"><span><span class="op">−</span>Custos variáveis (materiais, taxas, comissões)</span><span class="num money">R$ 3.100,00</span></div>
-          <div class="dre-row"><span>Margem de contribuição <span class="op">· 62%</span></span><b class="num money">R$ 5.100,00</b></div>
-          <div class="dre-row sub"><span><span class="op">−</span>Custos fixos (software, contador, DAS)</span><span class="num money">R$ 1.900,00</span></div>
-          <div class="dre-row"><span>Resultado operacional</span><b class="num money">R$ 3.200,00</b></div>
-          <div class="dre-row sub"><span><span class="op">−</span>Pró-labore (fixo, todo dia 5)</span><span class="num money">R$ 2.500,00</span></div>
-          <div class="dre-row total"><span>Resultado líquido</span><b class="num money pos">R$ 700,00</b></div>
-          <h2 style="margin-top:18px">Ponto de equilíbrio</h2>
-          <p class="hint">Faturamento mínimo para não ter prejuízo: (fixos + pró-labore) ÷ margem</p>
-          <div class="limit-bar pace-line" style="margin-top:6px">
-            <i style="width:100%; background: var(--good)"></i>
-            <span class="pace-mark" style="left:86.5%"></span>
-          </div>
-          <div class="b-sub" style="display:flex; justify-content:space-between; font-size:12px; color:var(--ink-3); margin-top:5px">
-            <span class="num money">Equilíbrio: R$ 7.097</span>
-            <span class="num money pos">Faturado: R$ 8.200 — R$ 1.103 acima ✓</span>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>Radar empresarial do Guardião</h2>
-          <p class="hint">Os erros que mais fecham empresas, vigiados de perto</p>
-          <div class="alert warn">
-            <span class="ic">⚠️</span>
-            <div>
-              <b>Mistura PF/PJ:</b> encontrei <b>3 gastos pessoais</b> na conta da empresa este mês
-              (R$ 412). Misturar as contas é o erro nº 1 associado a fechamento de negócios — impede
-              saber o que a empresa realmente gera.
-              <div class="cta-row"><button class="btn-mini">Reclassificar os 3</button><button class="btn-mini alt">Ver lançamentos</button></div>
-            </div>
-          </div>
-          <div class="alert warn">
-            <span class="ic">💧</span>
-            <div><b>Capital de giro em 21 dias</b> — abaixo do colchão de 30 dias que você definiu.
-              Empresas fecham mais por falta de giro do que por falta de lucro. Reter
-              <b class="num money">R$ 1.800</b> do resultado dos próximos 2 meses recompõe.</div>
-          </div>
-          <div class="alert info">
-            <span class="ic">📆</span>
-            <div><b>Ciclo de caixa: 13 dias.</b> Seus clientes pagam em 28 dias e você paga
-              fornecedores em 15 — seu caixa financia quase 2 semanas de operação. Negociar
-              recebimento em 21 dias zeraria a diferença.</div>
-          </div>
-          <div class="alert info">
-            <span class="ic">📈</span>
-            <div><b>Projeção do teto MEI:</b> no ritmo atual você fecha o ano em
-              <b class="num money">R$ 93.000</b> — acima do teto de R$ 81.000. Ótimo sinal de
-              crescimento: hora de planejar a migração para ME com seu contador, antes que vire multa.</div>
-          </div>
-          <div class="alert info" style="background: color-mix(in srgb, var(--good) 10%, transparent)">
-            <span class="ic">✅</span>
-            <div><b>Pró-labore fixo em dia</b> — R$ 2.500 todo dia 5, há 6 meses. É isso que mantém
-              PF e PJ separados de verdade.</div>
-          </div>
-        </div>
-      </div>
+      <div id="pjBody"></div>
     </section>
 
     <!-- ============ SEGURANÇA ============ -->
@@ -1061,6 +987,7 @@
       <button class="item" data-nav="cop" data-kw="/copiloto ia chat">✨ &nbsp;Perguntar ao Copiloto</button>
       <button class="item" id="cmdAdd" data-kw="/despesa /receita /lancar gasto">➕ &nbsp;Registrar lançamento</button>
       <button class="item" data-nav="orc" data-kw="/orcamento limites">🥧 &nbsp;Abrir Orçamento mensal</button>
+      <button class="item" data-nav="gastos" data-kw="/gastos fixos mensais despesas contas">🧾 &nbsp;Abrir Gastos (fixos e mensais)</button>
       <button class="item" data-nav="metas" data-kw="/meta objetivos">🎯 &nbsp;Ver Metas</button>
       <button class="item" data-nav="cal" data-kw="/calendario agenda vencimentos">📅 &nbsp;Abrir Calendário</button>
       <button class="item" data-nav="plan" data-kw="/planejar simular financiar fire">📈 &nbsp;Abrir Planejar</button>
@@ -1212,6 +1139,36 @@
   </div>
 </div>
 
+<!-- configurar empresa (MEI) -->
+<div class="sheet-veil" id="pjSheet">
+  <div class="sheet" role="dialog" aria-label="Configurar empresa">
+    <h2>Dados da empresa — mês</h2>
+    <p style="margin-bottom:2px">Informe os números da sua empresa neste mês. Eu calculo DRE, margem e ponto de equilíbrio.</p>
+    <div class="field">
+      <label for="pjFat">Faturamento (receita de serviços/vendas)</label>
+      <input id="pjFat" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="pjVar">Custos variáveis (materiais, taxas, comissões)</label>
+      <input id="pjVar" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="pjFix">Custos fixos (software, contador, DAS…)</label>
+      <input id="pjFix" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="pjPro">Pró-labore (o que você retira)</label>
+      <input id="pjPro" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="pjAno">Faturamento acumulado no ano (p/ teto MEI — opcional)</label>
+      <input id="pjAno" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
+    </div>
+    <button class="btn-primary" id="btnPjSave" style="margin-top:18px">Salvar</button>
+    <button class="alt" id="btnPjCancel">Cancelar</button>
+  </div>
+</div>
+
 <!-- limpar / zerar dados -->
 <div class="sheet-veil" id="clearSheet">
   <div class="sheet" role="dialog" aria-label="Limpar dados">
@@ -1330,7 +1287,7 @@
   const uid = () => "id" + Math.random().toString(36).slice(2, 9);
 
   const store = {
-    d: { mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [] },
+    d: { mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {} },
     load() { try { const r = localStorage.getItem(KEY); if (r) this.d = Object.assign(this.d, JSON.parse(r)); } catch (e) {} this.d.mode = "real"; },
     save() { try { localStorage.setItem(KEY, JSON.stringify(this.d)); } catch (e) {} },
   };
@@ -1533,7 +1490,7 @@
     updateScoreChip();
   }
   function resetAllData() {
-    store.d.accounts = []; store.d.tx = []; store.d.goals = []; store.d.bills = []; store.d.budgets = {}; store.d.investments = [];
+    store.d.accounts = []; store.d.tx = []; store.d.goals = []; store.d.bills = []; store.d.budgets = {}; store.d.investments = []; store.d.pj = {};
     store.save(); applyMode();
     showToast("Seus dados foram apagados");
   }
@@ -1561,10 +1518,196 @@
     const acct = store.d.accounts[0];
     store.d.tx.push({ id: uid(), type: "out", amount: b.amount, category: b.category || "Contas", account: acct ? acct.name : "", date: todayISO() });
     if (acct) acct.balance -= b.amount;
-    store.save(); renderReal(); renderRel();
+    store.save(); renderReal(); renderRel(); renderGastos();
     showToast(`${b.name} paga — ${brl(b.amount)}`);
   }
   const fmtDate = iso => { if (!iso) return ""; const [y, m, dd] = iso.split("-"); return dd + "/" + m; };
+
+  /* ---------- Gastos (fixos + mensais) ---------- */
+  function renderGastos() {
+    const body = $("#gastosBody"); if (!body) return;
+    const bills = store.d.bills || [];
+    const monthTx = store.d.tx.filter(t => t.type === "out" && inMonth(t));
+    if (!bills.length && !monthTx.length) {
+      body.innerHTML = `
+        <div class="card empty">
+          <div class="big">🧾</div>
+          <h2>Seus gastos aparecem aqui</h2>
+          <p>Separo seus <b>gastos fixos</b> (contas recorrentes como aluguel, luz, internet) dos <b>gastos do mês</b> (o dia a dia). Cadastre uma conta fixa ou registre uma despesa para começar.</p>
+          <div class="cta-row"><button class="btn-mini" data-act="addBill">+ Conta fixa</button>
+            <button class="btn-mini alt" data-act="addTx">Registrar gasto</button></div>
+        </div>`;
+      $$("[data-act]", body).forEach(b => b.addEventListener("click", () => ACT[b.dataset.act]()));
+      return;
+    }
+    const totalFixos = bills.reduce((a, b) => a + b.amount, 0);
+    const pagos = bills.filter(b => (b.paidMonths || []).includes(thisMonth()));
+    const totalPagos = pagos.reduce((a, b) => a + b.amount, 0);
+    const pendentes = totalFixos - totalPagos;
+    const totalMes = monthTx.reduce((a, t) => a + t.amount, 0);
+    const cats = byCategory(), maxCat = cats.length ? cats[0][1] : 1;
+    const hoje = new Date().getDate();
+    const lista = [...monthTx].sort((a, b) => (b.date + b.id).localeCompare(a.date + a.id));
+    body.innerHTML = `
+      <div class="grid g-tiles">
+        <div class="card tile"><div class="label">Gasto no mês</div>
+          <div class="value num money">${brl(totalMes)}</div>
+          <div class="delta"><span class="vs">${MESES_L[new Date().getMonth()]} · ${monthTx.length} lançamento(s)</span></div></div>
+        <div class="card tile"><div class="label">Gastos fixos / mês</div>
+          <div class="value num money">${brl(totalFixos)}</div>
+          <div class="delta"><span class="vs">${bills.length} conta(s) recorrente(s)</span></div></div>
+        <div class="card tile"><div class="label">Fixos já pagos</div>
+          <div class="value num money tx-in">${brl(totalPagos)}</div>
+          <div class="delta"><span class="vs">${pagos.length} de ${bills.length}</span></div></div>
+        <div class="card tile"><div class="label">Fixos a pagar</div>
+          <div class="value num money" style="color:${pendentes > 0 ? "var(--critical)" : "var(--good-text)"}">${brl(pendentes)}</div>
+          <div class="delta"><span class="vs">${pendentes > 0 ? "ainda neste mês" : "tudo em dia ✓"}</span></div></div>
+      </div>
+      <div class="grid g-1-1">
+        <div class="card" id="gastosFixos">
+          <div style="display:flex; align-items:baseline"><h2>Gastos fixos</h2>
+            <button class="btn-mini alt" data-act="addBill" style="margin-left:auto">+ Conta fixa</button></div>
+          <p class="hint">Contas recorrentes — ${pagos.length} de ${bills.length} pagas este mês</p>
+          <div class="row-list">
+            ${bills.length ? [...bills].sort((a, b) => a.dueDay - b.dueDay).map(b => { const paid = (b.paidMonths || []).includes(thisMonth()); const atrasada = !paid && b.dueDay < hoje;
+              return `<div class="row-item ${paid ? "paid" : ""}">
+                <span class="${paid ? "paid-ic" : "pending-ic"}">${paid ? "✓" : ""}</span>
+                <div class="grow"><div class="t">${esc(b.name)}</div><div class="d">vence dia ${b.dueDay}${b.category ? " · " + esc(b.category) : ""}${atrasada ? ` · <span style="color:var(--critical)">vencida</span>` : ""}</div></div>
+                <span class="num money">${brl(b.amount)}</span>
+                ${paid ? `<span class="pill ok">pago</span>` : `<button class="btn-ghost safe" data-pay="${b.id}">Pagar</button>`}
+                <button class="del" data-del-bill="${b.id}" aria-label="Excluir">✕</button></div>`;
+            }).join("") : `<p class="hint">Nenhuma conta fixa. Cadastre as recorrentes (aluguel, luz, internet…).</p>`}
+          </div>
+        </div>
+        <div class="card">
+          <h2>Gastos do mês por categoria</h2>
+          <p class="hint">${MESES_L[new Date().getMonth()]} · o que você já gastou</p>
+          ${cats.length ? cats.map(([c, v]) => `
+            <div class="budget-row"><div class="b-head"><span class="cat">${esc(c)}</span>
+              <span class="pct num money">${brl(v)}</span></div>
+              <div class="limit-bar"><i style="width:${Math.max(6, v / maxCat * 100)}%; background:var(--s1)"></i></div>
+              <div class="b-sub"><span>${Math.round(v / (totalMes || 1) * 100)}% dos gastos do mês</span></div></div>`).join("")
+            : `<p class="hint">Nenhuma despesa registrada este mês ainda.</p>`}
+        </div>
+      </div>
+      <div class="grid" style="margin-top:16px"><div class="card">
+        <div style="display:flex; align-items:baseline"><h2>Todos os gastos do mês</h2>
+          <button class="btn-mini" data-act="addTx" style="margin-left:auto">+ Gasto</button></div>
+        <p class="hint">${monthTx.length} lançamento(s) · ${brl(totalMes)}</p>
+        <div class="row-list mini-list">
+          ${lista.length ? lista.map(t => `<div class="row-item">
+            <span class="cat-dot" style="background:var(--s1)"></span>
+            <div class="grow"><div class="t">${esc(t.category)}</div><div class="d">${fmtDate(t.date)}${t.account ? " · " + esc(t.account) : ""}</div></div>
+            <span class="num tx-out">−${brl(t.amount)}</span>
+            <button class="del" data-del="${t.id}" aria-label="Excluir">✕</button></div>`).join("")
+            : `<p class="hint">Nenhum gasto registrado este mês.</p>`}
+        </div>
+      </div></div>`;
+    $$("[data-act]", body).forEach(b => b.addEventListener("click", () => ACT[b.dataset.act]()));
+    $$("[data-pay]", body).forEach(b => b.addEventListener("click", () => payBill(b.dataset.pay)));
+    $$("[data-del-bill]", body).forEach(b => b.addEventListener("click", () => {
+      store.d.bills = store.d.bills.filter(x => x.id !== b.dataset.delBill); store.save(); renderReal(); renderGastos();
+    }));
+    $$("[data-del]", body).forEach(b => b.addEventListener("click", () => {
+      store.d.tx = store.d.tx.filter(t => t.id !== b.dataset.del); store.save(); renderReal(); renderRel(); renderGastos();
+    }));
+  }
+
+  /* ---------- Empresa — MEI (dados reais do usuário) ---------- */
+  const TETO_MEI = 81000;
+  function renderPj() {
+    const body = $("#pjBody"); if (!body) return;
+    const pj = store.d.pj || {};
+    const has = ["fat", "custoVar", "custoFixo", "proLabore"].some(k => +pj[k] > 0);
+    if (!has) {
+      body.innerHTML = `
+        <div class="card empty">
+          <div class="big">🏢</div>
+          <h2>Sua empresa, com números reais</h2>
+          <p>Informe faturamento, custos e pró-labore do mês e eu monto a <b>DRE</b>, a <b>margem de contribuição</b> e o <b>ponto de equilíbrio</b> — separado das suas finanças pessoais. Nada de exemplos fictícios.</p>
+          <div class="cta-row"><button class="btn-mini" data-act="pj">Informar dados da empresa</button></div>
+        </div>`;
+      $$("[data-act='pj']", body).forEach(b => b.addEventListener("click", openPj));
+      return;
+    }
+    const fat = +pj.fat || 0, cv = +pj.custoVar || 0, cf = +pj.custoFixo || 0, pl = +pj.proLabore || 0;
+    const margem = fat - cv, margemPct = fat ? margem / fat : 0;
+    const resultadoOp = margem - cf, resultadoLiq = resultadoOp - pl;
+    const equilibrio = margemPct > 0 ? (cf + pl) / margemPct : 0;
+    const acima = fat - equilibrio;
+    const ano = +pj.fatAno || 0, tetoPct = Math.round(ano / TETO_MEI * 100);
+    const equilPos = margemPct > 0 ? Math.min(100, Math.round(equilibrio / (fat || 1) * 100)) : 100;
+    body.innerHTML = `
+      <div class="grid g-tiles">
+        <div class="card tile"><div class="label">Faturamento do mês</div>
+          <div class="value num money">${brl(fat)}</div></div>
+        <div class="card tile"><div class="label">Resultado líquido</div>
+          <div class="value num money" style="color:${resultadoLiq >= 0 ? "var(--good-text)" : "var(--critical)"}">${brl(resultadoLiq)}</div>
+          <div class="delta"><span class="vs">após custos e pró-labore</span></div></div>
+        <div class="card tile"><div class="label">Margem de contribuição</div>
+          <div class="value num">${Math.round(margemPct * 100)}%</div>
+          <div class="delta"><span class="vs num money">${brl(margem)}</span></div></div>
+        <div class="card tile"><div class="label">Teto MEI usado (ano)</div>
+          <div class="value num">${ano ? tetoPct + "%" : "—"}</div>
+          <div class="delta"><span class="vs num money">${ano ? brl(ano) + " de " + brl(TETO_MEI) : "informe o acumulado"}</span></div></div>
+      </div>
+      <div class="grid g-1-1">
+        <div class="card">
+          <div style="display:flex; align-items:baseline"><h2>DRE simplificada — mês</h2>
+            <button class="btn-mini alt" data-act="pj" style="margin-left:auto">Editar</button></div>
+          <p class="hint">Do faturamento ao que realmente sobra</p>
+          <div class="dre-row"><span>Receita</span><b class="num money">${brl(fat)}</b></div>
+          <div class="dre-row sub"><span><span class="op">−</span>Custos variáveis</span><span class="num money">${brl(cv)}</span></div>
+          <div class="dre-row"><span>Margem de contribuição <span class="op">· ${Math.round(margemPct * 100)}%</span></span><b class="num money">${brl(margem)}</b></div>
+          <div class="dre-row sub"><span><span class="op">−</span>Custos fixos</span><span class="num money">${brl(cf)}</span></div>
+          <div class="dre-row"><span>Resultado operacional</span><b class="num money">${brl(resultadoOp)}</b></div>
+          <div class="dre-row sub"><span><span class="op">−</span>Pró-labore</span><span class="num money">${brl(pl)}</span></div>
+          <div class="dre-row total"><span>Resultado líquido</span><b class="num money ${resultadoLiq >= 0 ? "pos" : ""}" style="${resultadoLiq < 0 ? "color:var(--critical)" : ""}">${brl(resultadoLiq)}</b></div>
+        </div>
+        <div class="card">
+          <h2>Ponto de equilíbrio</h2>
+          <p class="hint">Faturamento mínimo para não ter prejuízo: (fixos + pró-labore) ÷ margem</p>
+          ${margemPct > 0 ? `
+          <div class="limit-bar pace-line" style="margin-top:6px">
+            <i style="width:100%; background:${acima >= 0 ? "var(--good)" : "var(--critical)"}"></i>
+            <span class="pace-mark" style="left:${Math.min(98, equilPos)}%"></span>
+          </div>
+          <div class="b-sub" style="display:flex; justify-content:space-between; font-size:12px; color:var(--ink-3); margin-top:5px">
+            <span class="num money">Equilíbrio: ${brl(equilibrio)}</span>
+            <span class="num money ${acima >= 0 ? "pos" : ""}" style="${acima < 0 ? "color:var(--critical)" : ""}">Faturado: ${brl(fat)} — ${brl(Math.abs(acima))} ${acima >= 0 ? "acima ✓" : "abaixo ⚠️"}</span>
+          </div>` : `<p class="hint">Defina custos variáveis menores que o faturamento para calcular a margem.</p>`}
+          <div class="alert ${resultadoLiq >= 0 ? "info" : "warn"}" style="margin-top:16px">
+            <span class="ic">${resultadoLiq >= 0 ? "✅" : "⚠️"}</span>
+            <div>${resultadoLiq >= 0
+              ? `Depois de tudo, sobram <b class="num money">${brl(resultadoLiq)}</b> na empresa este mês. Manter o pró-labore fixo é o que separa PF e PJ de verdade.`
+              : `Este mês a empresa fechou <b class="num money">${brl(-resultadoLiq)}</b> no negativo. Reveja custos fixos ou o pró-labore até o faturamento crescer.`}</div>
+          </div>
+          ${ano && ano > TETO_MEI ? `<div class="alert warn" style="margin-top:10px"><span class="ic">📈</span><div>Você já passou o teto MEI de ${brl(TETO_MEI)} no ano. Fale com seu contador sobre migrar para ME antes que vire multa.</div></div>` : ""}
+        </div>
+      </div>`;
+    $$("[data-act='pj']", body).forEach(b => b.addEventListener("click", openPj));
+  }
+  const pjSheet = $("#pjSheet");
+  function openPj() {
+    const pj = store.d.pj || {};
+    $("#pjFat").value = pj.fat ? String(pj.fat).replace(".", ",") : "";
+    $("#pjVar").value = pj.custoVar ? String(pj.custoVar).replace(".", ",") : "";
+    $("#pjFix").value = pj.custoFixo ? String(pj.custoFixo).replace(".", ",") : "";
+    $("#pjPro").value = pj.proLabore ? String(pj.proLabore).replace(".", ",") : "";
+    $("#pjAno").value = pj.fatAno ? String(pj.fatAno).replace(".", ",") : "";
+    pjSheet.classList.add("open"); $("#pjFat").focus();
+  }
+  $("#btnPjCancel").addEventListener("click", () => pjSheet.classList.remove("open"));
+  pjSheet.addEventListener("click", e => { if (e.target === pjSheet) pjSheet.classList.remove("open"); });
+  $("#btnPjSave").addEventListener("click", () => {
+    store.d.pj = {
+      fat: parseNum($("#pjFat").value), custoVar: parseNum($("#pjVar").value),
+      custoFixo: parseNum($("#pjFix").value), proLabore: parseNum($("#pjPro").value),
+      fatAno: parseNum($("#pjAno").value),
+    };
+    store.save(); pjSheet.classList.remove("open"); renderPj();
+    showToast("Dados da empresa atualizados");
+  });
 
   /* ---------- Orçamento (Meus dados) ---------- */
   const daysInMonth = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); };
@@ -2014,12 +2157,16 @@
     const now = new Date();
     $("#dashSub").textContent = `${now.getDate()} de ${MESES_L[now.getMonth()]} de ${now.getFullYear()} · dados neste navegador`;
     renderRel();
+    renderGastos();
+    renderPj();
     renderCal();
     updateScoreChip();
   }
   $("#relCsv").addEventListener("click", relDownloadCsv);
   $("#relPdf").addEventListener("click", () => window.print());
   $$('[data-nav="rel"]').forEach(b => b.addEventListener("click", renderRel));
+  $$('[data-nav="gastos"]').forEach(b => b.addEventListener("click", renderGastos));
+  $$('[data-nav="pj"]').forEach(b => b.addEventListener("click", renderPj));
 
   /* ---------- lançamento rápido ---------- */
   const addSheet = $("#addSheet");
@@ -2068,7 +2215,7 @@
     if (ac) ac.balance += (addType === "in" ? amount : -amount);
     store.save();
     addSheet.classList.remove("open");
-    renderReal();
+    renderReal(); renderRel(); renderGastos();
     showToast(`${addType === "in" ? "Receita" : "Despesa"} de ${brl(amount)} registrada em ${cat}`);
   });
   addEventListener("keydown", e => {
@@ -2184,7 +2331,7 @@
     const day = Math.max(1, Math.min(31, parseInt($("#billDay").value, 10) || 1));
     if (!name || amount <= 0) { $("#billName").focus(); return; }
     store.d.bills.push({ id: uid(), name, amount, dueDay: day, category: billCat, recurring: true, paidMonths: [] });
-    store.save(); billSheet.classList.remove("open"); renderReal();
+    store.save(); billSheet.classList.remove("open"); renderReal(); renderGastos();
     showToast(`Conta "${name}" cadastrada`);
   });
 
@@ -2251,7 +2398,7 @@
   $("#cmdClear").addEventListener("click", () => { closeCmdk(); openClear(); });
   addEventListener("keydown", e => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openCmdk(); }
-    if (e.key === "Escape") { closeCmdk(); [sheet, guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, a11ySheet, clearSheet].forEach(s => s && s.classList.remove("open")); }
+    if (e.key === "Escape") { closeCmdk(); [sheet, guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, pjSheet, a11ySheet, clearSheet].forEach(s => s && s.classList.remove("open")); }
   });
 
   /* ---------- gráficos (SVG gerado) ---------- */
