@@ -840,6 +840,7 @@
         <span class="sub">Carteira consolidada</span>
       </div>
 
+      <div id="netHistBody"></div>
       <div id="realInv" hidden></div>
     </section>
 
@@ -952,6 +953,24 @@
           <div class="sim-out" id="rOut" style="margin-top:14px"></div>
         </div>
       </div>
+
+      <div class="grid" style="margin-top:16px"><div class="card">
+        <h2>À vista ou parcelado?</h2>
+        <p class="hint">Compara o preço à vista (com desconto) × parcelar sem juros deixando o dinheiro rendendo</p>
+        <div style="display:flex; gap:12px; flex-wrap:wrap">
+          <div class="field" style="flex:1; min-width:150px"><label>Preço de tabela (cheio)</label>
+            <input class="plan-in" id="vVal" type="text" inputmode="decimal" value="R$ 3.000"></div>
+          <div class="field" style="flex:1; min-width:120px"><label>Desconto à vista (%)</label>
+            <input class="plan-in" id="vDesc" type="text" inputmode="decimal" value="10"></div>
+        </div>
+        <div style="display:flex; gap:12px; flex-wrap:wrap">
+          <div class="field" style="flex:1; min-width:120px"><label>Parcelas (sem juros)</label>
+            <input class="plan-in" id="vN" type="number" value="10"></div>
+          <div class="field" style="flex:1; min-width:150px"><label>Rendimento do seu dinheiro (% a.m.)</label>
+            <input class="plan-in" id="vRate" type="text" inputmode="decimal" value="0,9"></div>
+        </div>
+        <div class="sim-out" id="vOut" style="margin-top:14px"></div>
+      </div></div>
 
       <div id="projBody" style="margin-top:16px"></div>
     </section>
@@ -1518,7 +1537,7 @@
   const uid = () => "id" + Math.random().toString(36).slice(2, 9);
 
   const store = {
-    d: { mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {}, cards: [], debts: [], customCats: { out: [], in: [] }, split: { people: [], expenses: [] }, shopping: { budget: 0, items: [] } },
+    d: { mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {}, cards: [], debts: [], customCats: { out: [], in: [] }, split: { people: [], expenses: [] }, shopping: { budget: 0, items: [] }, netHistory: [] },
     load() { try { const r = localStorage.getItem(KEY); if (r) this.d = Object.assign(this.d, JSON.parse(r)); } catch (e) {} this.d.mode = "real"; },
     save() { try { localStorage.setItem(KEY, JSON.stringify(this.d)); } catch (e) {} },
   };
@@ -1623,7 +1642,7 @@
           : `<div class="alert critical" style="margin-top:12px"><span class="ic">⚠️</span><div><b>Risco de ficar negativo</b> antes do fim do mês. Segure gastos não essenciais ${brl(-fc.projetado)} ou antecipe uma entrada.</div></div>`}
       </div></div>`;
     // card de patrimônio líquido (ativos − passivos)
-    const invTotal = (d.investments || []).reduce((a, i) => a + (i.amount || 0), 0);
+    const invTotal = (d.investments || []).reduce((a, i) => a + (i.value || 0), 0);
     const debtTotal = (d.debts || []).reduce((a, x) => a + (x.balance || 0), 0);
     const cardTotal = (d.cards || []).reduce((a, c) => a + cardInvoice(c), 0);
     const ativos = saldo + invTotal, passivos = debtTotal + cardTotal, patrimonio = ativos - passivos;
@@ -1744,7 +1763,7 @@
     updateScoreChip();
   }
   function resetAllData() {
-    store.d.accounts = []; store.d.tx = []; store.d.goals = []; store.d.bills = []; store.d.budgets = {}; store.d.investments = []; store.d.pj = {}; store.d.cards = []; store.d.debts = []; store.d.customCats = { out: [], in: [] }; store.d.split = { people: [], expenses: [] }; store.d.shopping = { budget: 0, items: [] };
+    store.d.accounts = []; store.d.tx = []; store.d.goals = []; store.d.bills = []; store.d.budgets = {}; store.d.investments = []; store.d.pj = {}; store.d.cards = []; store.d.debts = []; store.d.customCats = { out: [], in: [] }; store.d.split = { people: [], expenses: [] }; store.d.shopping = { budget: 0, items: [] }; store.d.netHistory = [];
     store.save(); applyMode();
     showToast("Seus dados foram apagados");
   }
@@ -2142,7 +2161,7 @@
         const data = parsed && parsed.data ? parsed.data : parsed;
         if (!data || typeof data !== "object" || !Array.isArray(data.tx)) throw new Error("formato inválido");
         if (!confirm("Importar este backup substitui os dados atuais deste navegador. Continuar?")) { e.target.value = ""; return; }
-        store.d = Object.assign({ mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {}, cards: [], debts: [], customCats: { out: [], in: [] }, split: { people: [], expenses: [] }, shopping: { budget: 0, items: [] } }, data);
+        store.d = Object.assign({ mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {}, cards: [], debts: [], customCats: { out: [], in: [] }, split: { people: [], expenses: [] }, shopping: { budget: 0, items: [] }, netHistory: [] }, data);
         store.d.mode = "real";
         store.save(); applyMode(); applyProfile();
         showToast("Backup importado com sucesso");
@@ -2152,6 +2171,49 @@
       e.target.value = "";
     };
     reader.readAsText(file);
+  }
+
+  /* ---------- Patrimônio líquido: valor e evolução mensal ---------- */
+  function netWorth() {
+    const invTotal = (store.d.investments || []).reduce((a, i) => a + (i.value || 0), 0);
+    const debtTotal = (store.d.debts || []).reduce((a, x) => a + (x.balance || 0), 0);
+    const cardTotal = (store.d.cards || []).reduce((a, c) => a + cardInvoice(c), 0);
+    return totalSaldo() + invTotal - debtTotal - cardTotal;
+  }
+  function snapshotNetWorth() {
+    if (!store.d.tx.length && !store.d.accounts.length && !(store.d.investments || []).length) return;
+    store.d.netHistory = store.d.netHistory || [];
+    const key = thisMonth(), val = netWorth();
+    const found = store.d.netHistory.find(h => h.m === key);
+    if (found) found.v = val; else store.d.netHistory.push({ m: key, v: val });
+    store.d.netHistory = store.d.netHistory.slice(-24);
+    store.save();
+  }
+  function renderNetHist() {
+    const body = $("#netHistBody"); if (!body) return;
+    const hist = (store.d.netHistory || []).slice(-12);
+    if (hist.length < 2) {
+      body.innerHTML = `<div class="card" style="margin-bottom:16px">
+        <h2>Evolução do patrimônio</h2>
+        <p class="hint">Patrimônio hoje: <b class="num money">${brl(netWorth())}</b>. Volte nos próximos meses — eu registro um ponto por mês e desenho a sua curva de patrimônio ao longo do tempo.</p></div>`;
+      return;
+    }
+    const vals = hist.map(h => h.v), maxV = Math.max(...vals), minV = Math.min(0, ...vals), range = (maxV - minV) || 1;
+    const first = vals[0], last = vals[vals.length - 1], delta = last - first;
+    const pct = first ? Math.round(delta / Math.abs(first) * 100) : 0;
+    body.innerHTML = `<div class="card" style="margin-bottom:16px">
+      <div style="display:flex; align-items:baseline; flex-wrap:wrap; gap:8px"><h2>Evolução do patrimônio</h2>
+        <span class="num money" style="margin:0 0 0 auto; color:${delta >= 0 ? "var(--good-text)" : "var(--critical)"}">${delta >= 0 ? "▲" : "▼"} ${brl(Math.abs(delta))} (${pct}%) em ${hist.length} meses</span></div>
+      <div style="display:flex; align-items:flex-end; gap:6px; height:150px; margin-top:10px">
+        ${hist.map(h => {
+          const hgt = Math.round((h.v - minV) / range * 100);
+          return `<div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; height:100%; justify-content:flex-end">
+            <div title="${brl(h.v)}" style="width:100%; max-width:26px; background:${h.v < 0 ? "var(--critical)" : "var(--accent)"}; border-radius:3px 3px 0 0; height:${Math.max(2, hgt)}%"></div>
+            <span style="font-size:10px; color:var(--ink-3)">${MESES_L[parseInt(h.m.slice(5)) - 1].slice(0, 3)}</span></div>`;
+        }).join("")}
+      </div>
+      <p class="hint" style="margin-top:10px">Ativos (contas + investimentos) menos passivos (dívidas + faturas). ${delta >= 0 ? "Sua curva está subindo — é assim que se constrói riqueza. 📈" : "Sua curva caiu no período; vale revisar dívidas e gastos."}</p>
+    </div>`;
   }
 
   /* ---------- Lista de compras com orçamento ---------- */
@@ -2941,8 +3003,22 @@
     const years = Math.floor(months / 12), mo = months % 12, reached = months < 1200;
     $("#rOut").innerHTML = `Seu número FIRE: <span class="fig">${brl(fireNum)}</span>${reached ? `No ritmo atual você chega lá em <b>${years} ano(s)${mo ? ` e ${mo} m` : ""}</b> — aí ${brl(spend)}/mês saem só do rendimento (regra dos 4%).` : "Com esses valores levaria mais de 100 anos: aumente o aporte ou o rendimento."}`;
   }
-  $$(".plan-in").forEach(inp => inp.addEventListener("input", () => { planFin(); planFire(); }));
-  planFin(); planFire();
+  function planVista() {
+    if (!$("#vVal")) return;
+    const V = parseNum($("#vVal").value), desc = parseRate($("#vDesc").value) / 100;
+    const N = Math.max(1, parseInt($("#vN").value, 10) || 1), rPct = parseRate($("#vRate").value), r = rPct / 100;
+    const precoVista = V * (1 - desc);
+    // valor presente das parcelas (1ª hoje), parcela = V/N
+    const parc = V / N;
+    let pvParc = 0; for (let k = 0; k < N; k++) pvParc += parc / Math.pow(1 + r, k);
+    const dif = pvParc - precoVista; // se >0, à vista é melhor (parcelado custa mais em valor presente)
+    const vistaMelhor = dif > 0;
+    $("#vOut").innerHTML = `À vista sai por <b class="num money">${brl(precoVista)}</b>; parcelado é ${N}× de <b class="num money">${brl(parc)}</b> (${brl(V)}), que valem hoje <b class="num money">${brl(pvParc)}</b> deixando o dinheiro render ${String(rPct).replace(".", ",")}%/mês.<span class="fig" style="color:${vistaMelhor ? "var(--good-text)" : "var(--accent)"}">${vistaMelhor ? "À vista" : "Parcelar"} economiza ${brl(Math.abs(dif))}</span>${vistaMelhor
+      ? `O desconto à vista supera o ganho de segurar o dinheiro. Se cabe no seu caixa, pague à vista.`
+      : `Sem juros, parcelar e manter o dinheiro rendendo compensa mais que o desconto — <b>desde que</b> você realmente invista e não gaste as parcelas.`}`;
+  }
+  $$(".plan-in").forEach(inp => inp.addEventListener("input", () => { planFin(); planFire(); planVista(); }));
+  planFin(); planFire(); planVista();
 
   /* ---------- Projeção de 12 meses (fluxo de caixa) ---------- */
   function renderProj() {
@@ -3113,6 +3189,7 @@
     toggleReal("demoMetas", "realMetas");
     const bc = $("#btnClearData"); if (bc) bc.hidden = false;
     renderReal(); renderOrc(); renderInv(); renderMetas();
+    snapshotNetWorth(); renderNetHist();
     $("#dashGreeting").textContent = "Seu painel";
     const now = new Date();
     $("#dashSub").textContent = `${now.getDate()} de ${MESES_L[now.getMonth()]} de ${now.getFullYear()} · dados neste navegador`;
@@ -3137,6 +3214,7 @@
   $$('[data-nav="dividas"]').forEach(b => b.addEventListener("click", renderDividas));
   $$('[data-nav="dividir"]').forEach(b => b.addEventListener("click", renderSplit));
   $$('[data-nav="compras"]').forEach(b => b.addEventListener("click", renderCompras));
+  $$('[data-nav="inv"]').forEach(b => b.addEventListener("click", renderNetHist));
   $$('[data-nav="plan"]').forEach(b => b.addEventListener("click", renderProj));
   $$('[data-nav="pj"]').forEach(b => b.addEventListener("click", renderPj));
   $$('[data-nav="sec"]').forEach(b => b.addEventListener("click", renderSec));
