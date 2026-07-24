@@ -562,7 +562,13 @@
   }
 
   /* responsivo */
-  @media (max-width: 980px) {
+  /* ---- barra de navegação inferior (mobile) ---- */
+  .bottom-nav { display: none; }
+  .topbar-brand { display: none; }
+  @media (min-width: 861px) {
+    /* tablet largo/desktop mantém sidebar */
+  }
+  @media (max-width: 980px) and (min-width: 861px) {
     body.logged .app { grid-template-columns: 1fr; }
     .sidebar { position: static; height: auto; flex-direction: row; align-items: center;
       overflow-x: auto; padding: 10px 14px; border-right: none;
@@ -574,6 +580,73 @@
     .g-2-1, .g-1-1 { grid-template-columns: 1fr; }
     .view { padding: 20px 16px 60px; }
     .topbar { padding: 10px 16px; }
+  }
+
+  @media (max-width: 860px) {
+    body.logged .app { grid-template-columns: 1fr; display: block; }
+    .sidebar { display: none; }
+    .main { min-width: 0; }
+    /* topbar app-like */
+    .topbar { position: sticky; top: 0; z-index: 40; padding: 10px 14px; gap: 8px;
+      background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: saturate(1.4) blur(10px);
+      border-bottom: 1px solid var(--ring); }
+    .topbar-brand { display: grid; place-items: center; flex: none; }
+    .topbar-brand .coin { width: 34px; height: 34px; border-radius: 10px; display: grid;
+      place-items: center; background: var(--accent); color: var(--accent-ink); font-weight: 800; font-size: 14px; }
+    .search { flex: 1; min-width: 0; max-width: none; padding: 10px 12px; overflow: hidden;
+      white-space: nowrap; color: transparent; gap: 0; }
+    .search svg { color: var(--ink-3); flex: none; }
+    .search kbd { display: none; }
+    .score-chip { flex: none; padding: 6px 10px; }
+    .icon-btn { width: 38px; height: 38px; }
+    #btnA11y { display: none; }
+    .view { padding: 16px 14px 96px; }
+    .view-h { margin-bottom: 4px; }
+    .view-h h1 { font-size: 23px; letter-spacing: -0.02em; }
+    .g-tiles { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .g-2-1, .g-1-1, .g-2, .g-1-2, .g-1 { grid-template-columns: 1fr; }
+    .card { padding: 16px; border-radius: 16px; }
+    .tile { padding: 14px; }
+    .tile .label { font-size: 12px; }
+    .tile .value { font-size: 18px; letter-spacing: -0.02em; white-space: nowrap; }
+    .tile .delta { font-size: 11px; }
+    .fab { right: 18px; bottom: 92px; width: 56px; height: 56px; box-shadow: 0 8px 22px rgba(11,110,85,.4); }
+    .msg { max-width: 86%; }
+    .login-card { padding: 26px 20px; }
+
+    /* bottom nav */
+    body.logged .bottom-nav { display: flex; }
+    .bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
+      justify-content: space-around; align-items: flex-end;
+      padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+      background: color-mix(in srgb, var(--card) 92%, transparent);
+      backdrop-filter: saturate(1.5) blur(14px);
+      border-top: 1px solid var(--ring); }
+    .bnav { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+      background: none; border: none; color: var(--ink-3); font-size: 10.5px; font-weight: 650;
+      padding: 6px 2px; cursor: pointer; transition: color .15s; }
+    .bnav svg { width: 23px; height: 23px; }
+    .bnav[aria-current="page"] { color: var(--accent); }
+    .bnav-mid { flex: 0 0 auto; }
+    .bnav-mid svg { width: 30px; height: 30px; margin-top: -22px; padding: 12px;
+      box-sizing: content-box; background: var(--accent); color: var(--accent-ink);
+      border-radius: 50%; box-shadow: 0 6px 18px rgba(11,110,85,.45);
+      border: 4px solid var(--card); }
+    .bnav-mid[aria-current="page"] { color: var(--accent-ink); }
+
+    /* more sheet */
+    .more-sheet { max-width: 460px; }
+    .more-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 6px 0 16px; }
+    .more-item { display: flex; flex-direction: column; align-items: center; gap: 7px;
+      padding: 14px 6px; border: 1px solid var(--ring); border-radius: 14px;
+      background: var(--card); color: var(--ink); font-size: 12px; font-weight: 650; cursor: pointer; }
+    .more-item:hover { border-color: var(--accent); }
+    .more-item .mi-ic { font-size: 22px; }
+  }
+
+  @media (max-width: 380px) {
+    .g-tiles { grid-template-columns: 1fr; }
+    .more-grid { grid-template-columns: 1fr 1fr; }
   }
 </style>
 
@@ -668,6 +741,7 @@
 
   <div class="main">
     <div class="topbar">
+      <div class="topbar-brand"><span class="coin">A$</span></div>
       <button class="search" id="openCmdk" aria-label="Pesquisa global">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
         Pesquisar ou executar comando… <kbd>Ctrl K</kbd>
@@ -903,6 +977,48 @@
 </div>
 
 <button class="fab" id="fabAdd" title="Registrar despesa (tecla N)" aria-label="Registrar despesa">+</button>
+
+<!-- navegação inferior (mobile) -->
+<nav class="bottom-nav" aria-label="Navegação inferior">
+  <button class="bnav" data-nav="dash" aria-current="page">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+    <span>Início</span>
+  </button>
+  <button class="bnav" data-nav="gastos">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 4h13l3 3v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M7 9h8M7 13h8M7 17h5"/></svg>
+    <span>Gastos</span>
+  </button>
+  <button class="bnav bnav-mid" data-nav="cop" aria-label="Copiloto">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"/></svg>
+  </button>
+  <button class="bnav" data-nav="cartoes">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20M6 15h4"/></svg>
+    <span>Cartões</span>
+  </button>
+  <button class="bnav" id="bnavMore" aria-label="Mais opções">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+    <span>Mais</span>
+  </button>
+</nav>
+
+<!-- mais opções (mobile) -->
+<div class="sheet-veil" id="moreSheet">
+  <div class="sheet more-sheet" role="dialog" aria-label="Mais opções">
+    <h2 style="text-align:center">Tudo do seu app</h2>
+    <div class="more-grid">
+      <button class="more-item" data-nav="orc"><span class="mi-ic">🥧</span>Orçamento</button>
+      <button class="more-item" data-nav="metas"><span class="mi-ic">🎯</span>Metas</button>
+      <button class="more-item" data-nav="inv"><span class="mi-ic">💹</span>Investir</button>
+      <button class="more-item" data-nav="cal"><span class="mi-ic">📅</span>Calendário</button>
+      <button class="more-item" data-nav="plan"><span class="mi-ic">📈</span>Planejar</button>
+      <button class="more-item" data-nav="rel"><span class="mi-ic">📄</span>Relatórios</button>
+      <button class="more-item" data-nav="pj"><span class="mi-ic">🏢</span>Empresa</button>
+      <button class="more-item" data-nav="sec"><span class="mi-ic">🛡️</span>Segurança</button>
+      <button class="more-item" id="moreLock"><span class="mi-ic">🔒</span>Bloquear</button>
+    </div>
+    <button class="alt" id="btnMoreClose">Fechar</button>
+  </div>
+</div>
 
 <!-- lançamento rápido -->
 <div class="sheet-veil" id="addSheet">
@@ -1247,13 +1363,27 @@
   setupLoginMode();
 
   /* ---------- navegação ---------- */
+  const BNAV_MAIN = ["dash", "gastos", "cop", "cartoes"];
   function go(name) {
     $$(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + name));
     $$(".nav-btn[data-nav]").forEach(b =>
       b.getAttribute("data-nav") === name ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
+    // barra inferior (mobile): destaca o item ativo, ou "Mais" quando a tela está lá dentro
+    $$(".bnav[data-nav]").forEach(b =>
+      b.getAttribute("data-nav") === name ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
+    const more = $("#bnavMore");
+    if (more) more[BNAV_MAIN.includes(name) ? "removeAttribute" : "setAttribute"]("aria-current", "page");
+    const ms = $("#moreSheet"); if (ms) ms.classList.remove("open");
+    window.scrollTo(0, 0);
     closeCmdk();
   }
   $$("[data-nav]").forEach(b => b.addEventListener("click", () => go(b.dataset.nav)));
+  /* ---------- barra inferior "Mais" (mobile) ---------- */
+  const moreSheet = $("#moreSheet");
+  $("#bnavMore").addEventListener("click", () => moreSheet.classList.add("open"));
+  $("#btnMoreClose").addEventListener("click", () => moreSheet.classList.remove("open"));
+  moreSheet.addEventListener("click", e => { if (e.target === moreSheet) moreSheet.classList.remove("open"); });
+  $("#moreLock").addEventListener("click", () => { moreSheet.classList.remove("open"); lockApp(); });
 
   /* ---------- tema ---------- */
   function toggleTheme() {
@@ -2736,7 +2866,7 @@
   $("#cmdLock").addEventListener("click", () => { closeCmdk(); lockApp(); });
   addEventListener("keydown", e => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openCmdk(); }
-    if (e.key === "Escape") { closeCmdk(); [guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, pjSheet, profSheet, cardSheet, cardBuySheet, a11ySheet, clearSheet].forEach(s => s && s.classList.remove("open")); }
+    if (e.key === "Escape") { closeCmdk(); [guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, pjSheet, profSheet, cardSheet, cardBuySheet, moreSheet, a11ySheet, clearSheet].forEach(s => s && s.classList.remove("open")); }
   });
 
   /* ---------- gráficos (SVG gerado) ---------- */
