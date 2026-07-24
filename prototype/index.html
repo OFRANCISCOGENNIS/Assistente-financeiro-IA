@@ -361,6 +361,9 @@
   .check-item.done .box { background: var(--good); border-color: var(--good); color: #fff; }
   .check-item.done { color: var(--ink-2); }
   .check-item .act { margin-left: auto; color: var(--accent); font-weight: 600; font-size: 13px; }
+  .check-item.open { border-radius: 8px; transition: background .15s; }
+  .check-item.open:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+  .check-item.open:hover .box { border-color: var(--accent); }
 
   .device { display: flex; gap: 12px; align-items: center; padding: 12px 0;
     border-bottom: 1px solid var(--ring); font-size: 13.5px; }
@@ -1628,11 +1631,11 @@
     const res = (d.goals || []).find(g => /reserva/i.test(g.name));
     const bills = d.bills || [], billsOk = bills.length && bills.every(b => (b.paidMonths || []).includes(thisMonth()));
     const fatores = [
-      { ok: taxa >= 0.2, t: "Taxa de poupança de 20%+ no mês", v: rec ? Math.round(taxa * 100) + "%" : "—" },
-      { ok: !!(res && res.target && res.current >= res.target * 0.5), t: "Reserva de emergência encaminhada", v: res ? Math.round(res.current / res.target * 100) + "%" : "sem meta" },
-      { ok: !!billsOk, t: "Contas fixas do mês em dia", v: bills.length ? `${bills.filter(b => (b.paidMonths || []).includes(thisMonth())).length}/${bills.length}` : "nenhuma" },
-      { ok: (d.investments || []).length > 0, t: "Você já investe", v: (d.investments || []).length ? "sim" : "ainda não" },
-      { ok: totalSaldo() > 0, t: "Saldo positivo nas contas", v: brl(totalSaldo()) },
+      { ok: taxa >= 0.2, t: "Taxa de poupança de 20%+ no mês", v: rec ? Math.round(taxa * 100) + "%" : "—", nav: "gastos", cta: "Registrar gastos" },
+      { ok: !!(res && res.target && res.current >= res.target * 0.5), t: "Reserva de emergência encaminhada", v: res ? Math.round(res.current / res.target * 100) + "%" : "sem meta", nav: "metas", cta: res ? "Guardar na reserva" : "Criar reserva" },
+      { ok: !!billsOk, t: "Contas fixas do mês em dia", v: bills.length ? `${bills.filter(b => (b.paidMonths || []).includes(thisMonth())).length}/${bills.length}` : "nenhuma", nav: "gastos", cta: bills.length ? "Pagar contas" : "Cadastrar contas" },
+      { ok: (d.investments || []).length > 0, t: "Você já investe", v: (d.investments || []).length ? "sim" : "ainda não", nav: "inv", cta: "Adicionar investimento" },
+      { ok: totalSaldo() > 0, t: "Saldo positivo nas contas", v: brl(totalSaldo()), nav: "dash", cta: "Adicionar conta" },
     ];
     const off = score == null ? 326.7 : 326.7 * (1 - score / 100);
     body.innerHTML = `
@@ -1649,8 +1652,11 @@
             </div>
             <div style="flex:1; min-width: 240px">
               <h2 style="font-size:16px">Sua saúde financeira: ${band.label}</h2>
-              <p class="hint" style="margin-bottom:6px">${score == null ? "Registre seus lançamentos para calcular seu score com os seus próprios números." : "Score calculado a partir dos seus dados — sem chute. Os itens abaixo mostram o que pesa."}</p>
-              ${fatores.map(f => `<div class="check-item ${f.ok ? "done" : ""}"><span class="box">${f.ok ? "✓" : ""}</span> ${f.t} <b class="num" style="margin-left:auto; color:var(--ink-3)">${f.v}</b></div>`).join("")}
+              <p class="hint" style="margin-bottom:6px">Estes itens <b>marcam sozinhos</b> conforme você avança — não são para preencher à mão. Toque num item aberto para ir resolvê-lo.</p>
+              ${fatores.map(f => f.ok
+                ? `<div class="check-item done"><span class="box">✓</span> ${f.t} <b class="num" style="margin-left:auto; color:var(--good-text)">${f.v}</b></div>`
+                : `<button class="check-item open" data-go="${f.nav}" type="button" style="width:100%; text-align:left; background:none; border:none; padding:8px 0; cursor:pointer; color:inherit; font:inherit"><span class="box"></span> ${f.t} <span style="margin-left:auto; color:var(--accent); font-weight:650; font-size:12.5px; white-space:nowrap">${f.cta} ›</span></button>`
+              ).join("")}
             </div>
           </div>
         </div>
@@ -1695,6 +1701,7 @@
     const sx = $("#secExport"); if (sx) sx.addEventListener("click", relDownloadCsv);
     const sc = $("#secClear"); if (sc) sc.addEventListener("click", openClear);
     const sd = $("#swDiscreet"); if (sd) sd.addEventListener("click", () => { setDiscreet(!isDiscreet()); });
+    $$("[data-go]", body).forEach(b => b.addEventListener("click", () => go(b.dataset.go)));
   }
   const profSheet = $("#profSheet");
   function openProf() {
