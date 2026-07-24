@@ -1670,6 +1670,13 @@
             <div class="row-item"><div class="grow"><div class="t">Seus lançamentos</div><div class="d">${d.tx.length} registrado(s) · ${d.accounts.length} conta(s)</div></div>
               <button class="btn-ghost safe" id="secExport">Exportar CSV</button></div>
           </div>
+          <h2 style="margin-top:18px; font-size:15px">Backup</h2>
+          <p class="hint">Salve uma cópia de tudo ou restaure em outro navegador</p>
+          <div class="cta-row">
+            <button class="btn-ghost safe" id="secBackup">⬇️ Baixar backup</button>
+            <button class="btn-ghost safe" id="secRestore">⬆️ Importar backup</button>
+            <input type="file" id="secRestoreInput" accept="application/json,.json" hidden>
+          </div>
         </div>
       </div>
       <div class="grid g-1-1">
@@ -1702,6 +1709,9 @@
     const sc = $("#secClear"); if (sc) sc.addEventListener("click", openClear);
     const sd = $("#swDiscreet"); if (sd) sd.addEventListener("click", () => { setDiscreet(!isDiscreet()); });
     $$("[data-go]", body).forEach(b => b.addEventListener("click", () => go(b.dataset.go)));
+    const sb = $("#secBackup"); if (sb) sb.addEventListener("click", exportBackup);
+    const sr = $("#secRestore"), sri = $("#secRestoreInput");
+    if (sr && sri) { sr.addEventListener("click", () => sri.click()); sri.addEventListener("change", importBackup); }
   }
   const profSheet = $("#profSheet");
   function openProf() {
@@ -1729,6 +1739,34 @@
       const ini = src.trim() ? src.trim().split(/[\s@.]+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join("") : "GF";
       av.textContent = ini || "GF";
     }
+  }
+  function exportBackup() {
+    const payload = { app: "assistente-financeiro-ia", version: 1, exportedAt: new Date().toISOString().slice(0, 10), data: store.d };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "assistente-financeiro-backup.json";
+    document.body.appendChild(a); a.click(); a.remove();
+    showToast("Backup baixado — guarde em lugar seguro");
+  }
+  function importBackup(e) {
+    const file = e.target.files && e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        const data = parsed && parsed.data ? parsed.data : parsed;
+        if (!data || typeof data !== "object" || !Array.isArray(data.tx)) throw new Error("formato inválido");
+        if (!confirm("Importar este backup substitui os dados atuais deste navegador. Continuar?")) { e.target.value = ""; return; }
+        store.d = Object.assign({ mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {} }, data);
+        store.d.mode = "real";
+        store.save(); applyMode(); applyProfile();
+        showToast("Backup importado com sucesso");
+      } catch (err) {
+        showToast("Arquivo inválido — selecione um backup exportado pelo app");
+      }
+      e.target.value = "";
+    };
+    reader.readAsText(file);
   }
 
   /* ---------- Orçamento (Meus dados) ---------- */
