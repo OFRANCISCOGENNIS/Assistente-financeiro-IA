@@ -56,6 +56,7 @@ O copiloto **v0** é um **motor de regras determinístico**: interpreta a pergun
 19. ✅ **Backup exportar/importar** (JSON) — portabilidade e segurança dos dados sem nuvem.
 20. ✅ **Empresa (MEI) real** — DRE, margem e ponto de equilíbrio calculados dos dados que o usuário informa.
 21. ✅ **Central de Segurança real** — score dos dados reais com itens acionáveis, perfil editável, backup e nota honesta sobre recursos de nuvem.
+22. ✅ **Login com senha local** — na primeira vez cria a senha (guardada como hash SHA-256, nunca em texto puro); depois exige a senha para entrar. "Esqueci a senha" reconfigura sem apagar os dados; comando "Bloquear" (Ctrl+K) trava o app. É proteção de acesso neste navegador — não substitui login em nuvem (Fase B).
 
 ### Fase B — Exige backend + IA (o salto de produto)
 

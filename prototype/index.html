@@ -428,6 +428,12 @@
   .btn-social:hover { border-color: var(--baseline); }
   .trust { display: flex; justify-content: center; gap: 6px; align-items: center;
     color: var(--ink-3); font-size: 12px; margin-top: 18px; }
+  .pw-error { color: var(--critical); font-size: 13px; font-weight: 600; text-align: left;
+    margin: -4px 0 10px; }
+  .link-btn { display: block; width: 100%; margin-top: 10px; background: none; border: none;
+    color: var(--ink-2); font-size: 13px; font-weight: 600; text-decoration: underline; cursor: pointer; }
+  .link-btn:hover { color: var(--accent); }
+  .link-btn[hidden] { display: none; }
 
   /* passkey sheet */
   .sheet-veil { position: fixed; inset: 0; background: rgba(8,12,10,.45); z-index: 60;
@@ -575,41 +581,27 @@
 <div class="login-wrap" id="loginView">
   <div class="login-card">
     <div class="wordmark"><span class="coin">A$</span> Assistente Financeiro</div>
-    <h1>Bem-vindo de volta</h1>
-    <p class="sub">Digite seu e-mail para continuar. Se você tiver uma passkey, entramos automaticamente.</p>
+    <h1 id="loginTitle">Bem-vindo de volta</h1>
+    <p class="sub" id="loginSub">Digite sua senha para entrar.</p>
     <div class="field">
       <label for="email">E-mail</label>
-      <input id="email" type="email" autocomplete="username webauthn" placeholder="voce@exemplo.com" value="genisfrazao27@gmail.com">
+      <input id="email" type="email" autocomplete="username" placeholder="voce@exemplo.com" value="genisfrazao27@gmail.com">
     </div>
-    <button class="btn-primary" id="btnContinue">Continuar</button>
-    <div class="or">ou entre com</div>
-    <button class="btn-social" data-login>
-      <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M23 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.2a5.3 5.3 0 0 1-2.3 3.5v2.9h3.7C21.8 18.8 23 15.9 23 12.3z"/><path fill="#34A853" d="M12 24c3.1 0 5.7-1 7.6-2.8l-3.7-2.9c-1 .7-2.4 1.1-3.9 1.1-3 0-5.5-2-6.4-4.7H1.8v3A11.5 11.5 0 0 0 12 24z"/><path fill="#FBBC05" d="M5.6 14.7a6.9 6.9 0 0 1 0-4.4v-3H1.8a11.5 11.5 0 0 0 0 10.4l3.8-3z"/><path fill="#EA4335" d="M12 4.6c1.7 0 3.2.6 4.4 1.7L19.7 3A11.5 11.5 0 0 0 1.8 7.3l3.8 3c.9-2.7 3.4-4.7 6.4-4.7z"/></svg>
-      Continuar com Google
-    </button>
-    <button class="btn-social" data-login>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16.7 12.9c0-2.4 2-3.6 2.1-3.7-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.9-1.6 0-3.1 1-4 2.4-1.7 3-.4 7.3 1.2 9.7.8 1.2 1.8 2.5 3.1 2.4 1.2 0 1.7-.8 3.2-.8s1.9.8 3.2.8c1.3 0 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.3-2.8 0 0-2.6-1-2.7-3.7zM14.3 5.6c.7-.8 1.1-2 1-3.1-1 0-2.2.7-2.9 1.5-.6.7-1.2 1.9-1 3 1.1.1 2.2-.6 2.9-1.4z"/></svg>
-      Continuar com Apple
-    </button>
+    <div class="field">
+      <label for="pw" id="pwLabel">Senha</label>
+      <input id="pw" type="password" autocomplete="current-password" placeholder="Sua senha">
+    </div>
+    <div class="field" id="pwConfirmField" hidden>
+      <label for="pw2">Confirmar senha</label>
+      <input id="pw2" type="password" autocomplete="new-password" placeholder="Repita a senha">
+    </div>
+    <div id="pwError" class="pw-error" role="alert" hidden></div>
+    <button class="btn-primary" id="btnLogin">Entrar</button>
+    <button class="link-btn" id="btnForgot" type="button" hidden>Esqueci minha senha</button>
     <div class="trust">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-      Seus dados são criptografados de ponta a ponta
+      A senha e seus dados ficam só neste navegador — nada é enviado a servidores.
     </div>
-  </div>
-</div>
-
-<!-- passkey sheet -->
-<div class="sheet-veil" id="passkeySheet">
-  <div class="sheet" role="dialog" aria-label="Autenticação com passkey">
-    <div class="fp">
-      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-        <path d="M12 11a3 3 0 0 0-3 3c0 2 .5 4 1.5 6M12 11a3 3 0 0 1 3 3c0 1.2-.1 2.4-.4 3.5M12 7a7 7 0 0 0-7 7c0 1.6.3 3.2.8 4.7M12 7a7 7 0 0 1 7 7v1M12 3a11 11 0 0 0-9.5 5.5"/>
-      </svg>
-    </div>
-    <h2>Entrar com sua passkey</h2>
-    <p>Encontramos uma passkey para <b>este e-mail</b> neste aparelho. Confirme com sua biometria — nada sai do seu dispositivo.</p>
-    <button class="btn-primary" id="btnPasskey">Usar biometria</button>
-    <button class="alt" id="btnFallback">Usar senha e código por e-mail</button>
   </div>
 </div>
 
@@ -903,6 +895,7 @@
       <button class="item" data-nav="sec" data-kw="/seguranca score">🛡️ &nbsp;Abrir Central de Segurança</button>
       <button class="item" id="cmdDiscreet" data-kw="/discreto ocultar">👁️ &nbsp;Alternar modo discreto</button>
       <button class="item" id="cmdTheme" data-kw="/tema escuro claro">🌗 &nbsp;Alternar tema claro/escuro</button>
+      <button class="item" id="cmdLock" data-kw="/bloquear sair travar senha lock logout">🔒 &nbsp;Bloquear (pedir senha)</button>
       <button class="item" id="cmdClear" data-kw="/limpar zerar apagar dados reset">🗑️ &nbsp;Limpar / zerar meus dados</button>
     </div>
     <div class="foot">Digite <b>/</b> para comandos · Enter seleciona · Esc fecha</div>
@@ -1203,15 +1196,55 @@
   const root = document.documentElement;
   const fmt = n => "R$ " + n.toLocaleString("pt-BR", { minimumFractionDigits: 0 });
 
-  /* ---------- login flow ---------- */
-  const sheet = $("#passkeySheet");
-  $("#btnContinue").addEventListener("click", () => sheet.classList.add("open"));
-  $("#email").addEventListener("keydown", e => { if (e.key === "Enter") sheet.classList.add("open"); });
-  const enterApp = () => { sheet.classList.remove("open"); document.body.classList.add("logged"); drawAll(); };
-  $("#btnPasskey").addEventListener("click", enterApp);
-  $("#btnFallback").addEventListener("click", enterApp);
-  $$("[data-login]").forEach(b => b.addEventListener("click", enterApp));
-  sheet.addEventListener("click", e => { if (e.target === sheet) sheet.classList.remove("open"); });
+  /* ---------- login com senha local (hash SHA-256 no navegador) ---------- */
+  const AUTH_KEY = "afia:auth";
+  const getAuth = () => { try { return JSON.parse(localStorage.getItem(AUTH_KEY) || "null"); } catch (e) { return null; } };
+  async function sha256(str) {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+  const pwEl = $("#pw"), pw2El = $("#pw2"), pwConfirmField = $("#pwConfirmField");
+  const pwErr = $("#pwError"), btnLogin = $("#btnLogin"), btnForgot = $("#btnForgot");
+  function showPwError(msg) { pwErr.textContent = msg; pwErr.hidden = false; }
+  function clearPwError() { pwErr.hidden = true; }
+  function setupLoginMode() {
+    const has = !!getAuth();
+    $("#loginTitle").textContent = has ? "Bem-vindo de volta" : "Crie sua senha";
+    $("#loginSub").textContent = has
+      ? "Digite sua senha para entrar." : "Defina uma senha para proteger seus dados neste navegador.";
+    $("#pwLabel").textContent = has ? "Senha" : "Nova senha (mín. 4 caracteres)";
+    pwEl.setAttribute("autocomplete", has ? "current-password" : "new-password");
+    pwConfirmField.hidden = has;
+    btnLogin.textContent = has ? "Entrar" : "Criar senha e entrar";
+    btnForgot.hidden = !has;
+    clearPwError();
+  }
+  const enterApp = () => { document.body.classList.add("logged"); drawAll(); pwEl.value = ""; if (pw2El) pw2El.value = ""; clearPwError(); };
+  async function doLogin() {
+    const auth = getAuth(), pw = pwEl.value;
+    if (!auth) {
+      if (pw.length < 4) return showPwError("A senha precisa ter pelo menos 4 caracteres.");
+      if (pw !== pw2El.value) return showPwError("As senhas não conferem.");
+      const hash = await sha256(pw);
+      localStorage.setItem(AUTH_KEY, JSON.stringify({ hash, createdAt: new Date().toISOString().slice(0, 10) }));
+      enterApp();
+    } else {
+      const hash = await sha256(pw);
+      if (hash === auth.hash) enterApp();
+      else showPwError("Senha incorreta. Tente de novo.");
+    }
+  }
+  btnLogin.addEventListener("click", doLogin);
+  [pwEl, pw2El].forEach(el => el && el.addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); }));
+  [pwEl, pw2El].forEach(el => el && el.addEventListener("input", clearPwError));
+  btnForgot.addEventListener("click", () => {
+    if (confirm("Redefinir a senha? Você criará uma nova senha agora. Seus dados financeiros NÃO são apagados — só o acesso é reconfigurado neste navegador.")) {
+      localStorage.removeItem(AUTH_KEY); setupLoginMode(); pwEl.value = ""; pwEl.focus();
+      showToast("Crie uma nova senha para continuar");
+    }
+  });
+  function lockApp() { document.body.classList.remove("logged"); setupLoginMode(); pwEl.focus(); }
+  setupLoginMode();
 
   /* ---------- navegação ---------- */
   function go(name) {
@@ -2700,9 +2733,10 @@
   $("#cmdTheme").addEventListener("click", () => { toggleTheme(); closeCmdk(); });
   $("#cmdExport").addEventListener("click", () => { closeCmdk(); relDownloadCsv(); });
   $("#cmdClear").addEventListener("click", () => { closeCmdk(); openClear(); });
+  $("#cmdLock").addEventListener("click", () => { closeCmdk(); lockApp(); });
   addEventListener("keydown", e => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openCmdk(); }
-    if (e.key === "Escape") { closeCmdk(); [sheet, guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, pjSheet, profSheet, cardSheet, cardBuySheet, a11ySheet, clearSheet].forEach(s => s && s.classList.remove("open")); }
+    if (e.key === "Escape") { closeCmdk(); [guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, pjSheet, profSheet, cardSheet, cardBuySheet, a11ySheet, clearSheet].forEach(s => s && s.classList.remove("open")); }
   });
 
   /* ---------- gráficos (SVG gerado) ---------- */
