@@ -1031,6 +1031,7 @@
       <button class="item" data-nav="inv" data-kw="/investimento carteira">💹 &nbsp;Ver Investimentos</button>
       <button class="item" data-nav="rel" data-kw="/relatorio compras entradas">📄 &nbsp;Abrir Relatórios</button>
       <button class="item" id="cmdExport" data-kw="/exportar csv">⬇️ &nbsp;Exportar CSV</button>
+      <button class="item" id="cmdImport" data-kw="/importar extrato csv lote banco">📥 &nbsp;Importar extrato (CSV)</button>
       <button class="item" data-nav="pj" data-kw="/empresa mei">🏢 &nbsp;Abrir Empresa (MEI)</button>
       <button class="item" data-nav="sec" data-kw="/seguranca score">🛡️ &nbsp;Abrir Central de Segurança</button>
       <button class="item" id="cmdDiscreet" data-kw="/discreto ocultar">👁️ &nbsp;Alternar modo discreto</button>
@@ -1249,6 +1250,23 @@
     </div>
     <button class="btn-primary" id="btnPjSave" style="margin-top:18px">Salvar</button>
     <button class="alt" id="btnPjCancel">Cancelar</button>
+  </div>
+</div>
+
+<!-- importar extrato CSV -->
+<div class="sheet-veil" id="importSheet">
+  <div class="sheet" role="dialog" aria-label="Importar extrato" style="max-width:560px; max-height:88vh; overflow-y:auto">
+    <h2>Importar extrato (CSV)</h2>
+    <p style="margin-bottom:8px">Selecione um arquivo <b>.csv</b> do seu banco. Eu detecto as colunas de <b>data</b>, <b>descrição</b> e <b>valor</b> — valores negativos viram despesas; positivos, receitas.</p>
+    <input type="file" id="importFile" accept=".csv,text/csv" style="margin-bottom:6px">
+    <button class="link-btn" id="btnImportSample" type="button" style="text-align:left; margin:2px 0 10px">Baixar um CSV de exemplo</button>
+    <div id="importAcctWrap" hidden>
+      <span class="fieldset-label">Conta de destino</span>
+      <div class="chip-row" id="importAccts"></div>
+    </div>
+    <div id="importPreview"></div>
+    <button class="btn-primary" id="btnImportConfirm" style="margin-top:16px" hidden>Importar</button>
+    <button class="alt" id="btnImportCancel">Cancelar</button>
   </div>
 </div>
 
@@ -1713,7 +1731,8 @@
               <span class="num ${t.type === "in" ? "tx-in" : "tx-out"}">${t.type === "in" ? "+" : "−"}${brl(t.amount)}</span>
               <button class="del" data-del="${t.id}" aria-label="Excluir">✕</button></div>`).join("")}
           </div>
-          <div class="cta-row" style="margin-top:12px"><button class="btn-mini" data-act="addTx">+ Lançamento</button></div>
+          <div class="cta-row" style="margin-top:12px"><button class="btn-mini" data-act="addTx">+ Lançamento</button>
+            <button class="btn-mini alt" data-act="import">📥 Importar CSV</button></div>
         </div>
         <div class="card">
           <h2>Metas</h2>
@@ -2215,6 +2234,119 @@
       <p class="hint" style="margin-top:10px">Ativos (contas + investimentos) menos passivos (dívidas + faturas). ${delta >= 0 ? "Sua curva está subindo — é assim que se constrói riqueza. 📈" : "Sua curva caiu no período; vale revisar dívidas e gastos."}</p>
     </div>`;
   }
+
+  /* ---------- Importar extrato CSV ---------- */
+  function csvRow(line, delim) {
+    const out = []; let cur = "", q = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (q) { if (c === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+      else { if (c === '"') q = true; else if (c === delim) { out.push(cur); cur = ""; } else cur += c; }
+    }
+    out.push(cur); return out.map(s => s.trim());
+  }
+  function parseImpDate(s) {
+    s = (s || "").trim(); let m;
+    if (m = s.match(/(\d{4})-(\d{2})-(\d{2})/)) return `${m[1]}-${m[2]}-${m[3]}`;
+    if (m = s.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/)) { let y = m[3]; if (y.length === 2) y = "20" + y; return `${y}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`; }
+    return null;
+  }
+  function parseImpAmount(s) {
+    s = String(s == null ? "" : s).replace(/[R$\s]/g, "");
+    const neg = /^-/.test(s) || /^\(.*\)$/.test(s);
+    s = s.replace(/[()\-+]/g, "");
+    if (s.includes(",") && s.includes(".")) { s = s.lastIndexOf(",") > s.lastIndexOf(".") ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, ""); }
+    else if (s.includes(",")) s = s.replace(",", ".");
+    const n = parseFloat(s); if (isNaN(n)) return null;
+    return neg ? -Math.abs(n) : n;
+  }
+  function guessCat(desc) {
+    const n = norm(desc || "");
+    const map = [["mercado|supermerc|atacad|hortifr", "Mercado"], ["uber|99|taxi|transport|combust|posto|gasolin|onibus|metro|estacion", "Transporte"],
+      ["restaur|ifood|lanch|padaria|pizzar|hamburg|cafe|bar\\b", "Restaurantes"], ["farmac|drogaria|hospital|clinic|laborator|medic|saude|dentist", "Saúde"],
+      ["aluguel|condomin|energia|eletric|agua\\b|internet|telefon|claro|vivo|tim\\b", "Moradia"], ["netflix|spotify|assinatur|prime|disney|hbo|youtube", "Assinaturas"],
+      ["escola|curso|faculdad|univ|livraria|udemy|alura", "Educação"], ["cinema|show|lazer|viagem|hotel|airbnb|game|steam", "Lazer"],
+      ["salario|salário|pagamento|deposito|provento|pró-labore|pro-labore|rendiment|pix recebid", "Salário"]];
+    for (const [re, cat] of map) if (new RegExp(re).test(n)) return cat;
+    return (desc || "").trim().slice(0, 28) || "Outros";
+  }
+  let impRows = [];
+  function parseCSVText(text) {
+    text = text.replace(/^﻿/, "");
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    if (!lines.length) return [];
+    const delim = (lines[0].match(/;/g) || []).length >= (lines[0].match(/,/g) || []).length ? ";" : ",";
+    const header = csvRow(lines[0], delim).map(h => norm(h));
+    const hasHeader = header.some(h => /data|date|valor|value|amount|descr|histor|categ|lancament/.test(h));
+    let di = 0, vi = 2, ci = 1;
+    if (hasHeader) {
+      di = header.findIndex(h => /data|date/.test(h)); if (di < 0) di = 0;
+      vi = header.findIndex(h => /valor|value|amount|montante|credito|debito/.test(h)); if (vi < 0) vi = header.length - 1;
+      ci = header.findIndex(h => /descr|histor|categ|lancament|title|memo/.test(h)); if (ci < 0) ci = 1;
+    }
+    const rows = [];
+    for (let i = hasHeader ? 1 : 0; i < lines.length; i++) {
+      const cols = csvRow(lines[i], delim);
+      const date = parseImpDate(cols[di]), amount = parseImpAmount(cols[vi]);
+      if (!date || amount == null || amount === 0) continue;
+      const desc = cols[ci] || "";
+      rows.push({ date, amount: Math.abs(amount), type: amount < 0 ? "out" : "in", category: guessCat(desc), desc });
+    }
+    return rows;
+  }
+  const importSheet = $("#importSheet");
+  let importAcct = "";
+  function openImport() {
+    impRows = []; $("#importFile").value = ""; $("#importPreview").innerHTML = "";
+    $("#btnImportConfirm").hidden = true; $("#importAcctWrap").hidden = true;
+    const accts = store.d.accounts.map(a => a.name);
+    if (accts.length) {
+      importAcct = accts[0];
+      $("#importAccts").innerHTML = accts.map(a => `<button class="chip" data-a="${encodeURIComponent(a)}" aria-pressed="${a === importAcct}">${esc(a)}</button>`).join("");
+      $$("#importAccts .chip").forEach(ch => ch.addEventListener("click", () => { importAcct = decodeURIComponent(ch.dataset.a); $$("#importAccts .chip").forEach(x => x.setAttribute("aria-pressed", String(decodeURIComponent(x.dataset.a) === importAcct))); }));
+    } else importAcct = "";
+    importSheet.classList.add("open");
+  }
+  $("#btnImportCancel").addEventListener("click", () => importSheet.classList.remove("open"));
+  importSheet.addEventListener("click", e => { if (e.target === importSheet) importSheet.classList.remove("open"); });
+  $("#importFile").addEventListener("change", e => {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      impRows = parseCSVText(String(rd.result));
+      const prev = $("#importPreview");
+      if (!impRows.length) { prev.innerHTML = `<div class="alert warn" style="margin-top:10px"><span class="ic">⚠️</span><div>Não consegui ler lançamentos. Confira se o arquivo tem colunas de data e valor.</div></div>`; $("#btnImportConfirm").hidden = true; $("#importAcctWrap").hidden = true; return; }
+      const nIn = impRows.filter(r => r.type === "in").length, nOut = impRows.length - nIn;
+      const show = impRows.slice(0, 8);
+      prev.innerHTML = `<p class="hint" style="margin:10px 0 6px"><b>${impRows.length}</b> lançamento(s): ${nIn} receita(s), ${nOut} despesa(s). Prévia:</p>
+        <div class="row-list mini-list">${show.map(r => `<div class="row-item">
+          <span class="cat-dot" style="background:${r.type === "in" ? "var(--good)" : "var(--s1)"}"></span>
+          <div class="grow"><div class="t">${esc(r.category)}</div><div class="d">${fmtDate(r.date)}</div></div>
+          <span class="num ${r.type === "in" ? "tx-in" : "tx-out"}">${r.type === "in" ? "+" : "−"}${brl(r.amount)}</span></div>`).join("")}
+          ${impRows.length > 8 ? `<p class="hint" style="margin-top:6px">…e mais ${impRows.length - 8}.</p>` : ""}</div>`;
+      $("#importAcctWrap").hidden = !store.d.accounts.length;
+      $("#btnImportConfirm").hidden = false;
+      $("#btnImportConfirm").textContent = `Importar ${impRows.length} lançamento(s)`;
+    };
+    rd.readAsText(f);
+  });
+  $("#btnImportConfirm").addEventListener("click", () => {
+    if (!impRows.length) return;
+    const acct = importAcct || (store.d.accounts[0] && store.d.accounts[0].name) || "";
+    let net = 0;
+    impRows.forEach(r => { store.d.tx.push({ id: uid(), type: r.type, amount: r.amount, category: r.category, account: acct, date: r.date }); net += r.type === "in" ? r.amount : -r.amount; });
+    const ac = store.d.accounts.find(a => a.name === acct); if (ac) ac.balance += net;
+    store.save(); importSheet.classList.remove("open");
+    applyMode();
+    showToast(`${impRows.length} lançamento(s) importado(s)`);
+    impRows = [];
+  });
+  $("#btnImportSample").addEventListener("click", () => {
+    const csv = "Data;Descrição;Valor\n05/07/2026;Salário empresa;5000,00\n06/07/2026;Supermercado Extra;-320,50\n08/07/2026;Uber;-27,90\n10/07/2026;Farmácia São João;-58,30\n15/07/2026;Netflix;-55,90";
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "exemplo-extrato.csv";
+    document.body.appendChild(a); a.click(); a.remove();
+  });
 
   /* ---------- Lista de compras com orçamento ---------- */
   function shopData() { const s = store.d.shopping || { budget: 0, items: [] }; s.items = s.items || []; return s; }
@@ -3415,7 +3547,7 @@
   });
 
   const scrollBills = () => { const c = $("#billsCard"); if (c) { c.scrollIntoView({ behavior: "smooth", block: "center" }); c.classList.add("flash"); setTimeout(() => c.classList.remove("flash"), 1200); } };
-  const ACT = { addAcct: openAcct, addTx: openAdd, addGoal: openGoal, addBill: openBill, scrollBills };
+  const ACT = { addAcct: openAcct, addTx: openAdd, addGoal: openGoal, addBill: openBill, scrollBills, import: openImport };
   applyMode();
 
   const btnEnv = $("#btnEnvelope");
@@ -3475,10 +3607,11 @@
   $("#cmdTheme").addEventListener("click", () => { toggleTheme(); closeCmdk(); });
   $("#cmdExport").addEventListener("click", () => { closeCmdk(); relDownloadCsv(); });
   $("#cmdClear").addEventListener("click", () => { closeCmdk(); openClear(); });
+  $("#cmdImport").addEventListener("click", () => { closeCmdk(); openImport(); });
   $("#cmdLock").addEventListener("click", () => { closeCmdk(); lockApp(); });
   addEventListener("keydown", e => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openCmdk(); }
-    if (e.key === "Escape") { closeCmdk(); [guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, pjSheet, profSheet, cardSheet, cardBuySheet, debtSheet, splitSheet, moreSheet, a11ySheet, clearSheet].forEach(s => s && s.classList.remove("open")); }
+    if (e.key === "Escape") { closeCmdk(); [guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, pjSheet, profSheet, cardSheet, cardBuySheet, debtSheet, splitSheet, importSheet, moreSheet, a11ySheet, clearSheet].forEach(s => s && s.classList.remove("open")); }
   });
 
   /* ---------- gráficos (SVG gerado) ---------- */
