@@ -702,6 +702,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20M6 15h4"/></svg>
       Cartões
     </button>
+    <button class="nav-btn" data-nav="dividas">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      Dívidas
+    </button>
     <button class="nav-btn" data-nav="metas">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
       Metas
@@ -841,6 +845,15 @@
       <div id="cardsBody"></div>
     </section>
 
+    <!-- ============ DÍVIDAS ============ -->
+    <section class="view" id="view-dividas" aria-label="Dívidas">
+      <div class="view-h">
+        <h1>Dívidas</h1>
+        <span class="sub">Compare bola de neve × avalanche e veja quando fica livre</span>
+      </div>
+      <div id="dividasBody"></div>
+    </section>
+
     <!-- ============ CALENDÁRIO ============ -->
     <section class="view" id="view-cal" aria-label="Calendário financeiro">
       <div class="view-h">
@@ -959,6 +972,7 @@
       <button class="item" data-nav="orc" data-kw="/orcamento limites">🥧 &nbsp;Abrir Orçamento mensal</button>
       <button class="item" data-nav="gastos" data-kw="/gastos fixos mensais despesas contas">🧾 &nbsp;Abrir Gastos (fixos e mensais)</button>
       <button class="item" data-nav="cartoes" data-kw="/cartao cartoes fatura credito limite">💳 &nbsp;Abrir Cartões (faturas)</button>
+      <button class="item" data-nav="dividas" data-kw="/divida dividas emprestimo quitar bola de neve avalanche">🧯 &nbsp;Abrir Dívidas (quitação)</button>
       <button class="item" data-nav="metas" data-kw="/meta objetivos">🎯 &nbsp;Ver Metas</button>
       <button class="item" data-nav="cal" data-kw="/calendario agenda vencimentos">📅 &nbsp;Abrir Calendário</button>
       <button class="item" data-nav="plan" data-kw="/planejar simular financiar fire">📈 &nbsp;Abrir Planejar</button>
@@ -1009,6 +1023,7 @@
       <button class="more-item" data-nav="orc"><span class="mi-ic">🥧</span>Orçamento</button>
       <button class="more-item" data-nav="metas"><span class="mi-ic">🎯</span>Metas</button>
       <button class="more-item" data-nav="inv"><span class="mi-ic">💹</span>Investir</button>
+      <button class="more-item" data-nav="dividas"><span class="mi-ic">🧯</span>Dívidas</button>
       <button class="more-item" data-nav="cal"><span class="mi-ic">📅</span>Calendário</button>
       <button class="more-item" data-nav="plan"><span class="mi-ic">📈</span>Planejar</button>
       <button class="more-item" data-nav="rel"><span class="mi-ic">📄</span>Relatórios</button>
@@ -1180,6 +1195,32 @@
     </div>
     <button class="btn-primary" id="btnPjSave" style="margin-top:18px">Salvar</button>
     <button class="alt" id="btnPjCancel">Cancelar</button>
+  </div>
+</div>
+
+<!-- adicionar dívida -->
+<div class="sheet-veil" id="debtSheet">
+  <div class="sheet" role="dialog" aria-label="Adicionar dívida">
+    <h2>Adicionar dívida</h2>
+    <p style="margin-bottom:2px">Empréstimo, financiamento, cartão parcelado, cheque especial…</p>
+    <div class="field">
+      <label for="debtName">Nome da dívida</label>
+      <input id="debtName" type="text" placeholder="Ex.: Empréstimo, Financiamento carro" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="debtBalance">Saldo devedor atual</label>
+      <input id="debtBalance" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="debtRate">Juros ao mês (%)</label>
+      <input id="debtRate" type="text" inputmode="decimal" placeholder="Ex.: 2,5">
+    </div>
+    <div class="field">
+      <label for="debtMin">Parcela mínima mensal</label>
+      <input id="debtMin" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
+    </div>
+    <button class="btn-primary" id="btnDebtSave" style="margin-top:18px">Salvar dívida</button>
+    <button class="alt" id="btnDebtCancel">Cancelar</button>
   </div>
 </div>
 
@@ -1422,7 +1463,7 @@
   const uid = () => "id" + Math.random().toString(36).slice(2, 9);
 
   const store = {
-    d: { mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {}, cards: [] },
+    d: { mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {}, cards: [], debts: [] },
     load() { try { const r = localStorage.getItem(KEY); if (r) this.d = Object.assign(this.d, JSON.parse(r)); } catch (e) {} this.d.mode = "real"; },
     save() { try { localStorage.setItem(KEY, JSON.stringify(this.d)); } catch (e) {} },
   };
@@ -1434,6 +1475,8 @@
     s = String(s).replace(/[R$\s.]/g, "").replace(",", ".");
     const n = parseFloat(s); return isNaN(n) ? 0 : n;
   };
+  // para percentuais/taxas: aceita "1,5" e "1.5" como decimal (sem separador de milhar)
+  const parseRate = s => { if (!s) return 0; const n = parseFloat(String(s).replace("%", "").replace(",", ".").trim()); return isNaN(n) ? 0 : n; };
   const todayISO = () => { const d = new Date(); return d.toISOString().slice(0, 10); };
   const thisMonth = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); };
   const inMonth = t => (t.date || "").slice(0, 7) === thisMonth();
@@ -1625,7 +1668,7 @@
     updateScoreChip();
   }
   function resetAllData() {
-    store.d.accounts = []; store.d.tx = []; store.d.goals = []; store.d.bills = []; store.d.budgets = {}; store.d.investments = []; store.d.pj = {}; store.d.cards = [];
+    store.d.accounts = []; store.d.tx = []; store.d.goals = []; store.d.bills = []; store.d.budgets = {}; store.d.investments = []; store.d.pj = {}; store.d.cards = []; store.d.debts = [];
     store.save(); applyMode();
     showToast("Seus dados foram apagados");
   }
@@ -2034,6 +2077,124 @@
     };
     reader.readAsText(file);
   }
+
+  /* ---------- Dívidas (bola de neve × avalanche) ---------- */
+  // Simula a quitação: paga o mínimo de todas e joga o "extra" na 1ª da ordem da estratégia.
+  function simulatePayoff(debts, extra, strategy) {
+    let ds = debts.map(d => ({ bal: d.balance, rate: (d.rate || 0) / 100, min: d.minPayment || 0 }));
+    let months = 0, totalInterest = 0;
+    const cap = 1200;
+    while (ds.some(d => d.bal > 0.01) && months < cap) {
+      months++;
+      ds.forEach(d => { if (d.bal > 0.01) { const i = d.bal * d.rate; d.bal += i; totalInterest += i; } });
+      let pool = ds.reduce((a, d) => a + d.min, 0) + extra;
+      ds.forEach(d => { if (d.bal > 0.01) { const pay = Math.min(d.bal, d.min); d.bal -= pay; pool -= pay; } });
+      const order = strategy === "avalanche"
+        ? [...ds].filter(d => d.bal > 0.01).sort((a, b) => b.rate - a.rate)
+        : [...ds].filter(d => d.bal > 0.01).sort((a, b) => a.bal - b.bal);
+      for (const d of order) { if (pool <= 0.01) break; const pay = Math.min(d.bal, pool); d.bal -= pay; pool -= pay; }
+    }
+    return { months, totalInterest, converged: months < cap };
+  }
+  let debtExtra = 0;
+  function renderDividas() {
+    const body = $("#dividasBody"); if (!body) return;
+    const debts = store.d.debts || [];
+    if (!debts.length) {
+      body.innerHTML = `
+        <div class="card empty">
+          <div class="big">🧯</div>
+          <h2>Saia das dívidas com estratégia</h2>
+          <p>Cadastre suas dívidas (saldo, juros e parcela) e eu comparo duas táticas comprovadas: <b>bola de neve</b> (quita a menor primeiro, pela motivação) e <b>avalanche</b> (ataca a de maior juro, economiza mais). Você vê quando fica livre e quanto de juros economiza.</p>
+          <div class="cta-row"><button class="btn-mini" data-act="debt">+ Adicionar dívida</button></div>
+        </div>`;
+      $$("[data-act='debt']", body).forEach(b => b.addEventListener("click", openDebt));
+      return;
+    }
+    const total = debts.reduce((a, d) => a + d.balance, 0);
+    const totalMin = debts.reduce((a, d) => a + (d.minPayment || 0), 0);
+    const wRate = total ? debts.reduce((a, d) => a + d.balance * (d.rate || 0), 0) / total : 0;
+    const snow = simulatePayoff(debts, debtExtra, "snowball");
+    const aval = simulatePayoff(debts, debtExtra, "avalanche");
+    const fmtMonths = m => m >= 1200 ? "não quita" : m >= 12 ? `${Math.floor(m / 12)}a ${m % 12}m` : `${m} meses`;
+    const fmtJuros = r => r.converged ? `${brl(r.totalInterest)} de juros` : "parcela não cobre os juros";
+    const bothOk = snow.converged && aval.converged;
+    const best = bothOk ? (aval.totalInterest <= snow.totalInterest ? "avalanche" : "snowball") : "";
+    const economia = bothOk ? Math.abs(snow.totalInterest - aval.totalInterest) : 0;
+    const minOk = debts.every(d => (d.minPayment || 0) > d.balance * (d.rate || 0) / 100);
+    body.innerHTML = `
+      <div class="grid g-tiles">
+        <div class="card tile"><div class="label">Dívida total</div>
+          <div class="value num money" style="color:var(--critical)">${brl(total)}</div>
+          <div class="delta"><span class="vs">${debts.length} dívida(s)</span></div></div>
+        <div class="card tile"><div class="label">Juros médio</div>
+          <div class="value num">${wRate.toFixed(1)}%<span style="font-size:13px"> a.m.</span></div>
+          <div class="delta"><span class="vs">ponderado pelo saldo</span></div></div>
+        <div class="card tile"><div class="label">Parcelas mínimas</div>
+          <div class="value num money">${brl(totalMin)}<span style="font-size:13px">/mês</span></div></div>
+        <div class="card tile"><div class="label">Adicionar</div>
+          <div class="cta-row" style="margin-top:6px"><button class="btn-mini" data-act="debt">+ Dívida</button></div></div>
+      </div>
+      <div class="grid g-1-1">
+        <div class="card">
+          <h2>Simulador de quitação</h2>
+          <p class="hint">Quanto você consegue pagar <b>além</b> das parcelas mínimas?</p>
+          <div class="field" style="margin-top:6px">
+            <label for="debtExtra">Pagamento extra por mês</label>
+            <input id="debtExtra" type="text" inputmode="decimal" value="${debtExtra ? String(debtExtra).replace(".", ",") : ""}" placeholder="R$ 0,00">
+          </div>
+          ${!minOk ? `<div class="alert warn" style="margin-top:6px"><span class="ic">⚠️</span><div>Em pelo menos uma dívida a parcela mínima é menor que os juros do mês — assim o saldo só cresce. Aumente a parcela ou renegocie.</div></div>` : ""}
+          <div class="grid g-tiles" style="margin-top:14px; grid-template-columns:1fr 1fr">
+            <div class="card tile" style="border:1px solid ${best === "snowball" ? "var(--accent)" : "var(--ring)"}">
+              <div class="label">❄️ Bola de neve ${best === "snowball" ? "· melhor p/ motivação" : ""}</div>
+              <div class="value num" style="font-size:20px">${fmtMonths(snow.months)}</div>
+              <div class="delta"><span class="vs num money">${fmtJuros(snow)}</span></div></div>
+            <div class="card tile" style="border:1px solid ${best === "avalanche" ? "var(--accent)" : "var(--ring)"}">
+              <div class="label">🏔️ Avalanche ${best === "avalanche" ? "· economiza mais" : ""}</div>
+              <div class="value num" style="font-size:20px">${fmtMonths(aval.months)}</div>
+              <div class="delta"><span class="vs num money">${fmtJuros(aval)}</span></div></div>
+          </div>
+          <div class="alert ${bothOk ? "info" : "warn"}" style="margin-top:14px"><span class="ic">${bothOk ? "💡" : "⚠️"}</span>
+            <div>${!bothOk
+              ? `Com esse pagamento as dívidas <b>não são quitadas</b> — a parcela não cobre os juros. Aumente o pagamento extra ou renegocie a taxa.`
+              : `A <b>avalanche</b> costuma custar menos juros; a <b>bola de neve</b> dá vitórias rápidas que mantêm o hábito. ${economia > 1 ? `No seu caso, a avalanche economiza <b class="num money">${brl(economia)}</b> em juros vs. a bola de neve.` : "No seu caso as duas ficam quase iguais — escolha a que te motiva mais."}`}</div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Suas dívidas</h2>
+          <p class="hint">Ordenadas da maior para a menor</p>
+          <div class="row-list">
+            ${[...debts].sort((a, b) => b.balance - a.balance).map(d => `<div class="row-item">
+              <span class="cat-dot" style="background:var(--critical)"></span>
+              <div class="grow"><div class="t">${esc(d.name)}</div><div class="d">${(d.rate || 0).toString().replace(".", ",")}% a.m. · mín. ${brl(d.minPayment || 0)}</div></div>
+              <span class="num money">${brl(d.balance)}</span>
+              <button class="del" data-del-debt="${d.id}" aria-label="Excluir">✕</button></div>`).join("")}
+          </div>
+          <p class="hint" style="margin-top:12px">Quitar dívida de juro alto é o melhor "investimento" que existe: livrar-se de ${wRate.toFixed(1)}% ao mês equivale a render isso garantido.</p>
+        </div>
+      </div>`;
+    $$("[data-act='debt']", body).forEach(b => b.addEventListener("click", openDebt));
+    $$("[data-del-debt]", body).forEach(b => b.addEventListener("click", () => {
+      store.d.debts = store.d.debts.filter(x => x.id !== b.dataset.delDebt); store.save(); renderDividas();
+    }));
+    const ex = $("#debtExtra");
+    if (ex) ex.addEventListener("input", () => { debtExtra = parseNum(ex.value); clearTimeout(ex._t); ex._t = setTimeout(() => { const pos = ex.selectionStart; renderDividas(); const n = $("#debtExtra"); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (e) {} } }, 350); });
+  }
+  const debtSheet = $("#debtSheet");
+  function openDebt() {
+    $("#debtName").value = ""; $("#debtBalance").value = ""; $("#debtRate").value = ""; $("#debtMin").value = "";
+    debtSheet.classList.add("open"); $("#debtName").focus();
+  }
+  $("#btnDebtCancel").addEventListener("click", () => debtSheet.classList.remove("open"));
+  debtSheet.addEventListener("click", e => { if (e.target === debtSheet) debtSheet.classList.remove("open"); });
+  $("#btnDebtSave").addEventListener("click", () => {
+    const name = $("#debtName").value.trim(), balance = parseNum($("#debtBalance").value);
+    const rate = parseRate($("#debtRate").value), min = parseNum($("#debtMin").value);
+    if (!name || balance <= 0) { $("#debtName").focus(); return; }
+    store.d.debts.push({ id: uid(), name, balance, rate, minPayment: min });
+    store.save(); debtSheet.classList.remove("open"); renderDividas();
+    showToast(`Dívida "${name}" adicionada`);
+  });
 
   /* ---------- Cartões de crédito & faturas ---------- */
   const cardOpen = c => (c.purchases || []).filter(p => !p.paid);
@@ -2621,6 +2782,7 @@
     renderRel();
     renderGastos();
     renderCards();
+    renderDividas();
     renderPj();
     renderSec();
     applyProfile();
@@ -2632,6 +2794,7 @@
   $$('[data-nav="rel"]').forEach(b => b.addEventListener("click", renderRel));
   $$('[data-nav="gastos"]').forEach(b => b.addEventListener("click", renderGastos));
   $$('[data-nav="cartoes"]').forEach(b => b.addEventListener("click", renderCards));
+  $$('[data-nav="dividas"]').forEach(b => b.addEventListener("click", renderDividas));
   $$('[data-nav="pj"]').forEach(b => b.addEventListener("click", renderPj));
   $$('[data-nav="sec"]').forEach(b => b.addEventListener("click", renderSec));
 
@@ -2866,7 +3029,7 @@
   $("#cmdLock").addEventListener("click", () => { closeCmdk(); lockApp(); });
   addEventListener("keydown", e => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openCmdk(); }
-    if (e.key === "Escape") { closeCmdk(); [guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, pjSheet, profSheet, cardSheet, cardBuySheet, moreSheet, a11ySheet, clearSheet].forEach(s => s && s.classList.remove("open")); }
+    if (e.key === "Escape") { closeCmdk(); [guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, pjSheet, profSheet, cardSheet, cardBuySheet, debtSheet, moreSheet, a11ySheet, clearSheet].forEach(s => s && s.classList.remove("open")); }
   });
 
   /* ---------- gráficos (SVG gerado) ---------- */
@@ -3065,6 +3228,15 @@
       if (res && res.current >= res.target * 0.5) pts += 16;
       pts = Math.max(5, Math.min(100, pts));
       return `Sua saúde financeira agora:<span class="fig">${pts}/100</span>Taxa de poupança do mês: ${Math.round(taxa * 100)}%. ${taxa >= 0.2 ? "Você guarda um quinto ou mais da renda — padrão de quem constrói patrimônio." : taxa >= 0 ? "Positivo, mas dá pra melhorar a sobra mensal." : "Atenção: mês no vermelho."}${res ? ` Sua reserva está em ${Math.round(res.current / res.target * 100)}% da meta.` : ""}${src}`;
+    }
+    if (/(divida|dividas|devo|devendo|emprestimo|quitar|bola de neve|avalanche|financiamento|cheque especial)/.test(n)) {
+      const debts = store.d.debts || [];
+      if (!debts.length) return `Você não tem dívidas cadastradas. Se tiver empréstimo, financiamento ou cartão parcelado, adicione em <b>Dívidas</b> que eu comparo bola de neve × avalanche e mostro quando você fica livre.${src}`;
+      const total = debts.reduce((a, d) => a + d.balance, 0);
+      const wRate = total ? debts.reduce((a, d) => a + d.balance * (d.rate || 0), 0) / total : 0;
+      const menor = [...debts].sort((a, b) => a.balance - b.balance)[0];
+      const maiorJuro = [...debts].sort((a, b) => (b.rate || 0) - (a.rate || 0))[0];
+      return `Você deve hoje:<span class="fig" style="color:var(--critical)">${brl(total)}</span>Juro médio de ${wRate.toFixed(1)}% ao mês. Duas estratégias: <b>avalanche</b> ataca a de maior juro (${esc(maiorJuro.name)}, ${(maiorJuro.rate || 0).toString().replace(".", ",")}% a.m.) e economiza mais; <b>bola de neve</b> quita a menor primeiro (${esc(menor.name)}, ${brl(menor.balance)}) pela motivação. Abra <b>Dívidas</b> e me diga quanto pode pagar a mais por mês que eu simulo as duas. 🧯${src}`;
     }
     if (/(assinatura|assinaturas|recorrenc|recorrente|streaming|netflix|spotify|cancelar|mensalidade)/.test(n)) {
       const rec = detectRecurring(), tot = rec.reduce((a, r) => a + r.monthly, 0);
