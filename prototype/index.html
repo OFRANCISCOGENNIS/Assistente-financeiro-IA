@@ -249,6 +249,8 @@
     font-size: 13px; font-weight: 600; color: var(--ink-2); background: var(--card); }
   .chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink);
     border-color: var(--accent); }
+  .chip.chip-add { border-style: dashed; color: var(--accent); background: transparent; }
+  .chip.chip-add:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
   .sheet .field { text-align: left; margin-top: 12px; }
   .sheet .fieldset-label { display: block; text-align: left; font-size: 12.5px;
     font-weight: 600; margin-top: 14px; }
@@ -919,10 +921,7 @@
         </div>
       </div>
 
-      <div class="card" style="margin-top:16px">
-        <h2>Outros planos</h2>
-        <p class="hint">Em breve: casamento, filho, intercâmbio, troca de emprego e aposentadoria por idade — todos recalculando sobre os seus dados. Enquanto isso, pergunte ao <b>Copiloto</b>: “vale a pena financiar um carro?” ou “quanto preciso para viajar em dezembro?”.</p>
-      </div>
+      <div id="projBody" style="margin-top:16px"></div>
     </section>
 
     <!-- ============ RELATÓRIOS ============ -->
@@ -1463,7 +1462,7 @@
   const uid = () => "id" + Math.random().toString(36).slice(2, 9);
 
   const store = {
-    d: { mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {}, cards: [], debts: [] },
+    d: { mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {}, cards: [], debts: [], customCats: { out: [], in: [] } },
     load() { try { const r = localStorage.getItem(KEY); if (r) this.d = Object.assign(this.d, JSON.parse(r)); } catch (e) {} this.d.mode = "real"; },
     save() { try { localStorage.setItem(KEY, JSON.stringify(this.d)); } catch (e) {} },
   };
@@ -1668,7 +1667,7 @@
     updateScoreChip();
   }
   function resetAllData() {
-    store.d.accounts = []; store.d.tx = []; store.d.goals = []; store.d.bills = []; store.d.budgets = {}; store.d.investments = []; store.d.pj = {}; store.d.cards = []; store.d.debts = [];
+    store.d.accounts = []; store.d.tx = []; store.d.goals = []; store.d.bills = []; store.d.budgets = {}; store.d.investments = []; store.d.pj = {}; store.d.cards = []; store.d.debts = []; store.d.customCats = { out: [], in: [] };
     store.save(); applyMode();
     showToast("Seus dados foram apagados");
   }
@@ -2066,7 +2065,7 @@
         const data = parsed && parsed.data ? parsed.data : parsed;
         if (!data || typeof data !== "object" || !Array.isArray(data.tx)) throw new Error("formato inválido");
         if (!confirm("Importar este backup substitui os dados atuais deste navegador. Continuar?")) { e.target.value = ""; return; }
-        store.d = Object.assign({ mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {} }, data);
+        store.d = Object.assign({ mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {}, cards: [], debts: [], customCats: { out: [], in: [] } }, data);
         store.d.mode = "real";
         store.save(); applyMode(); applyProfile();
         showToast("Backup importado com sucesso");
@@ -2315,7 +2314,7 @@
       cardBuySel = ch.dataset.cid;
       $$("#cardBuyCards .chip").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.cid === cardBuySel)));
     }));
-    fillChips($("#cardBuyCats"), CATS_OUT);
+    fillCatChips($("#cardBuyCats"), "out");
     $("#cardBuyDesc").value = ""; $("#cardBuyValue").value = ""; $("#cardBuyDate").value = todayISO();
     cardBuySheet.classList.add("open"); $("#cardBuyDesc").focus();
   }
@@ -2665,6 +2664,64 @@
   $$(".plan-in").forEach(inp => inp.addEventListener("input", () => { planFin(); planFire(); }));
   planFin(); planFire();
 
+  /* ---------- Projeção de 12 meses (fluxo de caixa) ---------- */
+  function renderProj() {
+    const body = $("#projBody"); if (!body) return;
+    const tx = store.d.tx || [];
+    if (!tx.length && !(store.d.accounts || []).length) {
+      body.innerHTML = `<div class="card"><h2>Projeção de 12 meses</h2>
+        <p class="hint">Assim que você registrar contas e lançamentos, projeto seu saldo mês a mês pelo próximo ano — com base na sua média real de renda e gastos.</p></div>`;
+      return;
+    }
+    const now = new Date();
+    let sumIn = 0, sumOut = 0, monthsWith = 0;
+    for (let i = 0; i < 3; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+      const mi = tx.filter(t => t.type === "in" && (t.date || "").slice(0, 7) === key).reduce((a, t) => a + t.amount, 0);
+      const mo = tx.filter(t => t.type === "out" && (t.date || "").slice(0, 7) === key).reduce((a, t) => a + t.amount, 0);
+      if (mi || mo) { sumIn += mi; sumOut += mo; monthsWith++; }
+    }
+    const div = monthsWith || 1;
+    const avgIn = sumIn / div, avgOut = sumOut / div, net = avgIn - avgOut;
+    const start = totalSaldo();
+    const pts = []; let bal = start;
+    for (let m = 0; m < 12; m++) { bal += net; pts.push(bal); }
+    const endBal = pts[11];
+    const all = [start, ...pts];
+    const maxV = Math.max(...all), minV = Math.min(0, ...all), range = (maxV - minV) || 1;
+    const negMonth = pts.findIndex(v => v < 0);
+    const nextMonths = ["", ...Array.from({ length: 12 }, (_, i) => MESES_L[(now.getMonth() + 1 + i) % 12].slice(0, 3))];
+    body.innerHTML = `
+      <div class="card">
+        <div style="display:flex; align-items:baseline; flex-wrap:wrap; gap:8px"><h2>Projeção de 12 meses</h2>
+          <span class="hint" style="margin:0 0 0 auto">pela sua média dos últimos ${monthsWith || 1} mês(es)</span></div>
+        <div class="grid g-tiles" style="margin:6px 0 14px">
+          <div class="card tile"><div class="label">Renda média</div><div class="value num money tx-in">${brl(avgIn)}<span style="font-size:12px">/mês</span></div></div>
+          <div class="card tile"><div class="label">Gasto médio</div><div class="value num money">${brl(avgOut)}<span style="font-size:12px">/mês</span></div></div>
+          <div class="card tile"><div class="label">Sobra média</div><div class="value num money" style="color:${net >= 0 ? "var(--good-text)" : "var(--critical)"}">${brl(net)}<span style="font-size:12px">/mês</span></div></div>
+          <div class="card tile"><div class="label">Saldo projetado (12m)</div><div class="value num money" style="color:${endBal >= 0 ? "var(--good-text)" : "var(--critical)"}">${brl(endBal)}</div></div>
+        </div>
+        <div style="display:flex; align-items:flex-end; gap:5px; height:150px; margin-top:8px">
+          ${all.map((v, i) => {
+            const h = Math.round((v - minV) / range * 100);
+            const isNeg = v < 0;
+            return `<div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; height:100%; justify-content:flex-end">
+              <div title="${nextMonths[i] || "hoje"}: ${brl(v)}" style="width:100%; max-width:22px; background:${isNeg ? "var(--critical)" : "var(--s1)"}; border-radius:3px 3px 0 0; height:${Math.max(2, h)}%"></div>
+              <span style="font-size:10px; color:var(--ink-3)">${i === 0 ? "hoje" : nextMonths[i]}</span></div>`;
+          }).join("")}
+        </div>
+        <div class="alert ${net >= 0 ? "info" : "warn"}" style="margin-top:14px"><span class="ic">${net >= 0 ? "📈" : "⚠️"}</span>
+          <div>${negMonth >= 0
+            ? `No ritmo atual, seu saldo fica <b>negativo</b> por volta de <b>${nextMonths[negMonth + 1]}</b>. Vale cortar gastos ou aumentar a renda antes disso.`
+            : net >= 0
+              ? `Mantendo esse ritmo, você fecha o ano com cerca de <b class="num money">${brl(endBal)}</b> — ${net > 0 ? `guardando <b class="num money">${brl(net)}</b> por mês.` : "no zero a zero."}`
+              : `Você gasta em média mais do que ganha. A projeção mostra o saldo caindo — priorize reequilibrar o mês.`}
+          <div class="hint" style="margin-top:6px">Projeção linear pela sua média; não considera 13º, sazonalidade ou metas. É um guia, não uma previsão exata.</div></div>
+        </div>
+      </div>`;
+  }
+
   /* ---------- Calendário financeiro ---------- */
   const DOW = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
   let calOffset = 0, calSel = null;
@@ -2785,6 +2842,7 @@
     renderDividas();
     renderPj();
     renderSec();
+    renderProj();
     applyProfile();
     renderCal();
     updateScoreChip();
@@ -2795,6 +2853,7 @@
   $$('[data-nav="gastos"]').forEach(b => b.addEventListener("click", renderGastos));
   $$('[data-nav="cartoes"]').forEach(b => b.addEventListener("click", renderCards));
   $$('[data-nav="dividas"]').forEach(b => b.addEventListener("click", renderDividas));
+  $$('[data-nav="plan"]').forEach(b => b.addEventListener("click", renderProj));
   $$('[data-nav="pj"]').forEach(b => b.addEventListener("click", renderPj));
   $$('[data-nav="sec"]').forEach(b => b.addEventListener("click", renderSec));
 
@@ -2809,8 +2868,36 @@
       ch.setAttribute("aria-pressed", "true");
     }));
   }
+  // categorias base + personalizadas do usuário (com "Outros" sempre por último)
+  function catsFor(type) {
+    const base = type === "out" ? CATS_OUT : CATS_IN;
+    const custom = ((store.d.customCats || {})[type] || []).filter(c => !base.includes(c));
+    return base.filter(c => c !== "Outros").concat(custom, ["Outros"]);
+  }
+  function fillCatChips(container, type, sel) {
+    const cats = catsFor(type);
+    container.innerHTML = cats.map((c, i) => `<button class="chip" aria-pressed="${sel ? c === sel : i === 0}">${esc(c)}</button>`).join("")
+      + `<button class="chip chip-add" data-add-cat="${type}" aria-pressed="false" title="Criar categoria">+ Nova</button>`;
+    $$(".chip", container).forEach(ch => {
+      if (ch.dataset.addCat) { ch.addEventListener("click", () => addCustomCat(ch.dataset.addCat, container)); return; }
+      ch.addEventListener("click", () => {
+        $$(".chip", container).forEach(c => c.setAttribute("aria-pressed", "false"));
+        ch.setAttribute("aria-pressed", "true");
+      });
+    });
+  }
+  function addCustomCat(type, container) {
+    const name = (prompt("Nome da nova categoria:") || "").trim();
+    if (!name) return;
+    if (catsFor(type).some(c => c.toLowerCase() === name.toLowerCase())) { showToast("Essa categoria já existe"); return; }
+    store.d.customCats = store.d.customCats || { out: [], in: [] };
+    store.d.customCats[type] = store.d.customCats[type] || [];
+    store.d.customCats[type].push(name); store.save();
+    fillCatChips(container, type, name);
+    showToast(`Categoria "${name}" criada`);
+  }
   function refreshAddSheet() {
-    fillChips($("#addCats"), addType === "out" ? CATS_OUT : CATS_IN);
+    fillCatChips($("#addCats"), addType === "out" ? "out" : "in");
     $("#addCatLabel").textContent = addType === "out" ? "Categoria" : "Origem";
     const accts = store.d.accounts.map(a => a.name);
     fillChips($("#addPay"), accts.length ? accts : ["Carteira"]);
@@ -2884,9 +2971,9 @@
   const budgetSheet = $("#budgetSheet");
   function openBudget() {
     const b = store.d.budgets || {};
-    $("#budgetFields").innerHTML = CATS_OUT.map(c =>
-      `<div class="field" style="margin-top:8px"><label>${c}</label>
-        <input type="text" inputmode="decimal" data-bcat="${c}" placeholder="sem limite" value="${b[c] ? "R$ " + b[c].toLocaleString("pt-BR") : ""}"></div>`).join("");
+    $("#budgetFields").innerHTML = catsFor("out").filter(c => c !== "Outros").map(c =>
+      `<div class="field" style="margin-top:8px"><label>${esc(c)}</label>
+        <input type="text" inputmode="decimal" data-bcat="${esc(c)}" placeholder="sem limite" value="${b[c] ? "R$ " + b[c].toLocaleString("pt-BR") : ""}"></div>`).join("");
     budgetSheet.classList.add("open");
   }
   $("#btnBudgetCancel").addEventListener("click", () => budgetSheet.classList.remove("open"));

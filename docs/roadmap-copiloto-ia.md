@@ -59,6 +59,8 @@ O copiloto **v0** é um **motor de regras determinístico**: interpreta a pergun
 22. ✅ **Login com senha local** — na primeira vez cria a senha (guardada como hash SHA-256, nunca em texto puro); depois exige a senha para entrar. "Esqueci a senha" reconfigura sem apagar os dados; comando "Bloquear" (Ctrl+K) trava o app. É proteção de acesso neste navegador — não substitui login em nuvem (Fase B).
 23. ✅ **Mobile app-like** — barra de navegação inferior (Início, Gastos, Copiloto em destaque, Cartões, Mais), sheet "Mais" em grade, topbar compacta com blur; cards e tiles otimizados para telas pequenas.
 24. ✅ **Dívidas (bola de neve × avalanche)** — cadastro (saldo, juros, parcela), simulador que compara as duas estratégias (tempo até quitar + juros pagos) conforme o pagamento extra, alerta quando a parcela não cobre os juros e intenção no copiloto.
+25. ✅ **Categorias personalizadas** — chip "+ Nova" no lançamento (e no cartão/orçamento) cria categorias próprias, persistidas e disponíveis em todo o app.
+26. ✅ **Projeção de 12 meses** — na tela Planejar, projeta o saldo mês a mês pelo próximo ano com base na média real de renda e gasto; avisa se/quando o saldo ficaria negativo.
 
 ### Fase B — Exige backend + IA (o salto de produto)
 
