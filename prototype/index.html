@@ -908,9 +908,11 @@
           <span><span class="sw" style="background:var(--s1)"></span>Despesas</span>
           <span><span class="sw" style="background:var(--critical)"></span>Conta a pagar</span>
           <span><span class="sw" style="background:var(--ink-3)"></span>Conta paga</span>
+          <span><span class="sw" style="background:var(--warn)"></span>Lembrete</span>
         </div>
       </div>
       <div class="card" id="calDayCard" style="margin-top:16px"></div>
+      <div class="card" id="remindersBody" style="margin-top:16px"></div>
     </section>
 
     <!-- ============ PLANEJAR ============ -->
@@ -1555,7 +1557,7 @@
   const uid = () => "id" + Math.random().toString(36).slice(2, 9);
 
   const store = {
-    d: { mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {}, cards: [], debts: [], customCats: { out: [], in: [] }, split: { people: [], expenses: [] }, shopping: { budget: 0, items: [] }, netHistory: [] },
+    d: { mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {}, cards: [], debts: [], customCats: { out: [], in: [] }, split: { people: [], expenses: [] }, shopping: { budget: 0, items: [] }, netHistory: [], reminders: [] },
     load() { try { const r = localStorage.getItem(KEY); if (r) this.d = Object.assign(this.d, JSON.parse(r)); } catch (e) {} this.d.mode = "real"; },
     save() { try { localStorage.setItem(KEY, JSON.stringify(this.d)); } catch (e) {} },
   };
@@ -1782,7 +1784,7 @@
     updateScoreChip();
   }
   function resetAllData() {
-    store.d.accounts = []; store.d.tx = []; store.d.goals = []; store.d.bills = []; store.d.budgets = {}; store.d.investments = []; store.d.pj = {}; store.d.cards = []; store.d.debts = []; store.d.customCats = { out: [], in: [] }; store.d.split = { people: [], expenses: [] }; store.d.shopping = { budget: 0, items: [] }; store.d.netHistory = [];
+    store.d.accounts = []; store.d.tx = []; store.d.goals = []; store.d.bills = []; store.d.budgets = {}; store.d.investments = []; store.d.pj = {}; store.d.cards = []; store.d.debts = []; store.d.customCats = { out: [], in: [] }; store.d.split = { people: [], expenses: [] }; store.d.shopping = { budget: 0, items: [] }; store.d.netHistory = []; store.d.reminders = [];
     store.save(); applyMode();
     showToast("Seus dados foram apagados");
   }
@@ -1837,6 +1839,27 @@
   }
 
   /* ---------- Gastos (fixos + mensais) ---------- */
+  // detecta categorias cujo gasto do mês destoa muito da média dos 3 meses anteriores
+  function detectAnomalies() {
+    const now = new Date(), curKey = thisMonth();
+    const prevKeys = [1, 2, 3].map(o => { const d = new Date(now.getFullYear(), now.getMonth() - o, 1); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); });
+    const cats = {};
+    store.d.tx.filter(t => t.type === "out").forEach(t => {
+      const k = (t.date || "").slice(0, 7); if (k !== curKey && !prevKeys.includes(k)) return;
+      const c = (cats[t.category] = cats[t.category] || { cur: 0, prevSum: 0, months: new Set() });
+      if (k === curKey) c.cur += t.amount; else { c.prevSum += t.amount; c.months.add(k); }
+    });
+    const out = [];
+    Object.entries(cats).forEach(([cat, d]) => {
+      if (d.cur <= 0) return;
+      const months = d.months.size, avg = months ? d.prevSum / months : 0;
+      if (!months) return;
+      if (avg <= 0) { if (d.cur >= 150) out.push({ cat, cur: d.cur, avg: 0, delta: d.cur, novo: true }); return; }
+      const ratio = d.cur / avg;
+      if (ratio >= 1.5 && d.cur - avg >= 50) out.push({ cat, cur: d.cur, avg, ratio, delta: d.cur - avg });
+    });
+    return out.sort((a, b) => b.delta - a.delta);
+  }
   function renderGastos() {
     const body = $("#gastosBody"); if (!body) return;
     const bills = store.d.bills || [];
@@ -1876,6 +1899,21 @@
           <div class="value num money" style="color:${pendentes > 0 ? "var(--critical)" : "var(--good-text)"}">${brl(pendentes)}</div>
           <div class="delta"><span class="vs">${pendentes > 0 ? "ainda neste mês" : "tudo em dia ✓"}</span></div></div>
       </div>
+      ${(() => {
+        const anom = detectAnomalies();
+        if (!anom.length) return "";
+        return `<div class="grid" style="margin-bottom:16px"><div class="card" style="border:1px solid color-mix(in srgb, var(--warn) 45%, var(--ring))">
+          <div style="display:flex; align-items:baseline"><h2>⚠️ Gastos fora do normal</h2>
+            <span class="hint" style="margin:0 0 0 auto">vs. sua média dos últimos meses</span></div>
+          <div class="row-list mini-list" style="margin-top:6px">
+            ${anom.slice(0, 4).map(a => `<div class="row-item">
+              <span class="cat-dot" style="background:var(--warn)"></span>
+              <div class="grow"><div class="t">${esc(a.cat)}</div><div class="d">${a.novo ? "categoria nova este mês" : `média era ${brl(a.avg)} · agora ${brl(a.cur)}`}</div></div>
+              <span class="num money" style="color:var(--critical)">${a.novo ? "novo" : "▲ " + Math.round((a.ratio - 1) * 100) + "%"}</span></div>`).join("")}
+          </div>
+          <p class="hint" style="margin-top:10px">Não necessariamente é problema — pode ser uma compra pontual. Mas vale conferir se foi planejado.</p>
+        </div></div>`;
+      })()}
       <div class="grid g-1-1">
         <div class="card" id="gastosFixos">
           <div style="display:flex; align-items:baseline"><h2>Gastos fixos</h2>
@@ -2180,7 +2218,7 @@
         const data = parsed && parsed.data ? parsed.data : parsed;
         if (!data || typeof data !== "object" || !Array.isArray(data.tx)) throw new Error("formato inválido");
         if (!confirm("Importar este backup substitui os dados atuais deste navegador. Continuar?")) { e.target.value = ""; return; }
-        store.d = Object.assign({ mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {}, cards: [], debts: [], customCats: { out: [], in: [] }, split: { people: [], expenses: [] }, shopping: { budget: 0, items: [] }, netHistory: [] }, data);
+        store.d = Object.assign({ mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {}, cards: [], debts: [], customCats: { out: [], in: [] }, split: { people: [], expenses: [] }, shopping: { budget: 0, items: [] }, netHistory: [], reminders: [] }, data);
         store.d.mode = "real";
         store.save(); applyMode(); applyProfile();
         showToast("Backup importado com sucesso");
@@ -3225,7 +3263,50 @@
       push(Math.min(b.dueDay, new Date(year, month + 1, 0).getDate()),
         { kind: paid ? "paid" : "bill", label: b.name + (paid ? " (pago)" : " · vence"), amount: brl(b.amount) });
     });
+    (store.d.reminders || []).filter(r => (r.date || "").slice(0, 7) === key).forEach(r =>
+      push(+r.date.slice(8, 10), { kind: "note", label: "🔔 " + r.text, amount: r.done ? "feito ✓" : "" }));
     return ev;
+  }
+  function renderReminders() {
+    const body = $("#remindersBody"); if (!body) return;
+    const rems = (store.d.reminders || []).slice().sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+    const hoje = todayISO();
+    body.innerHTML = `
+      <div style="display:flex; align-items:baseline"><h2>🔔 Lembretes financeiros</h2>
+        <span class="hint" style="margin:0 0 0 auto">aparecem no calendário</span></div>
+      <p class="hint">Ex.: renovar seguro, IPTU, revisar assinatura, aniversário caro…</p>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin:8px 0">
+        <input id="remText" type="text" placeholder="O que lembrar?" autocomplete="off"
+          style="flex:2; min-width:160px; padding:9px 12px; border:1px solid var(--ring); border-radius:9px; background:var(--card); color:var(--ink)">
+        <input id="remDate" type="date" value="${hoje}"
+          style="flex:1; min-width:130px; padding:9px 12px; border:1px solid var(--ring); border-radius:9px; background:var(--card); color:var(--ink)">
+        <button class="btn-mini" id="btnRemAdd">Adicionar</button>
+      </div>
+      <div class="row-list mini-list">
+        ${rems.length ? rems.map(r => {
+          const past = (r.date || "") < hoje && !r.done;
+          return `<div class="row-item" style="${r.done ? "opacity:.55" : ""}">
+            <button class="shop-check ${r.done ? "on" : ""}" data-rem-done="${r.id}" aria-label="Marcar">${r.done ? "✓" : ""}</button>
+            <div class="grow"><div class="t" style="${r.done ? "text-decoration:line-through" : ""}">${esc(r.text)}</div>
+              <div class="d">${fmtDate(r.date)}${past ? ` · <span style="color:var(--critical)">venceu</span>` : ""}</div></div>
+            <button class="del" data-rem-del="${r.id}" aria-label="Excluir">✕</button></div>`;
+        }).join("") : `<p class="hint">Nenhum lembrete. Adicione o primeiro acima.</p>`}
+      </div>`;
+    const t = $("#remText"), dt = $("#remDate");
+    const add = () => {
+      const text = (t.value || "").trim(); if (!text) { t.focus(); return; }
+      store.d.reminders = store.d.reminders || [];
+      store.d.reminders.push({ id: uid(), text, date: dt.value || todayISO(), done: false });
+      store.save(); renderReminders(); renderCal();
+    };
+    $("#btnRemAdd").addEventListener("click", add);
+    if (t) t.addEventListener("keydown", e => { if (e.key === "Enter") add(); });
+    $$("[data-rem-done]", body).forEach(b => b.addEventListener("click", () => {
+      const r = store.d.reminders.find(x => x.id === b.dataset.remDone); if (r) r.done = !r.done; store.save(); renderReminders(); renderCal();
+    }));
+    $$("[data-rem-del]", body).forEach(b => b.addEventListener("click", () => {
+      store.d.reminders = store.d.reminders.filter(x => x.id !== b.dataset.remDel); store.save(); renderReminders(); renderCal();
+    }));
   }
   function renderCal() {
     const grid = $("#calGrid"); if (!grid) return;
@@ -3236,7 +3317,7 @@
     const ev = calEvents(y, m);
     const first = new Date(y, m, 1).getDay(), days = new Date(y, m + 1, 0).getDate();
     const today = new Date(); const isThisMonth = (y === today.getFullYear() && m === today.getMonth());
-    const dotColor = { in: "var(--good)", out: "var(--s1)", bill: "var(--critical)", paid: "var(--ink-3)" };
+    const dotColor = { in: "var(--good)", out: "var(--s1)", bill: "var(--critical)", paid: "var(--ink-3)", note: "var(--warn)" };
     let html = DOW.map(d => `<div class="cal-dow">${d}</div>`).join("");
     for (let i = 0; i < first; i++) html += `<div class="cal-cell empty"></div>`;
     for (let d = 1; d <= days; d++) {
@@ -3260,6 +3341,7 @@
       card.style.display = "none";
     }
   }
+  $$('[data-nav="cal"]').forEach(b => b.addEventListener("click", renderReminders));
   $("#calPrev").addEventListener("click", () => { calOffset--; calSel = null; renderCal(); });
   $("#calNext").addEventListener("click", () => { calOffset++; calSel = null; renderCal(); });
   $("#calToday").addEventListener("click", () => { calOffset = 0; calSel = null; renderCal(); });
@@ -3336,6 +3418,7 @@
     renderProj();
     applyProfile();
     renderCal();
+    renderReminders();
     updateScoreChip();
   }
   $("#relCsv").addEventListener("click", relDownloadCsv);
@@ -3810,6 +3893,12 @@
       if (res && res.current >= res.target * 0.5) pts += 16;
       pts = Math.max(5, Math.min(100, pts));
       return `Sua saúde financeira agora:<span class="fig">${pts}/100</span>Taxa de poupança do mês: ${Math.round(taxa * 100)}%. ${taxa >= 0.2 ? "Você guarda um quinto ou mais da renda — padrão de quem constrói patrimônio." : taxa >= 0 ? "Positivo, mas dá pra melhorar a sobra mensal." : "Atenção: mês no vermelho."}${res ? ` Sua reserva está em ${Math.round(res.current / res.target * 100)}% da meta.` : ""}${src}`;
+    }
+    if (/(fora do normal|gastei muito|gasto anormal|anomal|estranho|aumentou|subiu|gastei demais|acima do normal|fora da curva)/.test(n)) {
+      const anom = detectAnomalies();
+      if (!anom.length) return `Boa notícia: não achei nenhum gasto fora do normal este mês. Suas categorias estão dentro da sua média dos últimos meses. 👏${src}`;
+      const linhas = anom.slice(0, 5).map(a => `<div class="barrow"><span>${esc(a.cat)}</span><b class="num money" style="color:var(--critical)">${a.novo ? "novo · " + brl(a.cur) : "▲" + Math.round((a.ratio - 1) * 100) + "% · " + brl(a.cur)}</b></div>`).join("");
+      return `Encontrei ${anom.length} categoria(s) gastando acima do seu normal:${linhas}<div style="margin-top:10px">Comparei com a sua média dos últimos meses. Pode ser compra pontual — mas vale conferir se foi planejado.</div>${src}`;
     }
     if (/(divida|dividas|devo|devendo|emprestimo|quitar|bola de neve|avalanche|financiamento|cheque especial)/.test(n)) {
       const debts = store.d.debts || [];
