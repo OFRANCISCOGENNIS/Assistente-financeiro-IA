@@ -208,6 +208,12 @@
   .mchip.up   { background: color-mix(in srgb, var(--critical) 13%, transparent); color: var(--critical); }
   .mchip.down { background: color-mix(in srgb, var(--good) 15%, transparent); color: var(--good-text); }
   .mchip.flat, .mchip.new { background: color-mix(in srgb, var(--ink) 8%, transparent); color: var(--ink-3); }
+  .shop-check { width: 24px; height: 24px; flex: none; border-radius: 7px; border: 1.5px solid var(--ring);
+    background: var(--card); color: #fff; font-size: 13px; font-weight: 800; cursor: pointer; display: grid; place-items: center; }
+  .shop-check.on { background: var(--good); border-color: var(--good); }
+  .pat-col { flex: 1; min-width: 180px; }
+  .pat-h { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+  .pat-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--ink-2); padding: 3px 0; }
   .card.flash { animation: cardflash 1.2s ease; }
   @keyframes cardflash { 0%, 100% { box-shadow: var(--shadow); } 30% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 55%, transparent); } }
   .cat-dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
@@ -712,6 +718,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.3"/><path d="M3 20a6 6 0 0 1 12 0M15.5 20a5 5 0 0 1 5.5-4.8"/></svg>
       Dividir
     </button>
+    <button class="nav-btn" data-nav="compras">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6h15l-1.5 9h-12z"/><path d="M6 6L5 3H2"/><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/></svg>
+      Compras
+    </button>
     <button class="nav-btn" data-nav="metas">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
       Metas
@@ -869,6 +879,15 @@
       <div id="splitBody"></div>
     </section>
 
+    <!-- ============ LISTA DE COMPRAS ============ -->
+    <section class="view" id="view-compras" aria-label="Lista de compras">
+      <div class="view-h">
+        <h1>Lista de compras</h1>
+        <span class="sub">Monte a lista, defina um teto e não estoure o orçamento</span>
+      </div>
+      <div id="comprasBody"></div>
+    </section>
+
     <!-- ============ CALENDÁRIO ============ -->
     <section class="view" id="view-cal" aria-label="Calendário financeiro">
       <div class="view-h">
@@ -986,6 +1005,7 @@
       <button class="item" data-nav="cartoes" data-kw="/cartao cartoes fatura credito limite">💳 &nbsp;Abrir Cartões (faturas)</button>
       <button class="item" data-nav="dividas" data-kw="/divida dividas emprestimo quitar bola de neve avalanche">🧯 &nbsp;Abrir Dívidas (quitação)</button>
       <button class="item" data-nav="dividir" data-kw="/dividir rachar rateio conta grupo casal splitwise">🤝 &nbsp;Abrir Dividir contas (rateio)</button>
+      <button class="item" data-nav="compras" data-kw="/compras lista mercado supermercado orcamento carrinho">🛒 &nbsp;Abrir Lista de compras</button>
       <button class="item" data-nav="metas" data-kw="/meta objetivos">🎯 &nbsp;Ver Metas</button>
       <button class="item" data-nav="cal" data-kw="/calendario agenda vencimentos">📅 &nbsp;Abrir Calendário</button>
       <button class="item" data-nav="plan" data-kw="/planejar simular financiar fire">📈 &nbsp;Abrir Planejar</button>
@@ -1038,6 +1058,7 @@
       <button class="more-item" data-nav="inv"><span class="mi-ic">💹</span>Investir</button>
       <button class="more-item" data-nav="dividas"><span class="mi-ic">🧯</span>Dívidas</button>
       <button class="more-item" data-nav="dividir"><span class="mi-ic">🤝</span>Dividir</button>
+      <button class="more-item" data-nav="compras"><span class="mi-ic">🛒</span>Compras</button>
       <button class="more-item" data-nav="cal"><span class="mi-ic">📅</span>Calendário</button>
       <button class="more-item" data-nav="plan"><span class="mi-ic">📈</span>Planejar</button>
       <button class="more-item" data-nav="rel"><span class="mi-ic">📄</span>Relatórios</button>
@@ -1497,7 +1518,7 @@
   const uid = () => "id" + Math.random().toString(36).slice(2, 9);
 
   const store = {
-    d: { mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {}, cards: [], debts: [], customCats: { out: [], in: [] }, split: { people: [], expenses: [] } },
+    d: { mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {}, cards: [], debts: [], customCats: { out: [], in: [] }, split: { people: [], expenses: [] }, shopping: { budget: 0, items: [] } },
     load() { try { const r = localStorage.getItem(KEY); if (r) this.d = Object.assign(this.d, JSON.parse(r)); } catch (e) {} this.d.mode = "real"; },
     save() { try { localStorage.setItem(KEY, JSON.stringify(this.d)); } catch (e) {} },
   };
@@ -1601,7 +1622,28 @@
           ? `<div class="hint" style="margin-top:10px; color:var(--good-text)">✓ No ritmo atual você fecha o mês no positivo. Bom trabalho.</div>`
           : `<div class="alert critical" style="margin-top:12px"><span class="ic">⚠️</span><div><b>Risco de ficar negativo</b> antes do fim do mês. Segure gastos não essenciais ${brl(-fc.projetado)} ou antecipe uma entrada.</div></div>`}
       </div></div>`;
-    realDash.innerHTML = alertBanner + forecastCard + `
+    // card de patrimônio líquido (ativos − passivos)
+    const invTotal = (d.investments || []).reduce((a, i) => a + (i.amount || 0), 0);
+    const debtTotal = (d.debts || []).reduce((a, x) => a + (x.balance || 0), 0);
+    const cardTotal = (d.cards || []).reduce((a, c) => a + cardInvoice(c), 0);
+    const ativos = saldo + invTotal, passivos = debtTotal + cardTotal, patrimonio = ativos - passivos;
+    const showPat = ativos > 0 || passivos > 0;
+    const patrimonioCard = showPat ? `
+      <div class="grid" style="margin-bottom:16px"><div class="card">
+        <div style="display:flex; align-items:baseline"><h2>Patrimônio líquido</h2>
+          <span class="hint" style="margin:0 0 0 auto">tudo que você tem − tudo que você deve</span></div>
+        <div class="value num money" style="font-size:30px; margin:4px 0; color:${patrimonio >= 0 ? "var(--good-text)" : "var(--critical)"}">${brl(patrimonio)}</div>
+        <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px">
+          <div class="pat-col"><div class="pat-h" style="color:var(--good-text)">Ativos ${brl(ativos)}</div>
+            <div class="pat-row"><span>Contas</span><b class="num money">${brl(saldo)}</b></div>
+            ${invTotal ? `<div class="pat-row"><span>Investimentos</span><b class="num money">${brl(invTotal)}</b></div>` : ""}</div>
+          <div class="pat-col"><div class="pat-h" style="color:var(--critical)">Passivos ${brl(passivos)}</div>
+            ${debtTotal ? `<div class="pat-row"><span>Dívidas</span><b class="num money">${brl(debtTotal)}</b></div>` : ""}
+            ${cardTotal ? `<div class="pat-row"><span>Faturas em aberto</span><b class="num money">${brl(cardTotal)}</b></div>` : ""}
+            ${!passivos ? `<div class="pat-row"><span>Nenhum — parabéns! 🎉</span><b></b></div>` : ""}</div>
+        </div>
+      </div></div>` : "";
+    realDash.innerHTML = alertBanner + forecastCard + patrimonioCard + `
       <div class="grid g-tiles">
         <div class="card tile"><div class="label">Saldo total</div>
           <div class="value num money">${brl(saldo)}</div>
@@ -1702,7 +1744,7 @@
     updateScoreChip();
   }
   function resetAllData() {
-    store.d.accounts = []; store.d.tx = []; store.d.goals = []; store.d.bills = []; store.d.budgets = {}; store.d.investments = []; store.d.pj = {}; store.d.cards = []; store.d.debts = []; store.d.customCats = { out: [], in: [] }; store.d.split = { people: [], expenses: [] };
+    store.d.accounts = []; store.d.tx = []; store.d.goals = []; store.d.bills = []; store.d.budgets = {}; store.d.investments = []; store.d.pj = {}; store.d.cards = []; store.d.debts = []; store.d.customCats = { out: [], in: [] }; store.d.split = { people: [], expenses: [] }; store.d.shopping = { budget: 0, items: [] };
     store.save(); applyMode();
     showToast("Seus dados foram apagados");
   }
@@ -2100,7 +2142,7 @@
         const data = parsed && parsed.data ? parsed.data : parsed;
         if (!data || typeof data !== "object" || !Array.isArray(data.tx)) throw new Error("formato inválido");
         if (!confirm("Importar este backup substitui os dados atuais deste navegador. Continuar?")) { e.target.value = ""; return; }
-        store.d = Object.assign({ mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {}, cards: [], debts: [], customCats: { out: [], in: [] }, split: { people: [], expenses: [] } }, data);
+        store.d = Object.assign({ mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {}, cards: [], debts: [], customCats: { out: [], in: [] }, split: { people: [], expenses: [] }, shopping: { budget: 0, items: [] } }, data);
         store.d.mode = "real";
         store.save(); applyMode(); applyProfile();
         showToast("Backup importado com sucesso");
@@ -2110,6 +2152,95 @@
       e.target.value = "";
     };
     reader.readAsText(file);
+  }
+
+  /* ---------- Lista de compras com orçamento ---------- */
+  function shopData() { const s = store.d.shopping || { budget: 0, items: [] }; s.items = s.items || []; return s; }
+  function renderCompras() {
+    const body = $("#comprasBody"); if (!body) return;
+    const s = shopData();
+    const total = s.items.reduce((a, it) => a + it.price * (it.qty || 1), 0);
+    const marcado = s.items.filter(it => it.done).reduce((a, it) => a + it.price * (it.qty || 1), 0);
+    const budget = s.budget || 0;
+    const pct = budget ? Math.round(total / budget * 100) : 0;
+    const cor = !budget ? "var(--accent)" : pct > 100 ? "var(--critical)" : pct >= 85 ? "var(--warn)" : "var(--accent)";
+    body.innerHTML = `
+      <div class="grid g-1-1">
+        <div class="card">
+          <h2>Sua lista</h2>
+          <p class="hint">Adicione item, preço e quantidade</p>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin:8px 0">
+            <input id="shopName" type="text" placeholder="Item (ex.: Arroz 5kg)" autocomplete="off"
+              style="flex:2; min-width:140px; padding:9px 12px; border:1px solid var(--ring); border-radius:9px; background:var(--card); color:var(--ink)">
+            <input id="shopPrice" type="text" inputmode="decimal" placeholder="R$ preço"
+              style="flex:1; min-width:80px; padding:9px 12px; border:1px solid var(--ring); border-radius:9px; background:var(--card); color:var(--ink)">
+            <input id="shopQty" type="number" min="1" value="1" title="Quantidade"
+              style="width:64px; padding:9px 10px; border:1px solid var(--ring); border-radius:9px; background:var(--card); color:var(--ink)">
+            <button class="btn-mini" id="btnShopAdd">Adicionar</button>
+          </div>
+          <div class="row-list mini-list">
+            ${s.items.length ? s.items.map(it => `<div class="row-item" style="${it.done ? "opacity:.55" : ""}">
+              <button class="shop-check ${it.done ? "on" : ""}" data-toggle="${it.id}" aria-label="Marcar">${it.done ? "✓" : ""}</button>
+              <div class="grow"><div class="t" style="${it.done ? "text-decoration:line-through" : ""}">${esc(it.name)}</div>
+                <div class="d">${it.qty > 1 ? it.qty + "× " : ""}${brl(it.price)}</div></div>
+              <span class="num money">${brl(it.price * (it.qty || 1))}</span>
+              <button class="del" data-del-item="${it.id}" aria-label="Excluir">✕</button></div>`).join("")
+              : `<p class="hint">Lista vazia. Adicione o primeiro item acima.</p>`}
+          </div>
+        </div>
+        <div class="card">
+          <h2>Orçamento da compra</h2>
+          <p class="hint">Defina um teto e acompanhe em tempo real</p>
+          <div class="field" style="margin-top:6px"><label for="shopBudget">Teto (opcional)</label>
+            <input id="shopBudget" type="text" inputmode="decimal" value="${budget ? "R$ " + budget.toLocaleString("pt-BR") : ""}" placeholder="R$ 0,00"></div>
+          <div style="display:flex; align-items:baseline; gap:8px; margin-top:8px">
+            <div class="value num money" style="font-size:26px; font-weight:750; color:${cor}">${brl(total)}</div>
+            <span class="hint" style="margin:0">${budget ? "de " + brl(budget) : "total da lista"}</span></div>
+          ${budget ? `<div class="limit-bar"><i style="width:${Math.min(100, pct)}%; background:${cor}"></i></div>
+            <div class="b-sub" style="display:flex; justify-content:space-between; font-size:12px; color:var(--ink-3); margin-top:5px">
+              <span>${pct}% do teto</span>
+              <span class="num money" style="color:${total > budget ? "var(--critical)" : "var(--good-text)"}">${total > budget ? brl(total - budget) + " acima" : brl(budget - total) + " de folga"}</span></div>` : ""}
+          <div class="row-item" style="margin-top:14px"><div class="grow"><div class="t">Itens no carrinho (marcados)</div>
+            <div class="d">${s.items.filter(it => it.done).length} de ${s.items.length}</div></div>
+            <span class="num money">${brl(marcado)}</span></div>
+          ${s.items.length ? `<div class="cta-row" style="margin-top:14px">
+            <button class="btn-mini" id="btnShopSpend">Lançar como despesa</button>
+            <button class="btn-ghost safe" id="btnShopClear">Limpar lista</button></div>
+            <p class="hint" style="margin-top:8px">"Lançar" registra ${marcado > 0 ? "os itens marcados" : "a lista toda"} como uma despesa em Mercado.</p>` : ""}
+        </div>
+      </div>`;
+    const nameEl = $("#shopName"), priceEl = $("#shopPrice"), qtyEl = $("#shopQty");
+    const addItem = () => {
+      const name = (nameEl.value || "").trim(), price = parseNum(priceEl.value), qty = Math.max(1, parseInt(qtyEl.value, 10) || 1);
+      if (!name || price <= 0) { nameEl.focus(); return; }
+      s.items.push({ id: uid(), name, price, qty, done: false }); store.d.shopping = s; store.save(); renderCompras();
+    };
+    $("#btnShopAdd").addEventListener("click", addItem);
+    [nameEl, priceEl, qtyEl].forEach(el => el && el.addEventListener("keydown", e => { if (e.key === "Enter") addItem(); }));
+    const bud = $("#shopBudget");
+    if (bud) bud.addEventListener("change", () => { s.budget = parseNum(bud.value); store.d.shopping = s; store.save(); renderCompras(); });
+    $$("[data-toggle]", body).forEach(b => b.addEventListener("click", () => {
+      const it = s.items.find(x => x.id === b.dataset.toggle); if (it) it.done = !it.done; store.d.shopping = s; store.save(); renderCompras();
+    }));
+    $$("[data-del-item]", body).forEach(b => b.addEventListener("click", () => {
+      s.items = s.items.filter(x => x.id !== b.dataset.delItem); store.d.shopping = s; store.save(); renderCompras();
+    }));
+    const spend = $("#btnShopSpend");
+    if (spend) spend.addEventListener("click", () => {
+      const marcados = s.items.filter(it => it.done);
+      const useItems = marcados.length ? marcados : s.items;
+      const amount = useItems.reduce((a, it) => a + it.price * (it.qty || 1), 0);
+      if (amount <= 0) return;
+      const acct = store.d.accounts[0];
+      store.d.tx.push({ id: uid(), type: "out", amount, category: "Mercado", account: acct ? acct.name : "", date: todayISO() });
+      if (acct) acct.balance -= amount;
+      s.items = marcados.length ? s.items.filter(it => !it.done) : [];
+      store.d.shopping = s; store.save();
+      renderCompras(); renderReal(); renderRel(); renderGastos();
+      showToast(`Compra de ${brl(amount)} lançada em Mercado`);
+    });
+    const clr = $("#btnShopClear");
+    if (clr) clr.addEventListener("click", () => { if (confirm("Limpar toda a lista de compras?")) { s.items = []; store.d.shopping = s; store.save(); renderCompras(); } });
   }
 
   /* ---------- Dividir contas (rateio + acerto) ---------- */
@@ -2990,6 +3121,7 @@
     renderCards();
     renderDividas();
     renderSplit();
+    renderCompras();
     renderPj();
     renderSec();
     renderProj();
@@ -3004,6 +3136,7 @@
   $$('[data-nav="cartoes"]').forEach(b => b.addEventListener("click", renderCards));
   $$('[data-nav="dividas"]').forEach(b => b.addEventListener("click", renderDividas));
   $$('[data-nav="dividir"]').forEach(b => b.addEventListener("click", renderSplit));
+  $$('[data-nav="compras"]').forEach(b => b.addEventListener("click", renderCompras));
   $$('[data-nav="plan"]').forEach(b => b.addEventListener("click", renderProj));
   $$('[data-nav="pj"]').forEach(b => b.addEventListener("click", renderPj));
   $$('[data-nav="sec"]').forEach(b => b.addEventListener("click", renderSec));

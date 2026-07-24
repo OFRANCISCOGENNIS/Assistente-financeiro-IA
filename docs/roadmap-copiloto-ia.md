@@ -62,6 +62,8 @@ O copiloto **v0** é um **motor de regras determinístico**: interpreta a pergun
 25. ✅ **Categorias personalizadas** — chip "+ Nova" no lançamento (e no cartão/orçamento) cria categorias próprias, persistidas e disponíveis em todo o app.
 26. ✅ **Projeção de 12 meses** — na tela Planejar, projeta o saldo mês a mês pelo próximo ano com base na média real de renda e gasto; avisa se/quando o saldo ficaria negativo.
 27. ✅ **Dividir contas (rateio)** — estilo Splitwise: cadastra pessoas e despesas (quem pagou), calcula a parte de cada um, os saldos (quem deve/recebe) e sugere o mínimo de transferências para acertar.
+28. ✅ **Patrimônio líquido** — card no dashboard somando ativos (contas + investimentos) menos passivos (dívidas + faturas de cartão em aberto), com detalhamento.
+29. ✅ **Lista de compras com orçamento** — monta a lista (item, preço, quantidade), define um teto, acompanha o total vs. teto em tempo real, marca itens no carrinho e lança a compra como despesa.
 
 ### Fase B — Exige backend + IA (o salto de produto)
 
