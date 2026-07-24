@@ -633,6 +633,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h13l3 3v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M7 9h8M7 13h8M7 17h5"/></svg>
       Gastos
     </button>
+    <button class="nav-btn" data-nav="cartoes">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20M6 15h4"/></svg>
+      Cartões
+    </button>
     <button class="nav-btn" data-nav="metas">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
       Metas
@@ -762,6 +766,15 @@
       <div id="gastosBody"></div>
     </section>
 
+    <!-- ============ CARTÕES DE CRÉDITO ============ -->
+    <section class="view" id="view-cartoes" aria-label="Cartões de crédito">
+      <div class="view-h">
+        <h1>Cartões</h1>
+        <span class="sub">Faturas, limite usado e vencimentos dos seus cartões</span>
+      </div>
+      <div id="cardsBody"></div>
+    </section>
+
     <!-- ============ CALENDÁRIO ============ -->
     <section class="view" id="view-cal" aria-label="Calendário financeiro">
       <div class="view-h">
@@ -879,6 +892,7 @@
       <button class="item" id="cmdAdd" data-kw="/despesa /receita /lancar gasto">➕ &nbsp;Registrar lançamento</button>
       <button class="item" data-nav="orc" data-kw="/orcamento limites">🥧 &nbsp;Abrir Orçamento mensal</button>
       <button class="item" data-nav="gastos" data-kw="/gastos fixos mensais despesas contas">🧾 &nbsp;Abrir Gastos (fixos e mensais)</button>
+      <button class="item" data-nav="cartoes" data-kw="/cartao cartoes fatura credito limite">💳 &nbsp;Abrir Cartões (faturas)</button>
       <button class="item" data-nav="metas" data-kw="/meta objetivos">🎯 &nbsp;Ver Metas</button>
       <button class="item" data-nav="cal" data-kw="/calendario agenda vencimentos">📅 &nbsp;Abrir Calendário</button>
       <button class="item" data-nav="plan" data-kw="/planejar simular financiar fire">📈 &nbsp;Abrir Planejar</button>
@@ -1060,6 +1074,58 @@
   </div>
 </div>
 
+<!-- adicionar cartão -->
+<div class="sheet-veil" id="cardSheet">
+  <div class="sheet" role="dialog" aria-label="Adicionar cartão">
+    <h2>Adicionar cartão</h2>
+    <p style="margin-bottom:2px">Seu cartão de crédito — limite e datas da fatura.</p>
+    <div class="field">
+      <label for="cardName">Nome do cartão</label>
+      <input id="cardName" type="text" placeholder="Ex.: Nubank, Inter Gold" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="cardLimit">Limite total</label>
+      <input id="cardLimit" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="cardClose">Dia do fechamento</label>
+      <input id="cardClose" type="number" min="1" max="31" placeholder="Ex.: 28">
+    </div>
+    <div class="field">
+      <label for="cardDue">Dia do vencimento</label>
+      <input id="cardDue" type="number" min="1" max="31" placeholder="Ex.: 5">
+    </div>
+    <button class="btn-primary" id="btnCardSave" style="margin-top:18px">Salvar cartão</button>
+    <button class="alt" id="btnCardCancel">Cancelar</button>
+  </div>
+</div>
+
+<!-- lançar compra no cartão -->
+<div class="sheet-veil" id="cardBuySheet">
+  <div class="sheet" role="dialog" aria-label="Compra no cartão">
+    <h2>Compra no cartão</h2>
+    <p style="margin-bottom:2px">Registre um gasto na fatura.</p>
+    <span class="fieldset-label">Cartão</span>
+    <div class="chip-row" id="cardBuyCards"></div>
+    <div class="field">
+      <label for="cardBuyDesc">Descrição</label>
+      <input id="cardBuyDesc" type="text" placeholder="Ex.: Mercado, Uber, Assinatura" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="cardBuyValue">Valor</label>
+      <input id="cardBuyValue" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
+    </div>
+    <span class="fieldset-label">Categoria</span>
+    <div class="chip-row" id="cardBuyCats"></div>
+    <div class="field">
+      <label for="cardBuyDate">Data</label>
+      <input id="cardBuyDate" type="date">
+    </div>
+    <button class="btn-primary" id="btnCardBuySave" style="margin-top:18px">Lançar compra</button>
+    <button class="alt" id="btnCardBuyCancel">Cancelar</button>
+  </div>
+</div>
+
 <!-- editar perfil -->
 <div class="sheet-veil" id="profSheet">
   <div class="sheet" role="dialog" aria-label="Editar perfil">
@@ -1193,7 +1259,7 @@
   const uid = () => "id" + Math.random().toString(36).slice(2, 9);
 
   const store = {
-    d: { mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {} },
+    d: { mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {}, cards: [] },
     load() { try { const r = localStorage.getItem(KEY); if (r) this.d = Object.assign(this.d, JSON.parse(r)); } catch (e) {} this.d.mode = "real"; },
     save() { try { localStorage.setItem(KEY, JSON.stringify(this.d)); } catch (e) {} },
   };
@@ -1396,7 +1462,7 @@
     updateScoreChip();
   }
   function resetAllData() {
-    store.d.accounts = []; store.d.tx = []; store.d.goals = []; store.d.bills = []; store.d.budgets = {}; store.d.investments = []; store.d.pj = {};
+    store.d.accounts = []; store.d.tx = []; store.d.goals = []; store.d.bills = []; store.d.budgets = {}; store.d.investments = []; store.d.pj = {}; store.d.cards = [];
     store.save(); applyMode();
     showToast("Seus dados foram apagados");
   }
@@ -1768,6 +1834,142 @@
     };
     reader.readAsText(file);
   }
+
+  /* ---------- Cartões de crédito & faturas ---------- */
+  const cardOpen = c => (c.purchases || []).filter(p => !p.paid);
+  const cardInvoice = c => cardOpen(c).reduce((a, p) => a + p.amount, 0);
+  function renderCards() {
+    const body = $("#cardsBody"); if (!body) return;
+    const cards = store.d.cards || [];
+    if (!cards.length) {
+      body.innerHTML = `
+        <div class="card empty">
+          <div class="big">💳</div>
+          <h2>Seus cartões, sem susto na fatura</h2>
+          <p>Cadastre um cartão e lance as compras. Eu somo a <b>fatura atual</b>, mostro o <b>limite usado</b> e aviso o <b>vencimento</b> — pra fatura nunca te pegar de surpresa.</p>
+          <div class="cta-row"><button class="btn-mini" data-act="card">+ Adicionar cartão</button></div>
+        </div>`;
+      $$("[data-act='card']", body).forEach(b => b.addEventListener("click", openCard));
+      return;
+    }
+    const totLimit = cards.reduce((a, c) => a + (c.limit || 0), 0);
+    const totFatura = cards.reduce((a, c) => a + cardInvoice(c), 0);
+    const disp = totLimit - totFatura;
+    const hoje = new Date().getDate();
+    body.innerHTML = `
+      <div class="grid g-tiles">
+        <div class="card tile"><div class="label">Fatura total em aberto</div>
+          <div class="value num money">${brl(totFatura)}</div>
+          <div class="delta"><span class="vs">${cards.length} cartão(ões)</span></div></div>
+        <div class="card tile"><div class="label">Limite total</div>
+          <div class="value num money">${brl(totLimit)}</div></div>
+        <div class="card tile"><div class="label">Limite disponível</div>
+          <div class="value num money" style="color:${disp > 0 ? "var(--good-text)" : "var(--critical)"}">${brl(disp)}</div>
+          <div class="delta"><span class="vs">${totLimit ? Math.round(totFatura / totLimit * 100) : 0}% usado</span></div></div>
+        <div class="card tile"><div class="label">Adicionar</div>
+          <div class="cta-row" style="margin-top:6px"><button class="btn-mini alt" data-act="card">+ Cartão</button>
+            <button class="btn-mini" data-act="cardBuy">+ Compra</button></div></div>
+      </div>
+      <div class="grid g-1-1">
+        ${cards.map(c => {
+          const fat = cardInvoice(c), usoPct = c.limit ? Math.min(100, Math.round(fat / c.limit * 100)) : 0;
+          const cor = usoPct >= 90 ? "var(--critical)" : usoPct >= 70 ? "var(--warn)" : "var(--accent)";
+          const venceEm = c.dueDay - hoje, vencText = venceEm < 0 ? "venceu dia " + c.dueDay : venceEm === 0 ? "vence hoje" : `vence dia ${c.dueDay} (${venceEm}d)`;
+          const compras = [...cardOpen(c)].sort((a, b) => (b.date + b.id).localeCompare(a.date + a.id));
+          return `<div class="card">
+            <div style="display:flex; align-items:baseline"><h2>${esc(c.name)}</h2>
+              <button class="del" data-del-card="${c.id}" aria-label="Excluir cartão" style="margin-left:auto">✕</button></div>
+            <p class="hint">Fecha dia ${c.closeDay} · ${vencText}</p>
+            <div style="display:flex; align-items:baseline; gap:8px; margin:6px 0 2px">
+              <div class="value num money" style="font-size:26px; font-weight:750">${brl(fat)}</div>
+              <span class="hint" style="margin:0">de fatura</span></div>
+            <div class="limit-bar"><i style="width:${Math.max(3, usoPct)}%; background:${cor}"></i></div>
+            <div class="b-sub" style="display:flex; justify-content:space-between; font-size:12px; color:var(--ink-3); margin-top:5px">
+              <span>${usoPct}% do limite (${brl(c.limit || 0)})</span>
+              <span class="num money">${brl((c.limit || 0) - fat)} livre</span></div>
+            <div class="row-list mini-list" style="margin-top:12px">
+              ${compras.length ? compras.map(p => `<div class="row-item">
+                <span class="cat-dot" style="background:var(--s1)"></span>
+                <div class="grow"><div class="t">${esc(p.desc || p.category || "Compra")}</div><div class="d">${fmtDate(p.date)}${p.category ? " · " + esc(p.category) : ""}</div></div>
+                <span class="num tx-out">−${brl(p.amount)}</span>
+                <button class="del" data-del-buy="${c.id}:${p.id}" aria-label="Excluir">✕</button></div>`).join("")
+                : `<p class="hint">Nenhuma compra em aberto nesta fatura.</p>`}
+            </div>
+            <div class="cta-row" style="margin-top:12px">
+              <button class="btn-mini" data-buy-card="${c.id}">+ Compra</button>
+              ${fat > 0 ? `<button class="btn-ghost safe" data-pay-inv="${c.id}">Pagar fatura (${brl(fat)})</button>` : ""}
+            </div>
+          </div>`;
+        }).join("")}
+      </div>`;
+    $$("[data-act='card']", body).forEach(b => b.addEventListener("click", openCard));
+    $$("[data-act='cardBuy']", body).forEach(b => b.addEventListener("click", () => openCardBuy()));
+    $$("[data-buy-card]", body).forEach(b => b.addEventListener("click", () => openCardBuy(b.dataset.buyCard)));
+    $$("[data-pay-inv]", body).forEach(b => b.addEventListener("click", () => payInvoice(b.dataset.payInv)));
+    $$("[data-del-card]", body).forEach(b => b.addEventListener("click", () => {
+      if (!confirm("Excluir este cartão e suas compras em aberto?")) return;
+      store.d.cards = store.d.cards.filter(c => c.id !== b.dataset.delCard); store.save(); renderCards();
+    }));
+    $$("[data-del-buy]", body).forEach(b => b.addEventListener("click", () => {
+      const [cid, pid] = b.dataset.delBuy.split(":");
+      const c = store.d.cards.find(x => x.id === cid); if (c) c.purchases = (c.purchases || []).filter(p => p.id !== pid);
+      store.save(); renderCards();
+    }));
+  }
+  function payInvoice(cid) {
+    const c = store.d.cards.find(x => x.id === cid); if (!c) return;
+    const fat = cardInvoice(c); if (fat <= 0) return;
+    if (!confirm(`Pagar a fatura de ${brl(fat)} do cartão ${c.name}?`)) return;
+    (c.purchases || []).forEach(p => { if (!p.paid) p.paid = true; });
+    const acct = store.d.accounts[0];
+    store.d.tx.push({ id: uid(), type: "out", amount: fat, category: "Cartão de crédito", account: acct ? acct.name : "", date: todayISO() });
+    if (acct) acct.balance -= fat;
+    store.save(); renderCards(); renderReal(); renderRel(); renderGastos();
+    showToast(`Fatura de ${c.name} paga — ${brl(fat)}`);
+  }
+  const cardSheet = $("#cardSheet");
+  function openCard() {
+    $("#cardName").value = ""; $("#cardLimit").value = ""; $("#cardClose").value = ""; $("#cardDue").value = "";
+    cardSheet.classList.add("open"); $("#cardName").focus();
+  }
+  $("#btnCardCancel").addEventListener("click", () => cardSheet.classList.remove("open"));
+  cardSheet.addEventListener("click", e => { if (e.target === cardSheet) cardSheet.classList.remove("open"); });
+  $("#btnCardSave").addEventListener("click", () => {
+    const name = $("#cardName").value.trim(), limit = parseNum($("#cardLimit").value);
+    const close = Math.max(1, Math.min(31, parseInt($("#cardClose").value, 10) || 1));
+    const due = Math.max(1, Math.min(31, parseInt($("#cardDue").value, 10) || 1));
+    if (!name) { $("#cardName").focus(); return; }
+    store.d.cards.push({ id: uid(), name, limit, closeDay: close, dueDay: due, purchases: [] });
+    store.save(); cardSheet.classList.remove("open"); renderCards();
+    showToast(`Cartão "${name}" adicionado`);
+  });
+  const cardBuySheet = $("#cardBuySheet");
+  let cardBuySel = null;
+  function openCardBuy(cid) {
+    const cards = store.d.cards || [];
+    if (!cards.length) { openCard(); return; }
+    cardBuySel = cid || cards[0].id;
+    $("#cardBuyCards").innerHTML = cards.map(c => `<button class="chip" data-cid="${c.id}" aria-pressed="${c.id === cardBuySel}">${esc(c.name)}</button>`).join("");
+    $$("#cardBuyCards .chip").forEach(ch => ch.addEventListener("click", () => {
+      cardBuySel = ch.dataset.cid;
+      $$("#cardBuyCards .chip").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.cid === cardBuySel)));
+    }));
+    fillChips($("#cardBuyCats"), CATS_OUT);
+    $("#cardBuyDesc").value = ""; $("#cardBuyValue").value = ""; $("#cardBuyDate").value = todayISO();
+    cardBuySheet.classList.add("open"); $("#cardBuyDesc").focus();
+  }
+  $("#btnCardBuyCancel").addEventListener("click", () => cardBuySheet.classList.remove("open"));
+  cardBuySheet.addEventListener("click", e => { if (e.target === cardBuySheet) cardBuySheet.classList.remove("open"); });
+  $("#btnCardBuySave").addEventListener("click", () => {
+    const c = store.d.cards.find(x => x.id === cardBuySel); if (!c) return;
+    const amount = parseNum($("#cardBuyValue").value);
+    if (amount <= 0) { $("#cardBuyValue").focus(); return; }
+    const cat = ($('#cardBuyCats .chip[aria-pressed="true"]') || {}).textContent || "Outros";
+    c.purchases = c.purchases || [];
+    c.purchases.push({ id: uid(), desc: $("#cardBuyDesc").value.trim(), amount, category: cat, date: $("#cardBuyDate").value || todayISO(), paid: false });
+    store.save(); cardBuySheet.classList.remove("open"); renderCards();
+    showToast(`Compra de ${brl(amount)} lançada em ${c.name}`);
+  });
 
   /* ---------- Orçamento (Meus dados) ---------- */
   const daysInMonth = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); };
@@ -2218,6 +2420,7 @@
     $("#dashSub").textContent = `${now.getDate()} de ${MESES_L[now.getMonth()]} de ${now.getFullYear()} · dados neste navegador`;
     renderRel();
     renderGastos();
+    renderCards();
     renderPj();
     renderSec();
     applyProfile();
@@ -2228,6 +2431,7 @@
   $("#relPdf").addEventListener("click", () => window.print());
   $$('[data-nav="rel"]').forEach(b => b.addEventListener("click", renderRel));
   $$('[data-nav="gastos"]').forEach(b => b.addEventListener("click", renderGastos));
+  $$('[data-nav="cartoes"]').forEach(b => b.addEventListener("click", renderCards));
   $$('[data-nav="pj"]').forEach(b => b.addEventListener("click", renderPj));
   $$('[data-nav="sec"]').forEach(b => b.addEventListener("click", renderSec));
 
@@ -2461,7 +2665,7 @@
   $("#cmdClear").addEventListener("click", () => { closeCmdk(); openClear(); });
   addEventListener("keydown", e => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openCmdk(); }
-    if (e.key === "Escape") { closeCmdk(); [sheet, guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, pjSheet, profSheet, a11ySheet, clearSheet].forEach(s => s && s.classList.remove("open")); }
+    if (e.key === "Escape") { closeCmdk(); [sheet, guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, pjSheet, profSheet, cardSheet, cardBuySheet, a11ySheet, clearSheet].forEach(s => s && s.classList.remove("open")); }
   });
 
   /* ---------- gráficos (SVG gerado) ---------- */
