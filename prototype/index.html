@@ -664,7 +664,7 @@
       Educação
     </button>
     <div class="spacer"></div>
-    <div class="user-chip"><span class="avatar">GF</span> genisfrazao27@…</div>
+    <div class="user-chip"><span class="avatar" id="sideAvatar">GF</span> <span id="sideName">genisfrazao27@…</span></div>
   </nav>
 
   <div class="main">
@@ -861,119 +861,7 @@
         <span class="sub">Estado da conta, dispositivos e privacidade em um só lugar</span>
       </div>
 
-      <div class="grid g-2-1">
-        <div class="card">
-          <div class="score-wrap">
-            <div class="score-ring">
-              <svg viewBox="0 0 120 120">
-                <circle cx="60" cy="60" r="52" fill="none" stroke="var(--grid)" stroke-width="10"/>
-                <circle cx="60" cy="60" r="52" fill="none" stroke="var(--warn)" stroke-width="10"
-                  stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="78.4"/>
-              </svg>
-              <div class="n">76<small>de 100</small></div>
-            </div>
-            <div style="flex:1; min-width: 240px">
-              <h2 style="font-size:16px">Seu score está na banda Atenção</h2>
-              <p class="hint" style="margin-bottom:6px">+12 pts disponíveis nos itens abaixo — resolvê-los leva você à banda Protegido.</p>
-              <div class="check-item done"><span class="box">✓</span> Passkey ativa neste aparelho</div>
-              <div class="check-item done"><span class="box">✓</span> Verificação em duas etapas por push</div>
-              <div class="check-item"><span class="box"></span> Revisar 1 dispositivo com acesso incomum <button class="act">Revisar (+5 pts)</button></div>
-              <div class="check-item"><span class="box"></span> Configurar contato de recuperação <button class="act">Configurar (+3 pts)</button></div>
-              <div class="check-item"><span class="box"></span> Cancelar assinatura sem uso (StreamMax) <button class="act">Resolver (+4 pts)</button></div>
-              <div style="display:flex; gap:18px; margin-top:12px; flex-wrap:wrap">
-                <div style="flex:1; min-width:140px">
-                  <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:4px">
-                    <span style="color:var(--ink-2); font-weight:600">Financeiro</span><b class="num">50/60</b>
-                  </div>
-                  <div class="limit-bar"><i style="width:83%; background:var(--accent)"></i></div>
-                </div>
-                <div style="flex:1; min-width:140px">
-                  <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:4px">
-                    <span style="color:var(--ink-2); font-weight:600">Segurança</span><b class="num">29/40</b>
-                  </div>
-                  <div class="limit-bar"><i style="width:72%; background:var(--accent)"></i></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <h2>Atividade recente</h2>
-          <p class="hint">Linha do tempo de segurança</p>
-          <ul class="tl">
-            <li class="hl"><b>Login em novo dispositivo</b> — Windows · Curitiba, PR<br><span class="when">hoje, 08:12 · aprovado por push</span></li>
-            <li><b>Pix de R$ 1.850,00</b> aprovado com biometria<br><span class="when">ontem, 19:40</span></li>
-            <li><b>Consentimento Open Finance renovado</b> — Banco Inter<br><span class="when">18/07, 10:03</span></li>
-            <li><b>Relatório mensal exportado</b> (PDF, criptografado)<br><span class="when">01/07, 07:00</span></li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="grid g-1-1">
-        <div class="card">
-          <h2>Dispositivos conectados</h2>
-          <p class="hint">Revogue o acesso de qualquer aparelho a qualquer momento</p>
-          <div class="device">
-            <span class="dev-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18h2"/></svg></span>
-            <div class="grow"><div class="t">iPhone 15 — este aparelho</div>
-              <div class="d">São Paulo, SP · agora · passkey + Face ID</div></div>
-            <span class="pill ok">atual</span>
-          </div>
-          <div class="device">
-            <span class="dev-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg></span>
-            <div class="grow"><div class="t">MacBook Air</div>
-              <div class="d">São Paulo, SP · há 2 h · sessão web</div></div>
-            <button class="btn-ghost">Encerrar</button>
-          </div>
-          <div class="device unusual">
-            <span class="dev-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg></span>
-            <div class="grow"><div class="t">Windows — Chrome</div>
-              <div class="d">Curitiba, PR · hoje, 08:12 · local incomum para você</div></div>
-            <button class="btn-ghost">Revogar</button>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>Privacidade</h2>
-          <p class="hint">Você controla o que aparece e o que é compartilhado</p>
-          <div class="switch-row">
-            <div class="grow"><div class="t">Modo discreto</div>
-              <div class="d">Oculta saldos e valores em locais públicos</div></div>
-            <button class="sw-toggle" role="switch" aria-checked="false" id="swDiscreet" aria-label="Modo discreto"></button>
-          </div>
-          <div class="switch-row">
-            <div class="grow"><div class="t">Biometria para Pix acima de R$ 500</div>
-              <div class="d">Aprovação extra em transferências altas</div></div>
-            <button class="sw-toggle" role="switch" aria-checked="true" aria-label="Biometria para Pix"></button>
-          </div>
-          <div class="switch-row">
-            <div class="grow"><div class="t">Acesso do contador (somente leitura)</div>
-              <div class="d">ana.contadora@exemplo.com · relatórios e extratos</div></div>
-            <button class="sw-toggle" role="switch" aria-checked="true" aria-label="Acesso do contador"></button>
-          </div>
-          <h2 style="margin-top:18px">Conexões Open Finance <span class="of-badge">2 ativas</span></h2>
-          <div class="row-list">
-            <div class="row-item">
-              <div class="grow"><div class="t">Banco Inter</div>
-                <div class="d">saldo + extrato + cartões · consentimento válido até 18/10/2026</div></div>
-              <button class="btn-ghost">Revogar</button>
-            </div>
-            <div class="row-item">
-              <div class="grow"><div class="t">Nubank</div>
-                <div class="d">saldo + extrato · consentimento válido até 02/09/2026</div></div>
-              <button class="btn-ghost">Revogar</button>
-            </div>
-          </div>
-          <h2 style="margin-top:18px">Seus dados</h2>
-          <div class="row-list">
-            <div class="row-item">
-              <div class="grow"><div class="t">Exportar histórico completo</div>
-                <div class="d">12 meses · 1.284 lançamentos · PDF criptografado</div></div>
-              <button class="btn-ghost safe" id="btnExport">Exportar</button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div id="secBody"></div>
     </section>
   </div>
 </div>
@@ -1169,6 +1057,24 @@
   </div>
 </div>
 
+<!-- editar perfil -->
+<div class="sheet-veil" id="profSheet">
+  <div class="sheet" role="dialog" aria-label="Editar perfil">
+    <h2>Seus dados</h2>
+    <p style="margin-bottom:2px">Só ficam neste navegador. Usados para personalizar o app.</p>
+    <div class="field">
+      <label for="profNome">Nome</label>
+      <input id="profNome" type="text" placeholder="Como quer ser chamado(a)" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="profEmail">E-mail</label>
+      <input id="profEmail" type="email" placeholder="voce@exemplo.com" autocomplete="off">
+    </div>
+    <button class="btn-primary" id="btnProfSave" style="margin-top:18px">Salvar</button>
+    <button class="alt" id="btnProfCancel">Cancelar</button>
+  </div>
+</div>
+
 <!-- limpar / zerar dados -->
 <div class="sheet-veil" id="clearSheet">
   <div class="sheet" role="dialog" aria-label="Limpar dados">
@@ -1260,13 +1166,10 @@
   function setDiscreet(on) {
     document.body.classList.toggle("discreet", on);
     $("#btnDiscreet").setAttribute("aria-pressed", String(on));
-    $("#swDiscreet").setAttribute("aria-checked", String(on));
+    const sw = $("#swDiscreet"); if (sw) sw.setAttribute("aria-checked", String(on));
   }
   const isDiscreet = () => document.body.classList.contains("discreet");
   $("#btnDiscreet").addEventListener("click", () => setDiscreet(!isDiscreet()));
-  $("#swDiscreet").addEventListener("click", () => setDiscreet(!isDiscreet()));
-  $$(".sw-toggle:not(#swDiscreet)").forEach(sw =>
-    sw.addEventListener("click", () => sw.setAttribute("aria-checked", String(sw.getAttribute("aria-checked") !== "true"))));
 
   /* ---------- guardião ---------- */
   const toast = $("#toast");
@@ -1287,7 +1190,7 @@
   const uid = () => "id" + Math.random().toString(36).slice(2, 9);
 
   const store = {
-    d: { mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {} },
+    d: { mode: "real", accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {} },
     load() { try { const r = localStorage.getItem(KEY); if (r) this.d = Object.assign(this.d, JSON.parse(r)); } catch (e) {} this.d.mode = "real"; },
     save() { try { localStorage.setItem(KEY, JSON.stringify(this.d)); } catch (e) {} },
   };
@@ -1708,6 +1611,118 @@
     store.save(); pjSheet.classList.remove("open"); renderPj();
     showToast("Dados da empresa atualizados");
   });
+
+  /* ---------- Central de Segurança (score real + perfil editável) ---------- */
+  function scoreBand(s) {
+    if (s == null) return { label: "sem dados ainda", color: "var(--ink-3)" };
+    if (s >= 80) return { label: "Protegido", color: "var(--good)" };
+    if (s >= 60) return { label: "Saudável", color: "var(--good)" };
+    if (s >= 40) return { label: "Atenção", color: "var(--warn)" };
+    return { label: "Cuidado", color: "var(--critical)" };
+  }
+  function renderSec() {
+    const body = $("#secBody"); if (!body) return;
+    const d = store.d, prof = d.profile || {};
+    const score = computeScore(), band = scoreBand(score);
+    const rec = monthIn(), des = monthOut(), taxa = rec ? (rec - des) / rec : 0;
+    const res = (d.goals || []).find(g => /reserva/i.test(g.name));
+    const bills = d.bills || [], billsOk = bills.length && bills.every(b => (b.paidMonths || []).includes(thisMonth()));
+    const fatores = [
+      { ok: taxa >= 0.2, t: "Taxa de poupança de 20%+ no mês", v: rec ? Math.round(taxa * 100) + "%" : "—" },
+      { ok: !!(res && res.target && res.current >= res.target * 0.5), t: "Reserva de emergência encaminhada", v: res ? Math.round(res.current / res.target * 100) + "%" : "sem meta" },
+      { ok: !!billsOk, t: "Contas fixas do mês em dia", v: bills.length ? `${bills.filter(b => (b.paidMonths || []).includes(thisMonth())).length}/${bills.length}` : "nenhuma" },
+      { ok: (d.investments || []).length > 0, t: "Você já investe", v: (d.investments || []).length ? "sim" : "ainda não" },
+      { ok: totalSaldo() > 0, t: "Saldo positivo nas contas", v: brl(totalSaldo()) },
+    ];
+    const off = score == null ? 326.7 : 326.7 * (1 - score / 100);
+    body.innerHTML = `
+      <div class="grid g-2-1">
+        <div class="card">
+          <div class="score-wrap">
+            <div class="score-ring">
+              <svg viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="52" fill="none" stroke="var(--grid)" stroke-width="10"/>
+                <circle cx="60" cy="60" r="52" fill="none" stroke="${band.color}" stroke-width="10"
+                  stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="${off.toFixed(1)}"/>
+              </svg>
+              <div class="n">${score == null ? "—" : score}<small>de 100</small></div>
+            </div>
+            <div style="flex:1; min-width: 240px">
+              <h2 style="font-size:16px">Sua saúde financeira: ${band.label}</h2>
+              <p class="hint" style="margin-bottom:6px">${score == null ? "Registre seus lançamentos para calcular seu score com os seus próprios números." : "Score calculado a partir dos seus dados — sem chute. Os itens abaixo mostram o que pesa."}</p>
+              ${fatores.map(f => `<div class="check-item ${f.ok ? "done" : ""}"><span class="box">${f.ok ? "✓" : ""}</span> ${f.t} <b class="num" style="margin-left:auto; color:var(--ink-3)">${f.v}</b></div>`).join("")}
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div style="display:flex; align-items:baseline"><h2>Seus dados</h2>
+            <button class="btn-mini alt" id="secEditProf" style="margin-left:auto">Editar</button></div>
+          <p class="hint">Ficam só neste navegador</p>
+          <div class="row-list mini-list">
+            <div class="row-item"><div class="grow"><div class="t">Nome</div><div class="d">${prof.nome ? esc(prof.nome) : "não informado"}</div></div></div>
+            <div class="row-item"><div class="grow"><div class="t">E-mail</div><div class="d">${prof.email ? esc(prof.email) : "não informado"}</div></div></div>
+            <div class="row-item"><div class="grow"><div class="t">Seus lançamentos</div><div class="d">${d.tx.length} registrado(s) · ${d.accounts.length} conta(s)</div></div>
+              <button class="btn-ghost safe" id="secExport">Exportar CSV</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="grid g-1-1">
+        <div class="card">
+          <h2>Privacidade</h2>
+          <p class="hint">Você controla o que aparece na tela</p>
+          <div class="switch-row">
+            <div class="grow"><div class="t">Modo discreto</div>
+              <div class="d">Oculta saldos e valores em locais públicos</div></div>
+            <button class="sw-toggle" role="switch" aria-checked="${isDiscreet()}" id="swDiscreet" aria-label="Modo discreto"></button>
+          </div>
+          <div class="switch-row">
+            <div class="grow"><div class="t">Apagar meus dados</div>
+              <div class="d">Zera tudo que está salvo neste navegador</div></div>
+            <button class="btn-ghost danger" id="secClear">Limpar dados</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Sincronização e dispositivos</h2>
+          <p class="hint">O que ainda depende de uma conta na nuvem</p>
+          <div class="alert info">
+            <span class="ic">☁️</span>
+            <div>Login em vários dispositivos, gestão de aparelhos conectados, Open Finance (importar bancos automaticamente) e backup criptografado fazem parte da <b>versão em nuvem</b> — ainda não disponível neste protótipo. Hoje, tudo fica seguro <b>só no seu navegador</b>, sem sair do aparelho.</div>
+          </div>
+          <div class="privacy-note" style="margin-top:12px">🔒 Nenhum dado seu é enviado para servidores nesta versão.</div>
+        </div>
+      </div>`;
+    const be = $("#secEditProf"); if (be) be.addEventListener("click", openProf);
+    const sx = $("#secExport"); if (sx) sx.addEventListener("click", relDownloadCsv);
+    const sc = $("#secClear"); if (sc) sc.addEventListener("click", openClear);
+    const sd = $("#swDiscreet"); if (sd) sd.addEventListener("click", () => { setDiscreet(!isDiscreet()); });
+  }
+  const profSheet = $("#profSheet");
+  function openProf() {
+    const prof = store.d.profile || {};
+    $("#profNome").value = prof.nome || "";
+    $("#profEmail").value = prof.email || "";
+    profSheet.classList.add("open"); $("#profNome").focus();
+  }
+  $("#btnProfCancel").addEventListener("click", () => profSheet.classList.remove("open"));
+  profSheet.addEventListener("click", e => { if (e.target === profSheet) profSheet.classList.remove("open"); });
+  $("#btnProfSave").addEventListener("click", () => {
+    store.d.profile = { nome: $("#profNome").value.trim(), email: $("#profEmail").value.trim() };
+    store.save(); profSheet.classList.remove("open");
+    renderSec(); applyProfile();
+    showToast("Seus dados foram atualizados");
+  });
+  function applyProfile() {
+    const prof = store.d.profile || {};
+    const nameEl = $("#sideName");
+    const disp = prof.nome || prof.email;
+    if (nameEl && disp) nameEl.textContent = disp.length > 22 ? disp.slice(0, 21) + "…" : disp;
+    const av = $("#sideAvatar");
+    if (av) {
+      const src = prof.nome || prof.email || "";
+      const ini = src.trim() ? src.trim().split(/[\s@.]+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join("") : "GF";
+      av.textContent = ini || "GF";
+    }
+  }
 
   /* ---------- Orçamento (Meus dados) ---------- */
   const daysInMonth = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); };
@@ -2159,6 +2174,8 @@
     renderRel();
     renderGastos();
     renderPj();
+    renderSec();
+    applyProfile();
     renderCal();
     updateScoreChip();
   }
@@ -2167,6 +2184,7 @@
   $$('[data-nav="rel"]').forEach(b => b.addEventListener("click", renderRel));
   $$('[data-nav="gastos"]').forEach(b => b.addEventListener("click", renderGastos));
   $$('[data-nav="pj"]').forEach(b => b.addEventListener("click", renderPj));
+  $$('[data-nav="sec"]').forEach(b => b.addEventListener("click", renderSec));
 
   /* ---------- lançamento rápido ---------- */
   const addSheet = $("#addSheet");
@@ -2362,7 +2380,7 @@
     upd();
   }
   const guardSheet = $("#guardSheet");
-  $("#btnExport").addEventListener("click", () => guardSheet.classList.add("open"));
+  const bExp = $("#btnExport"); if (bExp) bExp.addEventListener("click", () => guardSheet.classList.add("open"));
   $("#btnExportCancel").addEventListener("click", () => guardSheet.classList.remove("open"));
   $("#btnExportConfirm").addEventListener("click", () => {
     guardSheet.classList.remove("open");
@@ -2398,7 +2416,7 @@
   $("#cmdClear").addEventListener("click", () => { closeCmdk(); openClear(); });
   addEventListener("keydown", e => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openCmdk(); }
-    if (e.key === "Escape") { closeCmdk(); [sheet, guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, pjSheet, a11ySheet, clearSheet].forEach(s => s && s.classList.remove("open")); }
+    if (e.key === "Escape") { closeCmdk(); [sheet, guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, pjSheet, profSheet, a11ySheet, clearSheet].forEach(s => s && s.classList.remove("open")); }
   });
 
   /* ---------- gráficos (SVG gerado) ---------- */
