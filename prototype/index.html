@@ -1495,6 +1495,27 @@
   }
   const fmtDate = iso => { if (!iso) return ""; const [y, m, dd] = iso.split("-"); return dd + "/" + m; };
 
+  /* ---------- Assinaturas & recorrências (detecção determinística) ---------- */
+  function detectRecurring() {
+    const items = [];
+    // contas fixas cadastradas = recorrências certas
+    (store.d.bills || []).forEach(b => items.push({ name: b.name, monthly: b.amount, tag: "conta fixa" }));
+    // cartões: mesma descrição em 2+ meses = assinatura
+    const byDesc = {};
+    (store.d.cards || []).forEach(c => (c.purchases || []).forEach(p => {
+      const key = (p.desc || p.category || "").toLowerCase().trim(); if (!key) return;
+      (byDesc[key] = byDesc[key] || { name: p.desc || p.category, amounts: [], months: new Set() });
+      byDesc[key].amounts.push(p.amount); byDesc[key].months.add((p.date || "").slice(0, 7));
+    }));
+    Object.values(byDesc).forEach(g => {
+      if (g.months.size >= 2) {
+        const avg = g.amounts.reduce((a, v) => a + v, 0) / g.amounts.length;
+        items.push({ name: g.name, monthly: avg, tag: "assinatura no cartão" });
+      }
+    });
+    return items.sort((a, b) => b.monthly - a.monthly);
+  }
+
   /* ---------- Gastos (fixos + mensais) ---------- */
   function renderGastos() {
     const body = $("#gastosBody"); if (!body) return;
@@ -1562,6 +1583,22 @@
             : `<p class="hint">Nenhuma despesa registrada este mês ainda.</p>`}
         </div>
       </div>
+      ${(() => {
+        const rec = detectRecurring(), totRec = rec.reduce((a, r) => a + r.monthly, 0);
+        if (!rec.length) return "";
+        return `<div class="grid" style="margin-top:16px"><div class="card">
+          <div style="display:flex; align-items:baseline"><h2>Assinaturas & recorrências</h2>
+            <b class="num money" style="margin-left:auto">${brl(totRec)}/mês</b></div>
+          <p class="hint">Cobranças que se repetem — revise o que não usa mais</p>
+          <div class="row-list mini-list">
+            ${rec.map(r => `<div class="row-item">
+              <span class="cat-dot" style="background:${r.tag === "conta fixa" ? "var(--critical)" : "var(--s2)"}"></span>
+              <div class="grow"><div class="t">${esc(r.name)}</div><div class="d">${r.tag}</div></div>
+              <span class="num money">${brl(r.monthly)}</span></div>`).join("")}
+          </div>
+          <p class="hint" style="margin-top:10px">💡 São <b class="num money">${brl(totRec * 12)}</b> por ano. Cancelar o que não usa é a economia mais fácil que existe.</p>
+        </div></div>`;
+      })()}
       <div class="grid" style="margin-top:16px"><div class="card">
         <div style="display:flex; align-items:baseline"><h2>Todos os gastos do mês</h2>
           <button class="btn-mini" data-act="addTx" style="margin-left:auto">+ Gasto</button></div>
@@ -2825,9 +2862,9 @@
   const copLog = $("#copLog"), copInput = $("#copInput");
   const SUGG = ["Quanto posso gastar hoje?", "Vou fechar o mês no positivo?",
     "Quais contas ainda faltam pagar?", "Quanto entrou de caixa este mês?",
-    "Quanto comprei este mês?", "Estou gastando muito com alimentação?",
-    "Quanto economizei este mês?", "Para onde vai meu dinheiro?",
-    "Como está minha saúde financeira?",
+    "Quanto comprei este mês?", "Quais são minhas assinaturas?",
+    "Estou gastando muito com alimentação?", "Quanto economizei este mês?",
+    "Para onde vai meu dinheiro?", "Como está minha saúde financeira?",
     "Quanto guardar por mês para juntar R$ 6.000 até dezembro?"];
   const norm = s => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
@@ -2864,6 +2901,12 @@
       if (res && res.current >= res.target * 0.5) pts += 16;
       pts = Math.max(5, Math.min(100, pts));
       return `Sua saúde financeira agora:<span class="fig">${pts}/100</span>Taxa de poupança do mês: ${Math.round(taxa * 100)}%. ${taxa >= 0.2 ? "Você guarda um quinto ou mais da renda — padrão de quem constrói patrimônio." : taxa >= 0 ? "Positivo, mas dá pra melhorar a sobra mensal." : "Atenção: mês no vermelho."}${res ? ` Sua reserva está em ${Math.round(res.current / res.target * 100)}% da meta.` : ""}${src}`;
+    }
+    if (/(assinatura|assinaturas|recorrenc|recorrente|streaming|netflix|spotify|cancelar|mensalidade)/.test(n)) {
+      const rec = detectRecurring(), tot = rec.reduce((a, r) => a + r.monthly, 0);
+      if (!rec.length) return `Ainda não encontrei recorrências. Cadastre suas contas fixas em <b>Gastos</b> ou lance as compras do cartão — aí eu identifico assinaturas que se repetem todo mês.${src}`;
+      const linhas = rec.slice(0, 8).map(r => `<div class="barrow"><span>${esc(r.name)} <span style="color:var(--ink-3)">· ${r.tag}</span></span><b class="num money">${brl(r.monthly)}</b></div>`).join("");
+      return `Suas cobranças recorrentes somam:<span class="fig">${brl(tot)}/mês</span>${linhas}<div style="margin-top:10px">São <b class="num money">${brl(tot * 12)}</b> por ano. Cancelar o que você não usa é a economia mais fácil que existe — cada ${brl(50)}/mês cortado vira ${brl(600)} no ano.</div>${src}`;
     }
     if (/(conta.*pag|pagar conta|contas do mes|conta fixa|contas fixas|ja paguei|falta pagar|contas em aberto|boleto|vencer|vencimento)/.test(n)) {
       const bills = s.bills || [];

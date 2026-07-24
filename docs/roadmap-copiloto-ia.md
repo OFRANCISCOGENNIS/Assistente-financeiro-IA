@@ -50,6 +50,12 @@ O copiloto **v0** é um **motor de regras determinístico**: interpreta a pergun
 9. ✅ **Planejar** — simuladores de financiamento (parcela/juros/total) e FIRE (número + tempo).
 10. ✅ **Contas a pagar** — cadastro, pagas × pendentes, pagar gera despesa e baixa saldo.
 11. ✅ **Comandos "/"** no Ctrl+K (/despesa, /meta, /planejar, /relatorio, /exportar…).
+16. ✅ **Aba Gastos** — separa gastos fixos (contas recorrentes) dos gastos do mês (por categoria + lista).
+17. ✅ **Cartões de crédito & faturas** — cadastro, compras, fatura em aberto, limite usado, vencimento e "pagar fatura" (gera despesa e baixa saldo).
+18. ✅ **Assinaturas & recorrências** — detecção determinística (contas fixas + compras de cartão que se repetem em 2+ meses), total mensal/anual e intenção no copiloto.
+19. ✅ **Backup exportar/importar** (JSON) — portabilidade e segurança dos dados sem nuvem.
+20. ✅ **Empresa (MEI) real** — DRE, margem e ponto de equilíbrio calculados dos dados que o usuário informa.
+21. ✅ **Central de Segurança real** — score dos dados reais com itens acionáveis, perfil editável, backup e nota honesta sobre recursos de nuvem.
 
 ### Fase B — Exige backend + IA (o salto de produto)
 
