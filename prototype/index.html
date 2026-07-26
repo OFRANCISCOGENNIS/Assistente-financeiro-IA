@@ -488,6 +488,8 @@
 
   .mini-list .row-item .del { color: var(--ink-3); font-size: 15px; padding: 2px 6px; }
   .mini-list .row-item .del:hover { color: var(--critical); }
+  .row-item .del.edit { font-size: 14px; }
+  .row-item .del.edit:hover { color: var(--accent); }
   .tx-in { color: var(--good-text); font-weight: 650; }
   .tx-out { color: var(--ink); font-weight: 650; }
   .seg { display: inline-flex; border: 1px solid var(--ring); border-radius: 9px; padding: 3px;
@@ -1735,6 +1737,7 @@
               <span class="cat-dot" style="background:${t.type === "in" ? "var(--good)" : "var(--s1)"}"></span>
               <div class="grow"><div class="t">${esc(t.desc || t.category)}</div><div class="d">${t.desc ? esc(t.category) + " · " : ""}${fmtDate(t.date)}${t.account ? " · " + esc(t.account) : ""}</div></div>
               <span class="num ${t.type === "in" ? "tx-in" : "tx-out"}">${t.type === "in" ? "+" : "−"}${brl(t.amount)}</span>
+              <button class="del edit" data-edit="${t.id}" aria-label="Editar" title="Editar">✎</button>
               <button class="del" data-del="${t.id}" aria-label="Excluir">✕</button></div>`).join("")}
           </div>
           <div class="cta-row" style="margin-top:12px"><button class="btn-mini" data-act="addTx">+ Lançamento</button>
@@ -1774,6 +1777,9 @@
 
     $$("[data-del]", realDash).forEach(b => b.addEventListener("click", () => {
       store.d.tx = store.d.tx.filter(t => t.id !== b.dataset.del); store.save(); renderReal();
+    }));
+    $$("[data-edit]", realDash).forEach(b => b.addEventListener("click", () => {
+      const t = store.d.tx.find(x => x.id === b.dataset.edit); if (t) openAdd(t);
     }));
     $$("[data-del-goal]", realDash).forEach(b => b.addEventListener("click", () => {
       store.d.goals = store.d.goals.filter(g => g.id !== b.dataset.delGoal); store.save(); renderReal();
@@ -1970,6 +1976,7 @@
             <span class="cat-dot" style="background:var(--s1)"></span>
             <div class="grow"><div class="t">${esc(t.desc || t.category)}</div><div class="d">${t.desc ? esc(t.category) + " · " : ""}${fmtDate(t.date)}${t.account ? " · " + esc(t.account) : ""}</div></div>
             <span class="num tx-out">−${brl(t.amount)}</span>
+            <button class="del edit" data-edit="${t.id}" aria-label="Editar" title="Editar">✎</button>
             <button class="del" data-del="${t.id}" aria-label="Excluir">✕</button></div>`).join("")
             : `<p class="hint">Nenhum gasto registrado este mês.</p>`}
         </div>
@@ -1978,6 +1985,9 @@
     $$("[data-pay]", body).forEach(b => b.addEventListener("click", () => payBill(b.dataset.pay)));
     $$("[data-del-bill]", body).forEach(b => b.addEventListener("click", () => {
       store.d.bills = store.d.bills.filter(x => x.id !== b.dataset.delBill); store.save(); renderReal(); renderGastos();
+    }));
+    $$("[data-edit]", body).forEach(b => b.addEventListener("click", () => {
+      const t = store.d.tx.find(x => x.id === b.dataset.edit); if (t) openAdd(t);
     }));
     $$("[data-del]", body).forEach(b => b.addEventListener("click", () => {
       store.d.tx = store.d.tx.filter(t => t.id !== b.dataset.del); store.save(); renderReal(); renderRel(); renderGastos();
@@ -3489,20 +3499,31 @@
     $$("#addType button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
     refreshAddSheet();
   }));
-  const openAdd = () => {
+  let editingTxId = null;
+  const selectChip = (container, text) => { let hit = false; $$(".chip", container).forEach(c => { const on = c.textContent.trim() === text && !c.dataset.addCat; c.setAttribute("aria-pressed", String(on)); if (on) hit = true; }); return hit; };
+  const openAdd = (editTx) => {
     if (store.d.mode !== "real") { store.d.mode = "real"; store.save(); applyMode(); }
-    addType = "out";
-    $$("#addType button").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.type === "out")));
+    editingTxId = editTx ? editTx.id : null;
+    addType = editTx ? editTx.type : "out";
+    $$("#addType button").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.type === addType)));
     refreshAddSheet();
-    $("#addDate").value = todayISO();
-    $("#addValue").value = "";
-    if ($("#addDesc")) $("#addDesc").value = "";
+    $("#addDate").value = editTx ? editTx.date : todayISO();
+    $("#addValue").value = editTx ? String(editTx.amount).replace(".", ",") : "";
+    if ($("#addDesc")) $("#addDesc").value = editTx ? (editTx.desc || "") : "";
+    if (editTx) {
+      selectChip($("#addCats"), editTx.category);
+      if (editTx.account) selectChip($("#addPay"), editTx.account);
+      $("#addTitle").textContent = "Editar lançamento";
+      $("#btnAddSave").textContent = "Salvar alterações";
+    } else {
+      $("#btnAddSave").textContent = "Registrar";
+    }
     addSheet.classList.add("open"); $("#addValue").focus();
   };
-  $("#fabAdd").addEventListener("click", openAdd);
+  $("#fabAdd").addEventListener("click", () => openAdd());
   $("#cmdAdd").addEventListener("click", () => { closeCmdk(); openAdd(); });
-  $("#btnAddCancel").addEventListener("click", () => addSheet.classList.remove("open"));
-  addSheet.addEventListener("click", e => { if (e.target === addSheet) addSheet.classList.remove("open"); });
+  $("#btnAddCancel").addEventListener("click", () => { editingTxId = null; addSheet.classList.remove("open"); });
+  addSheet.addEventListener("click", e => { if (e.target === addSheet) { editingTxId = null; addSheet.classList.remove("open"); } });
   $("#btnAddSave").addEventListener("click", () => {
     const amount = parseNum($("#addValue").value);
     if (amount <= 0) { $("#addValue").focus(); showToast("Informe um valor válido"); return; }
@@ -3510,6 +3531,20 @@
     const acct = ($('#addPay .chip[aria-pressed="true"]') || {}).textContent || "";
     const date = $("#addDate").value || todayISO();
     const desc = (($("#addDesc") || {}).value || "").trim();
+    if (editingTxId) {
+      const t = store.d.tx.find(x => x.id === editingTxId);
+      if (t) {
+        const oldAc = store.d.accounts.find(a => a.name === t.account);
+        if (oldAc) oldAc.balance -= (t.type === "in" ? t.amount : -t.amount);
+        t.type = addType; t.amount = amount; t.category = cat; t.account = acct; t.date = date; t.desc = desc;
+        const newAc = store.d.accounts.find(a => a.name === acct);
+        if (newAc) newAc.balance += (addType === "in" ? amount : -amount);
+      }
+      editingTxId = null;
+      store.save(); addSheet.classList.remove("open"); applyMode();
+      showToast("Lançamento atualizado");
+      return;
+    }
     store.d.tx.push({ id: uid(), type: addType, amount, category: cat, account: acct, date, desc });
     const ac = store.d.accounts.find(a => a.name === acct);
     if (ac) ac.balance += (addType === "in" ? amount : -amount);
