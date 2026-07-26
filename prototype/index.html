@@ -1105,6 +1105,10 @@
       <label for="addValue">Valor</label>
       <input id="addValue" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
     </div>
+    <div class="field">
+      <label for="addDesc">Descrição <span style="color:var(--ink-3); font-weight:500">(opcional)</span></label>
+      <input id="addDesc" type="text" placeholder="Ex.: Almoço com cliente, Uber aeroporto" autocomplete="off">
+    </div>
     <span class="fieldset-label" id="addCatLabel">Categoria</span>
     <div class="chip-row" id="addCats"></div>
     <span class="fieldset-label">Conta</span>
@@ -1729,7 +1733,7 @@
           <div class="row-list mini-list">
             ${recentes.map(t => `<div class="row-item">
               <span class="cat-dot" style="background:${t.type === "in" ? "var(--good)" : "var(--s1)"}"></span>
-              <div class="grow"><div class="t">${t.category}</div><div class="d">${fmtDate(t.date)}${t.account ? " · " + t.account : ""}</div></div>
+              <div class="grow"><div class="t">${esc(t.desc || t.category)}</div><div class="d">${t.desc ? esc(t.category) + " · " : ""}${fmtDate(t.date)}${t.account ? " · " + esc(t.account) : ""}</div></div>
               <span class="num ${t.type === "in" ? "tx-in" : "tx-out"}">${t.type === "in" ? "+" : "−"}${brl(t.amount)}</span>
               <button class="del" data-del="${t.id}" aria-label="Excluir">✕</button></div>`).join("")}
           </div>
@@ -1964,7 +1968,7 @@
         <div class="row-list mini-list">
           ${lista.length ? lista.map(t => `<div class="row-item">
             <span class="cat-dot" style="background:var(--s1)"></span>
-            <div class="grow"><div class="t">${esc(t.category)}</div><div class="d">${fmtDate(t.date)}${t.account ? " · " + esc(t.account) : ""}</div></div>
+            <div class="grow"><div class="t">${esc(t.desc || t.category)}</div><div class="d">${t.desc ? esc(t.category) + " · " : ""}${fmtDate(t.date)}${t.account ? " · " + esc(t.account) : ""}</div></div>
             <span class="num tx-out">−${brl(t.amount)}</span>
             <button class="del" data-del="${t.id}" aria-label="Excluir">✕</button></div>`).join("")
             : `<p class="hint">Nenhum gasto registrado este mês.</p>`}
@@ -3133,7 +3137,7 @@
         <div class="card"><h2>Maiores lançamentos</h2><p class="hint">${periodLabel}</p>
           <div class="row-list mini-list">
             ${d.top.map(t => `<div class="row-item"><span class="cat-dot" style="background:${t.type === "in" ? "var(--good)" : "var(--s1)"}"></span>
-              <div class="grow"><div class="t">${t.category}</div><div class="d">${fmtDate(t.date)}</div></div>
+              <div class="grow"><div class="t">${esc(t.desc || t.category)}</div><div class="d">${t.desc ? esc(t.category) + " · " : ""}${fmtDate(t.date)}</div></div>
               <span class="num ${t.type === "in" ? "tx-in" : "tx-out"}">${t.type === "in" ? "+" : "−"}${brl(t.amount)}</span></div>`).join("") || `<p class="hint">Nada no período.</p>`}
           </div>
         </div>
@@ -3142,9 +3146,9 @@
   function relDownloadCsv() {
     const d = relData();
     if (!d.tx.length) { showToast("Registre lançamentos para exportar o relatório"); return; }
-    const rows = [["Data", "Tipo", "Categoria", "Conta", "Valor"]];
+    const rows = [["Data", "Tipo", "Categoria", "Descrição", "Conta", "Valor"]];
     [...d.tx].sort((a, b) => (a.date).localeCompare(b.date)).forEach(t =>
-      rows.push([t.date, t.type === "in" ? "Receita" : "Despesa", t.category, t.account || "", String(t.amount).replace(".", ",")]));
+      rows.push([t.date, t.type === "in" ? "Receita" : "Despesa", t.category, t.desc || "", t.account || "", String(t.amount).replace(".", ",")]));
     const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\n");
     const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
@@ -3257,7 +3261,7 @@
     const push = (d, o) => { (ev[d] = ev[d] || []).push(o); };
     const key = year + "-" + String(month + 1).padStart(2, "0");
     store.d.tx.filter(t => (t.date || "").slice(0, 7) === key).forEach(t =>
-      push(+t.date.slice(8, 10), { kind: t.type === "in" ? "in" : "out", label: t.category, amount: (t.type === "in" ? "+" : "−") + brl(t.amount) }));
+      push(+t.date.slice(8, 10), { kind: t.type === "in" ? "in" : "out", label: t.desc || t.category, amount: (t.type === "in" ? "+" : "−") + brl(t.amount) }));
     (store.d.bills || []).forEach(b => {
       const paid = (b.paidMonths || []).includes(key);
       push(Math.min(b.dueDay, new Date(year, month + 1, 0).getDate()),
@@ -3492,6 +3496,7 @@
     refreshAddSheet();
     $("#addDate").value = todayISO();
     $("#addValue").value = "";
+    if ($("#addDesc")) $("#addDesc").value = "";
     addSheet.classList.add("open"); $("#addValue").focus();
   };
   $("#fabAdd").addEventListener("click", openAdd);
@@ -3504,7 +3509,8 @@
     const cat = ($('#addCats .chip[aria-pressed="true"]') || {}).textContent || "Outros";
     const acct = ($('#addPay .chip[aria-pressed="true"]') || {}).textContent || "";
     const date = $("#addDate").value || todayISO();
-    store.d.tx.push({ id: uid(), type: addType, amount, category: cat, account: acct, date });
+    const desc = (($("#addDesc") || {}).value || "").trim();
+    store.d.tx.push({ id: uid(), type: addType, amount, category: cat, account: acct, date, desc });
     const ac = store.d.accounts.find(a => a.name === acct);
     if (ac) ac.balance += (addType === "in" ? amount : -amount);
     store.save();
