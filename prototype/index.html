@@ -620,7 +620,7 @@
     .tile .label { font-size: 12px; }
     .tile .value { font-size: 18px; letter-spacing: -0.02em; white-space: nowrap; }
     .tile .delta { font-size: 11px; }
-    .fab { right: 18px; bottom: 92px; width: 56px; height: 56px; box-shadow: 0 8px 22px rgba(11,110,85,.4); }
+    .fab { right: 14px; bottom: 86px; width: 46px; height: 46px; font-size: 24px; box-shadow: 0 8px 22px rgba(11,110,85,.4); }
     .msg { max-width: 86%; }
     .login-card { padding: 26px 20px; }
 
@@ -1735,7 +1735,7 @@
           <div class="row-list mini-list">
             ${recentes.map(t => `<div class="row-item">
               <span class="cat-dot" style="background:${t.type === "in" ? "var(--good)" : "var(--s1)"}"></span>
-              <div class="grow"><div class="t">${esc(t.desc || t.category)}</div><div class="d">${t.desc ? esc(t.category) + " · " : ""}${fmtDate(t.date)}${t.account ? " · " + esc(t.account) : ""}</div></div>
+              <div class="grow" data-editrow="${t.id}" style="cursor:pointer" title="Tocar para editar"><div class="t">${esc(t.desc || t.category)}</div><div class="d">${t.desc ? esc(t.category) + " · " : ""}${fmtDate(t.date)}${t.account ? " · " + esc(t.account) : ""}</div></div>
               <span class="num ${t.type === "in" ? "tx-in" : "tx-out"}">${t.type === "in" ? "+" : "−"}${brl(t.amount)}</span>
               <button class="del edit" data-edit="${t.id}" aria-label="Editar" title="Editar">✎</button>
               <button class="del" data-del="${t.id}" aria-label="Excluir">✕</button></div>`).join("")}
@@ -1778,8 +1778,9 @@
     $$("[data-del]", realDash).forEach(b => b.addEventListener("click", () => {
       store.d.tx = store.d.tx.filter(t => t.id !== b.dataset.del); store.save(); renderReal();
     }));
-    $$("[data-edit]", realDash).forEach(b => b.addEventListener("click", () => {
-      const t = store.d.tx.find(x => x.id === b.dataset.edit); if (t) openAdd(t);
+    $$("[data-edit], [data-editrow]", realDash).forEach(b => b.addEventListener("click", () => {
+      const id = b.dataset.edit || b.dataset.editrow;
+      const t = store.d.tx.find(x => x.id === id); if (t) openAdd(t);
     }));
     $$("[data-del-goal]", realDash).forEach(b => b.addEventListener("click", () => {
       store.d.goals = store.d.goals.filter(g => g.id !== b.dataset.delGoal); store.save(); renderReal();
@@ -1974,7 +1975,7 @@
         <div class="row-list mini-list">
           ${lista.length ? lista.map(t => `<div class="row-item">
             <span class="cat-dot" style="background:var(--s1)"></span>
-            <div class="grow"><div class="t">${esc(t.desc || t.category)}</div><div class="d">${t.desc ? esc(t.category) + " · " : ""}${fmtDate(t.date)}${t.account ? " · " + esc(t.account) : ""}</div></div>
+            <div class="grow" data-editrow="${t.id}" style="cursor:pointer" title="Tocar para editar"><div class="t">${esc(t.desc || t.category)}</div><div class="d">${t.desc ? esc(t.category) + " · " : ""}${fmtDate(t.date)}${t.account ? " · " + esc(t.account) : ""}</div></div>
             <span class="num tx-out">−${brl(t.amount)}</span>
             <button class="del edit" data-edit="${t.id}" aria-label="Editar" title="Editar">✎</button>
             <button class="del" data-del="${t.id}" aria-label="Excluir">✕</button></div>`).join("")
@@ -1986,8 +1987,9 @@
     $$("[data-del-bill]", body).forEach(b => b.addEventListener("click", () => {
       store.d.bills = store.d.bills.filter(x => x.id !== b.dataset.delBill); store.save(); renderReal(); renderGastos();
     }));
-    $$("[data-edit]", body).forEach(b => b.addEventListener("click", () => {
-      const t = store.d.tx.find(x => x.id === b.dataset.edit); if (t) openAdd(t);
+    $$("[data-edit], [data-editrow]", body).forEach(b => b.addEventListener("click", () => {
+      const id = b.dataset.edit || b.dataset.editrow;
+      const t = store.d.tx.find(x => x.id === id); if (t) openAdd(t);
     }));
     $$("[data-del]", body).forEach(b => b.addEventListener("click", () => {
       store.d.tx = store.d.tx.filter(t => t.id !== b.dataset.del); store.save(); renderReal(); renderRel(); renderGastos();
