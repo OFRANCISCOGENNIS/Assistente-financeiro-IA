@@ -758,7 +758,7 @@
       Educação
     </button>
     <div class="spacer"></div>
-    <div class="user-chip"><span class="avatar" id="sideAvatar">GF</span> <span id="sideName">genisfrazao27@…</span></div>
+    <button class="user-chip" id="sideConfig" title="Configurações" style="background:none; border:none; cursor:pointer; width:100%; text-align:left"><span class="avatar" id="sideAvatar">GF</span> <span id="sideName">genisfrazao27@…</span> <span style="margin-left:auto; color:var(--ink-3)">⚙️</span></button>
   </nav>
 
   <div class="main">
@@ -1040,6 +1040,7 @@
       <button class="item" data-nav="sec" data-kw="/seguranca score">🛡️ &nbsp;Abrir Central de Segurança</button>
       <button class="item" id="cmdDiscreet" data-kw="/discreto ocultar">👁️ &nbsp;Alternar modo discreto</button>
       <button class="item" id="cmdTheme" data-kw="/tema escuro claro">🌗 &nbsp;Alternar tema claro/escuro</button>
+      <button class="item" id="cmdConfig" data-kw="/config configuracoes ajustes tema perfil backup">⚙️ &nbsp;Configurações</button>
       <button class="item" id="cmdLock" data-kw="/bloquear sair travar senha lock logout">🔒 &nbsp;Bloquear (pedir senha)</button>
       <button class="item" id="cmdClear" data-kw="/limpar zerar apagar dados reset">🗑️ &nbsp;Limpar / zerar meus dados</button>
     </div>
@@ -1088,6 +1089,7 @@
       <button class="more-item" data-nav="rel"><span class="mi-ic">📄</span>Relatórios</button>
       <button class="more-item" data-nav="pj"><span class="mi-ic">🏢</span>Empresa</button>
       <button class="more-item" data-nav="sec"><span class="mi-ic">🛡️</span>Segurança</button>
+      <button class="more-item" id="moreConfig"><span class="mi-ic">⚙️</span>Config</button>
       <button class="more-item" id="moreLock"><span class="mi-ic">🔒</span>Bloquear</button>
     </div>
     <button class="alt" id="btnMoreClose">Fechar</button>
@@ -1406,6 +1408,46 @@
   </div>
 </div>
 
+<!-- configurações -->
+<div class="sheet-veil" id="configSheet">
+  <div class="sheet" role="dialog" aria-label="Configurações" style="text-align:left; max-height:88vh; overflow-y:auto">
+    <h2 style="text-align:center">Configurações</h2>
+    <p style="text-align:center; margin-bottom:10px">Personalize o app e cuide dos seus dados.</p>
+
+    <div class="switch-row"><div class="grow"><div class="t">Seu perfil</div>
+      <div class="d" id="cfgProfile">nome e e-mail</div></div>
+      <button class="btn-ghost safe" id="cfgEditProfile">Editar</button></div>
+
+    <div class="switch-row"><div class="grow"><div class="t">Tema escuro</div>
+      <div class="d">Alterna entre claro e escuro</div></div>
+      <button class="sw-toggle" role="switch" aria-checked="false" id="cfgTheme" aria-label="Tema escuro"></button></div>
+
+    <div class="switch-row"><div class="grow"><div class="t">Modo discreto</div>
+      <div class="d">Oculta os valores em locais públicos</div></div>
+      <button class="sw-toggle" role="switch" aria-checked="false" id="cfgDiscreet" aria-label="Modo discreto"></button></div>
+
+    <div class="switch-row"><div class="grow"><div class="t">Acessibilidade</div>
+      <div class="d">Contraste, texto grande, daltonismo</div></div>
+      <button class="btn-ghost safe" id="cfgA11y">Abrir</button></div>
+
+    <div class="switch-row"><div class="grow"><div class="t">Backup dos dados</div>
+      <div class="d">Baixe uma cópia ou restaure em outro navegador</div></div>
+      <div style="display:flex; gap:6px"><button class="btn-ghost safe" id="cfgBackup">Baixar</button>
+        <button class="btn-ghost safe" id="cfgRestore">Importar</button></div></div>
+
+    <div class="switch-row"><div class="grow"><div class="t">Bloquear agora</div>
+      <div class="d">Pede a senha para voltar</div></div>
+      <button class="btn-ghost safe" id="cfgLock">🔒 Bloquear</button></div>
+
+    <h2 style="text-align:center; font-size:15px; margin-top:16px">Limpar painel</h2>
+    <p class="hint" style="margin:0 0 10px">Zera todos os dados deste navegador. Não dá para desfazer.</p>
+    <button class="btn-ghost danger" id="cfgClear" style="width:100%; justify-content:center; margin-bottom:12px">🗑️ Limpar dados</button>
+    <input type="file" id="cfgRestoreInput" accept="application/json,.json" hidden>
+
+    <button class="alt" id="btnConfigClose">Fechar</button>
+  </div>
+</div>
+
 <!-- acessibilidade -->
 <div class="sheet-veil" id="a11ySheet">
   <div class="sheet" role="dialog" aria-label="Acessibilidade" style="text-align:left">
@@ -1525,6 +1567,7 @@
   $("#btnMoreClose").addEventListener("click", () => moreSheet.classList.remove("open"));
   moreSheet.addEventListener("click", e => { if (e.target === moreSheet) moreSheet.classList.remove("open"); });
   $("#moreLock").addEventListener("click", () => { moreSheet.classList.remove("open"); lockApp(); });
+  $("#moreConfig").addEventListener("click", () => { moreSheet.classList.remove("open"); openConfig(); });
 
   /* ---------- tema ---------- */
   function toggleTheme() {
@@ -1816,6 +1859,31 @@
       resetAllData(); clearSheet.classList.remove("open");
     }
   });
+
+  /* ---------- Configurações ---------- */
+  const configSheet = $("#configSheet");
+  const isDarkNow = () => root.getAttribute("data-theme") === "dark" || (!root.getAttribute("data-theme") && matchMedia("(prefers-color-scheme: dark)").matches);
+  function openConfig() {
+    const prof = store.d.profile || {};
+    $("#cfgProfile").textContent = prof.nome || prof.email || "não informado";
+    $("#cfgTheme").setAttribute("aria-checked", String(isDarkNow()));
+    $("#cfgDiscreet").setAttribute("aria-checked", String(isDiscreet()));
+    configSheet.classList.add("open");
+  }
+  $("#btnConfigClose").addEventListener("click", () => configSheet.classList.remove("open"));
+  configSheet.addEventListener("click", e => { if (e.target === configSheet) configSheet.classList.remove("open"); });
+  $("#cfgEditProfile").addEventListener("click", () => { configSheet.classList.remove("open"); openProf(); });
+  $("#cfgTheme").addEventListener("click", () => { toggleTheme(); $("#cfgTheme").setAttribute("aria-checked", String(isDarkNow())); });
+  $("#cfgDiscreet").addEventListener("click", () => { setDiscreet(!isDiscreet()); $("#cfgDiscreet").setAttribute("aria-checked", String(isDiscreet())); });
+  $("#cfgA11y").addEventListener("click", () => { configSheet.classList.remove("open"); applyA11y(); a11ySheet.classList.add("open"); });
+  $("#cfgBackup").addEventListener("click", exportBackup);
+  const cfgRestoreInput = $("#cfgRestoreInput");
+  $("#cfgRestore").addEventListener("click", () => cfgRestoreInput.click());
+  cfgRestoreInput.addEventListener("change", importBackup);
+  $("#cfgLock").addEventListener("click", () => { configSheet.classList.remove("open"); lockApp(); });
+  $("#cfgClear").addEventListener("click", () => { configSheet.classList.remove("open"); openClear(); });
+  const sideCfg = $("#sideConfig"); if (sideCfg) sideCfg.addEventListener("click", openConfig);
+
   function payBill(id) {
     const b = store.d.bills.find(x => x.id === id); if (!b) return;
     b.paidMonths = b.paidMonths || [];
@@ -3734,10 +3802,11 @@
   $("#cmdExport").addEventListener("click", () => { closeCmdk(); relDownloadCsv(); });
   $("#cmdClear").addEventListener("click", () => { closeCmdk(); openClear(); });
   $("#cmdImport").addEventListener("click", () => { closeCmdk(); openImport(); });
+  $("#cmdConfig").addEventListener("click", () => { closeCmdk(); openConfig(); });
   $("#cmdLock").addEventListener("click", () => { closeCmdk(); lockApp(); });
   addEventListener("keydown", e => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openCmdk(); }
-    if (e.key === "Escape") { closeCmdk(); [guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, pjSheet, profSheet, cardSheet, cardBuySheet, debtSheet, splitSheet, importSheet, moreSheet, a11ySheet, clearSheet].forEach(s => s && s.classList.remove("open")); }
+    if (e.key === "Escape") { closeCmdk(); [guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, pjSheet, profSheet, cardSheet, cardBuySheet, debtSheet, splitSheet, importSheet, moreSheet, configSheet, a11ySheet, clearSheet].forEach(s => s && s.classList.remove("open")); }
   });
 
   /* ---------- gráficos (SVG gerado) ---------- */
