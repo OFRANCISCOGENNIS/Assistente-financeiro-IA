@@ -66,6 +66,10 @@ O copiloto **v0** é um **motor de regras determinístico**: interpreta a pergun
 29. ✅ **Lista de compras com orçamento** — monta a lista (item, preço, quantidade), define um teto, acompanha o total vs. teto em tempo real, marca itens no carrinho e lança a compra como despesa.
 30. ✅ **Conversor "à vista × parcelado"** — na tela Planejar, compara o preço à vista (com desconto) com parcelar sem juros deixando o dinheiro render, em valor presente, e recomenda a opção mais barata.
 31. ✅ **Evolução do patrimônio** — registra um ponto de patrimônio líquido por mês (snapshot automático) e desenha a curva ao longo do tempo, com variação total no período.
+35. ✅ **Editar tudo** — contas, metas, investimentos, contas fixas, cartões e dívidas ganharam edição (botão ✎), como já era o lançamento.
+36. ✅ **Busca e filtros** — busca por descrição/categoria e filtro por categoria na lista de gastos do mês, ao vivo.
+37. ✅ **Gamificação** — painel de 10 conquistas no dashboard, desbloqueadas pelos dados reais.
+38. ✅ **Onboarding** — tela de boas-vindas no primeiro uso com os 3 primeiros passos; reabrível em Configurações.
 32. ✅ **Importar extrato (CSV)** — lê um CSV do banco (detecta colunas de data/descrição/valor e o separador), auto-categoriza pela descrição, mostra prévia com receitas/despesas e importa em lote para a conta escolhida (atualiza o saldo). Inclui CSV de exemplo para download.
 33. ✅ **Detector de gastos anômalos** — compara o gasto de cada categoria no mês com a média dos 3 meses anteriores e destaca as que subiram muito (≥50% e ≥R$50), em card na aba Gastos e intenção no copiloto.
 34. ✅ **Lembretes financeiros** — anota lembretes com data (renovar seguro, IPTU, revisar assinatura…), que aparecem no calendário (dia e card do dia) e numa lista com marcar-feito e aviso de vencido.

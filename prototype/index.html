@@ -404,6 +404,11 @@
   .tl li:last-child::after { display: none; }
   .tl .when { color: var(--ink-3); font-size: 11.5px; }
 
+  .onb-steps { display: flex; flex-direction: column; gap: 12px; margin: 16px 0 4px; text-align: left; }
+  .onb-step { display: flex; gap: 12px; align-items: flex-start; }
+  .onb-step .onb-n { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--accent);
+    color: var(--accent-ink); font-weight: 800; font-size: 13px; display: grid; place-items: center; }
+  .onb-step .d { color: var(--ink-3); font-size: 12.5px; margin-top: 2px; }
   .switch-row { display: flex; align-items: center; gap: 12px; padding: 10px 0;
     border-bottom: 1px solid var(--ring); font-size: 13.5px; }
   .switch-row:last-child { border-bottom: none; }
@@ -1416,6 +1421,22 @@
   </div>
 </div>
 
+<!-- boas-vindas / onboarding -->
+<div class="sheet-veil" id="welcomeSheet">
+  <div class="sheet" role="dialog" aria-label="Bem-vindo">
+    <div style="font-size:42px; text-align:center">👋</div>
+    <h2 style="text-align:center">Bem-vindo ao seu assistente financeiro</h2>
+    <p style="text-align:center">Em menos de 1 minuto você começa a ter clareza do seu dinheiro. Tudo fica <b>só neste navegador</b> — nada vai para servidores.</p>
+    <div class="onb-steps">
+      <div class="onb-step"><span class="onb-n">1</span><div><b>Adicione uma conta</b><div class="d">Onde seu dinheiro está — banco, carteira, poupança</div></div></div>
+      <div class="onb-step"><span class="onb-n">2</span><div><b>Registre um gasto ou receita</b><div class="d">Leva segundos; dá pra importar o extrato depois</div></div></div>
+      <div class="onb-step"><span class="onb-n">3</span><div><b>Veja tudo calculado</b><div class="d">Saldo, previsão, gastos por categoria e insights</div></div></div>
+    </div>
+    <button class="btn-primary" id="btnWelcomeStart" style="margin-top:16px">Adicionar minha primeira conta</button>
+    <button class="alt" id="btnWelcomeSkip">Explorar por conta própria</button>
+  </div>
+</div>
+
 <!-- configurações -->
 <div class="sheet-veil" id="configSheet">
   <div class="sheet" role="dialog" aria-label="Configurações" style="text-align:left; max-height:88vh; overflow-y:auto">
@@ -1442,6 +1463,10 @@
       <div class="d">Baixe uma cópia ou restaure em outro navegador</div></div>
       <div style="display:flex; gap:6px"><button class="btn-ghost safe" id="cfgBackup">Baixar</button>
         <button class="btn-ghost safe" id="cfgRestore">Importar</button></div></div>
+
+    <div class="switch-row"><div class="grow"><div class="t">Boas-vindas / tour</div>
+      <div class="d">Rever os primeiros passos do app</div></div>
+      <button class="btn-ghost safe" id="cfgTour">Ver de novo</button></div>
 
     <div class="switch-row"><div class="grow"><div class="t">Bloquear agora</div>
       <div class="d">Pede a senha para voltar</div></div>
@@ -1526,7 +1551,20 @@
     btnForgot.hidden = !has;
     clearPwError();
   }
-  const enterApp = () => { document.body.classList.add("logged"); drawAll(); pwEl.value = ""; if (pw2El) pw2El.value = ""; clearPwError(); };
+  const enterApp = () => { document.body.classList.add("logged"); drawAll(); pwEl.value = ""; if (pw2El) pw2El.value = ""; clearPwError(); setTimeout(maybeWelcome, 250); };
+  const WELCOME_KEY = "afia:welcomed";
+  function maybeWelcome() {
+    if (typeof store === "undefined") return;
+    const empty = !store.d.accounts.length && !store.d.tx.length;
+    let seen = false; try { seen = !!localStorage.getItem(WELCOME_KEY); } catch (e) {}
+    if (empty && !seen) openWelcome();
+  }
+  const welcomeSheet = $("#welcomeSheet");
+  function openWelcome() { if (welcomeSheet) welcomeSheet.classList.add("open"); }
+  function closeWelcome() { try { localStorage.setItem(WELCOME_KEY, "1"); } catch (e) {} if (welcomeSheet) welcomeSheet.classList.remove("open"); }
+  $("#btnWelcomeSkip").addEventListener("click", closeWelcome);
+  $("#btnWelcomeStart").addEventListener("click", () => { closeWelcome(); if (typeof openAcct === "function") openAcct(); });
+  welcomeSheet.addEventListener("click", e => { if (e.target === welcomeSheet) closeWelcome(); });
   async function doLogin() {
     const auth = getAuth(), pw = pwEl.value;
     if (!auth) {
@@ -1934,6 +1972,7 @@
   cfgRestoreInput.addEventListener("change", importBackup);
   $("#cfgLock").addEventListener("click", () => { configSheet.classList.remove("open"); lockApp(); });
   $("#cfgClear").addEventListener("click", () => { configSheet.classList.remove("open"); openClear(); });
+  $("#cfgTour").addEventListener("click", () => { configSheet.classList.remove("open"); openWelcome(); });
   const sideCfg = $("#sideConfig"); if (sideCfg) sideCfg.addEventListener("click", openConfig);
 
   function payBill(id) {
@@ -3984,7 +4023,7 @@
   $("#cmdLock").addEventListener("click", () => { closeCmdk(); lockApp(); });
   addEventListener("keydown", e => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openCmdk(); }
-    if (e.key === "Escape") { closeCmdk(); [guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, pjSheet, profSheet, cardSheet, cardBuySheet, debtSheet, splitSheet, importSheet, moreSheet, configSheet, a11ySheet, clearSheet].forEach(s => s && s.classList.remove("open")); }
+    if (e.key === "Escape") { closeCmdk(); [guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, pjSheet, profSheet, cardSheet, cardBuySheet, debtSheet, splitSheet, importSheet, moreSheet, configSheet, welcomeSheet, a11ySheet, clearSheet].forEach(s => s && s.classList.remove("open")); }
   });
 
   /* ---------- gráficos (SVG gerado) ---------- */
