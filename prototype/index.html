@@ -1626,6 +1626,7 @@
 
   /* ---------- cálculos ---------- */
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const norm = s => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
   const daysLeft = () => { const d = new Date(); const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); return Math.max(1, last - d.getDate() + 1); };
   const totalSaldo = () => store.d.accounts.reduce((s, a) => s + a.balance, 0);
   const monthIn = () => store.d.tx.filter(t => t.type === "in" && inMonth(t)).reduce((s, t) => s + t.amount, 0);
@@ -2050,9 +2051,17 @@
       <div class="grid" style="margin-top:16px"><div class="card">
         <div style="display:flex; align-items:baseline"><h2>Todos os gastos do mês</h2>
           <button class="btn-mini" data-act="addTx" style="margin-left:auto">+ Gasto</button></div>
-        <p class="hint">${monthTx.length} lançamento(s) · ${brl(totalMes)}</p>
-        <div class="row-list mini-list">
-          ${lista.length ? lista.map(t => `<div class="row-item">
+        <p class="hint" id="gastosCount">${monthTx.length} lançamento(s) · ${brl(totalMes)}</p>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin:6px 0 10px">
+          <input id="gastosSearch" type="search" placeholder="🔎 Buscar por descrição ou categoria" autocomplete="off"
+            style="flex:2; min-width:160px; padding:9px 12px; border:1px solid var(--ring); border-radius:9px; background:var(--card); color:var(--ink)">
+          <select id="gastosCatFilter" style="flex:1; min-width:120px; padding:9px 10px; border:1px solid var(--ring); border-radius:9px; background:var(--card); color:var(--ink)">
+            <option value="">Todas categorias</option>
+            ${[...new Set(monthTx.map(t => t.category))].sort().map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join("")}
+          </select>
+        </div>
+        <div class="row-list mini-list" id="gastosList">
+          ${lista.length ? lista.map(t => `<div class="row-item" data-search="${esc((norm(t.desc || "") + " " + norm(t.category || "")))}" data-cat="${esc(t.category)}">
             <span class="cat-dot" style="background:var(--s1)"></span>
             <div class="grow" data-editrow="${t.id}" style="cursor:pointer" title="Tocar para editar"><div class="t">${esc(t.desc || t.category)}</div><div class="d">${t.desc ? esc(t.category) + " · " : ""}${fmtDate(t.date)}${t.account ? " · " + esc(t.account) : ""}</div></div>
             <span class="num tx-out">−${brl(t.amount)}</span>
@@ -2060,6 +2069,7 @@
             <button class="del" data-del="${t.id}" aria-label="Excluir">✕</button></div>`).join("")
             : `<p class="hint">Nenhum gasto registrado este mês.</p>`}
         </div>
+        <p class="hint" id="gastosNoResult" hidden>Nenhum lançamento com esse filtro.</p>
       </div></div>`;
     $$("[data-act]", body).forEach(b => b.addEventListener("click", () => ACT[b.dataset.act]()));
     $$("[data-pay]", body).forEach(b => b.addEventListener("click", () => payBill(b.dataset.pay)));
@@ -2074,6 +2084,24 @@
     $$("[data-del]", body).forEach(b => b.addEventListener("click", () => {
       store.d.tx = store.d.tx.filter(t => t.id !== b.dataset.del); store.save(); renderReal(); renderRel(); renderGastos();
     }));
+    const gs = $("#gastosSearch"), gcf = $("#gastosCatFilter"), glist = $("#gastosList");
+    if (gs && glist) {
+      const applyFilter = () => {
+        const q = norm(gs.value.trim()), cat = gcf.value;
+        let shown = 0, sum = 0;
+        $$(".row-item", glist).forEach(r => {
+          const okText = !q || (r.dataset.search || "").includes(q);
+          const okCat = !cat || r.dataset.cat === cat;
+          const show = okText && okCat;
+          r.style.display = show ? "" : "none";
+          if (show) { shown++; const m = (r.querySelector(".tx-out") || {}).textContent || ""; sum += parseNum(m.replace("−", "")); }
+        });
+        const nr = $("#gastosNoResult"); if (nr) nr.hidden = shown > 0 || !monthTx.length;
+        const cnt = $("#gastosCount"); if (cnt) cnt.textContent = (q || cat) ? `${shown} lançamento(s) filtrado(s) · ${brl(sum)}` : `${monthTx.length} lançamento(s) · ${brl(totalMes)}`;
+      };
+      gs.addEventListener("input", applyFilter);
+      gcf.addEventListener("change", applyFilter);
+    }
   }
 
   /* ---------- Empresa — MEI (dados reais do usuário) ---------- */
@@ -4079,7 +4107,6 @@
     "Estou gastando muito com alimentação?", "Quanto economizei este mês?",
     "Para onde vai meu dinheiro?", "Como está minha saúde financeira?",
     "Quanto guardar por mês para juntar R$ 6.000 até dezembro?"];
-  const norm = s => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
   function copSnap() {
     return { real: true, has: !!(store.d.tx.length || store.d.accounts.length),
