@@ -211,6 +211,14 @@
   .shop-check { width: 24px; height: 24px; flex: none; border-radius: 7px; border: 1.5px solid var(--ring);
     background: var(--card); color: #fff; font-size: 13px; font-weight: 800; cursor: pointer; display: grid; place-items: center; }
   .shop-check.on { background: var(--good); border-color: var(--good); }
+  .ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; margin-top: 10px; }
+  .ach { text-align: center; padding: 12px 6px; border-radius: 12px; border: 1px solid var(--ring);
+    background: var(--card); opacity: .5; filter: grayscale(1); transition: transform .12s; }
+  .ach.on { opacity: 1; filter: none; border-color: color-mix(in srgb, var(--accent) 45%, var(--ring));
+    background: color-mix(in srgb, var(--accent) 7%, var(--card)); }
+  .ach.on:hover { transform: translateY(-2px); }
+  .ach-ic { font-size: 26px; line-height: 1.2; }
+  .ach-t { font-size: 11px; font-weight: 650; color: var(--ink-2); margin-top: 4px; }
   .pat-col { flex: 1; min-width: 180px; }
   .pat-h { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
   .pat-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--ink-2); padding: 3px 0; }
@@ -1636,6 +1644,26 @@
     store.d.tx.filter(t => t.type === "out" && inMonth(t)).forEach(t => { m[t.category] = (m[t.category] || 0) + t.amount; });
     return Object.entries(m).sort((a, b) => b[1] - a[1]);
   };
+  function achievements() {
+    const d = store.d;
+    const rec = monthIn(), des = monthOut(), taxa = rec ? (rec - des) / rec : 0;
+    const res = (d.goals || []).find(g => /reserva/i.test(g.name));
+    const bills = d.bills || [];
+    const nw = (typeof netWorth === "function") ? netWorth() : 0;
+    const temDados = d.accounts.length > 0 || d.tx.length > 0;
+    return [
+      { icon: "🌱", t: "Primeiro passo", d: "Adicionou sua 1ª conta ou lançamento", done: temDados },
+      { icon: "📝", t: "Organizado", d: "10 ou mais lançamentos registrados", done: d.tx.length >= 10 },
+      { icon: "💚", t: "No azul", d: "Fechou o mês com sobra positiva", done: rec > 0 && (rec - des) > 0 },
+      { icon: "🐷", t: "Poupador", d: "Taxa de poupança de 20% ou mais no mês", done: taxa >= 0.2 },
+      { icon: "🎯", t: "Sonhador", d: "Criou pelo menos uma meta", done: (d.goals || []).length > 0 },
+      { icon: "🛡️", t: "Reserva encaminhada", d: "Reserva de emergência em 50%+ da meta", done: !!(res && res.target && res.current >= res.target * 0.5) },
+      { icon: "✅", t: "Contas em dia", d: "Todas as contas fixas do mês pagas", done: bills.length > 0 && bills.every(b => (b.paidMonths || []).includes(thisMonth())) },
+      { icon: "📈", t: "Investidor", d: "Tem investimentos na carteira", done: (d.investments || []).length > 0 },
+      { icon: "💰", t: "Patrimônio positivo", d: "Ativos maiores que passivos", done: nw > 0 },
+      { icon: "🏆", t: "Livre de dívidas", d: "Nenhuma dívida em aberto", done: temDados && (d.debts || []).length === 0 },
+    ];
+  }
   const prevMonthKey = () => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 1); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); };
   const catTotalsFor = key => {
     const m = {};
@@ -1820,6 +1848,19 @@
           </div>
         </div>
       </div>
+      ${(() => {
+        const ach = achievements(), got = ach.filter(a => a.done).length;
+        return `<div class="grid" style="margin-top:16px"><div class="card">
+          <div style="display:flex; align-items:baseline"><h2>🏅 Conquistas</h2>
+            <span class="num" style="margin:0 0 0 auto; color:var(--accent); font-weight:700">${got} de ${ach.length}</span></div>
+          <p class="hint">Bons hábitos financeiros que você já desbloqueou</p>
+          <div class="ach-grid">
+            ${ach.map(a => `<div class="ach ${a.done ? "on" : ""}" title="${esc(a.d)}">
+              <div class="ach-ic">${a.done ? a.icon : "🔒"}</div>
+              <div class="ach-t">${esc(a.t)}</div></div>`).join("")}
+          </div>
+        </div></div>`;
+      })()}
       <div class="privacy-note">🔒 Seus dados ficam só neste navegador ·
         <button id="btnReset" style="color:var(--critical); font-weight:650; text-decoration:underline">Apagar tudo</button></div>`;
 
