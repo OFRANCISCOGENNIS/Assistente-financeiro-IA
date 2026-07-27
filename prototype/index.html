@@ -1765,8 +1765,10 @@
           <h2>Contas</h2>
           <p class="hint">Onde seu dinheiro está</p>
           <div class="row-list mini-list">
-            ${d.accounts.map(a => `<div class="row-item"><div class="grow"><div class="t">${a.name}</div></div>
-              <span class="num money">${brl(a.balance)}</span></div>`).join("") || `<p class="hint">Nenhuma conta ainda.</p>`}
+            ${d.accounts.map(a => `<div class="row-item"><div class="grow" data-editacct="${a.id}" style="cursor:pointer" title="Tocar para editar"><div class="t">${esc(a.name)}</div></div>
+              <span class="num money">${brl(a.balance)}</span>
+              <button class="del edit" data-editacct="${a.id}" aria-label="Editar" title="Editar">✎</button>
+              <button class="del" data-del-acct="${a.id}" aria-label="Excluir">✕</button></div>`).join("") || `<p class="hint">Nenhuma conta ainda.</p>`}
           </div>
           <div class="cta-row" style="margin-top:12px"><button class="btn-mini alt" data-act="addAcct">+ Conta</button></div>
         </div>
@@ -1793,6 +1795,7 @@
             ${d.goals.map(g => `<div class="row-item"><div class="grow"><div class="t">${g.name}</div>
               <div class="limit-bar"><i style="width:${Math.min(100, g.target ? g.current / g.target * 100 : 0)}%; background:var(--accent)"></i></div>
               <div class="d num money">${brl(g.current)} de ${brl(g.target)} · ${g.target ? Math.round(g.current / g.target * 100) : 0}%</div></div>
+              <button class="del edit" data-editgoal="${g.id}" aria-label="Editar" title="Editar">✎</button>
               <button class="del" data-del-goal="${g.id}" aria-label="Excluir">✕</button></div>`).join("") || `<p class="hint">Nenhuma meta ainda.</p>`}
           </div>
           <div class="cta-row" style="margin-top:12px"><button class="btn-mini alt" data-act="addGoal">+ Meta</button></div>
@@ -1810,6 +1813,7 @@
                 <div class="grow"><div class="t">${b.name}</div><div class="d">vence dia ${b.dueDay}${b.category ? " · " + b.category : ""}</div></div>
                 <span class="num money">${brl(b.amount)}</span>
                 ${paid ? `<span class="pill ok">pago</span>` : `<button class="btn-ghost safe" data-pay="${b.id}">Pagar</button>`}
+                <button class="del edit" data-edit-bill="${b.id}" aria-label="Editar" title="Editar">✎</button>
                 <button class="del" data-del-bill="${b.id}" aria-label="Excluir">✕</button></div>`;
             }).join("") : `<p class="hint">Nenhuma conta fixa. Cadastre as recorrentes (aluguel, luz, internet…) e marque como pagas em um toque.</p>`}
           </div>
@@ -1828,8 +1832,14 @@
     $$("[data-del-goal]", realDash).forEach(b => b.addEventListener("click", () => {
       store.d.goals = store.d.goals.filter(g => g.id !== b.dataset.delGoal); store.save(); renderReal();
     }));
+    $$("[data-editgoal]", realDash).forEach(b => b.addEventListener("click", () => { const g = store.d.goals.find(x => x.id === b.dataset.editgoal); if (g) openGoal(g); }));
+    $$("[data-editacct]", realDash).forEach(b => b.addEventListener("click", () => { const a = store.d.accounts.find(x => x.id === b.dataset.editacct); if (a) openAcct(a); }));
+    $$("[data-del-acct]", realDash).forEach(b => b.addEventListener("click", () => {
+      store.d.accounts = store.d.accounts.filter(a => a.id !== b.dataset.delAcct); store.save(); renderReal();
+    }));
     $$("[data-act]", realDash).forEach(b => b.addEventListener("click", () => ACT[b.dataset.act]()));
     $$("[data-pay]", realDash).forEach(b => b.addEventListener("click", () => payBill(b.dataset.pay)));
+    $$("[data-edit-bill]", realDash).forEach(b => b.addEventListener("click", () => { const x = store.d.bills.find(y => y.id === b.dataset.editBill); if (x) openBill(x); }));
     $$("[data-del-bill]", realDash).forEach(b => b.addEventListener("click", () => {
       store.d.bills = store.d.bills.filter(x => x.id !== b.dataset.delBill); store.save(); renderReal();
     }));
@@ -2005,6 +2015,7 @@
                 <div class="grow"><div class="t">${esc(b.name)}</div><div class="d">vence dia ${b.dueDay}${b.category ? " · " + esc(b.category) : ""}${atrasada ? ` · <span style="color:var(--critical)">vencida</span>` : ""}</div></div>
                 <span class="num money">${brl(b.amount)}</span>
                 ${paid ? `<span class="pill ok">pago</span>` : `<button class="btn-ghost safe" data-pay="${b.id}">Pagar</button>`}
+                <button class="del edit" data-edit-bill="${b.id}" aria-label="Editar" title="Editar">✎</button>
                 <button class="del" data-del-bill="${b.id}" aria-label="Excluir">✕</button></div>`;
             }).join("") : `<p class="hint">Nenhuma conta fixa. Cadastre as recorrentes (aluguel, luz, internet…).</p>`}
           </div>
@@ -2052,6 +2063,7 @@
       </div></div>`;
     $$("[data-act]", body).forEach(b => b.addEventListener("click", () => ACT[b.dataset.act]()));
     $$("[data-pay]", body).forEach(b => b.addEventListener("click", () => payBill(b.dataset.pay)));
+    $$("[data-edit-bill]", body).forEach(b => b.addEventListener("click", () => { const x = store.d.bills.find(y => y.id === b.dataset.editBill); if (x) openBill(x); }));
     $$("[data-del-bill]", body).forEach(b => b.addEventListener("click", () => {
       store.d.bills = store.d.bills.filter(x => x.id !== b.dataset.delBill); store.save(); renderReal(); renderGastos();
     }));
@@ -2703,7 +2715,7 @@
           <p>Cadastre suas dívidas (saldo, juros e parcela) e eu comparo duas táticas comprovadas: <b>bola de neve</b> (quita a menor primeiro, pela motivação) e <b>avalanche</b> (ataca a de maior juro, economiza mais). Você vê quando fica livre e quanto de juros economiza.</p>
           <div class="cta-row"><button class="btn-mini" data-act="debt">+ Adicionar dívida</button></div>
         </div>`;
-      $$("[data-act='debt']", body).forEach(b => b.addEventListener("click", openDebt));
+      $$("[data-act='debt']", body).forEach(b => b.addEventListener("click", () => openDebt()));
       return;
     }
     const total = debts.reduce((a, d) => a + d.balance, 0);
@@ -2763,29 +2775,47 @@
               <span class="cat-dot" style="background:var(--critical)"></span>
               <div class="grow"><div class="t">${esc(d.name)}</div><div class="d">${(d.rate || 0).toString().replace(".", ",")}% a.m. · mín. ${brl(d.minPayment || 0)}</div></div>
               <span class="num money">${brl(d.balance)}</span>
+              <button class="del edit" data-edit-debt="${d.id}" aria-label="Editar" title="Editar">✎</button>
               <button class="del" data-del-debt="${d.id}" aria-label="Excluir">✕</button></div>`).join("")}
           </div>
           <p class="hint" style="margin-top:12px">Quitar dívida de juro alto é o melhor "investimento" que existe: livrar-se de ${wRate.toFixed(1)}% ao mês equivale a render isso garantido.</p>
         </div>
       </div>`;
-    $$("[data-act='debt']", body).forEach(b => b.addEventListener("click", openDebt));
+    $$("[data-act='debt']", body).forEach(b => b.addEventListener("click", () => openDebt()));
     $$("[data-del-debt]", body).forEach(b => b.addEventListener("click", () => {
       store.d.debts = store.d.debts.filter(x => x.id !== b.dataset.delDebt); store.save(); renderDividas();
+    }));
+    $$("[data-edit-debt]", body).forEach(b => b.addEventListener("click", () => {
+      const d = store.d.debts.find(x => x.id === b.dataset.editDebt); if (d) openDebt(d);
     }));
     const ex = $("#debtExtra");
     if (ex) ex.addEventListener("input", () => { debtExtra = parseNum(ex.value); clearTimeout(ex._t); ex._t = setTimeout(() => { const pos = ex.selectionStart; renderDividas(); const n = $("#debtExtra"); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (e) {} } }, 350); });
   }
   const debtSheet = $("#debtSheet");
-  function openDebt() {
-    $("#debtName").value = ""; $("#debtBalance").value = ""; $("#debtRate").value = ""; $("#debtMin").value = "";
+  let editingDebtId = null;
+  function openDebt(edit) {
+    editingDebtId = edit ? edit.id : null;
+    $("#debtName").value = edit ? edit.name : "";
+    $("#debtBalance").value = edit ? String(edit.balance).replace(".", ",") : "";
+    $("#debtRate").value = edit ? String(edit.rate).replace(".", ",") : "";
+    $("#debtMin").value = edit ? String(edit.minPayment || 0).replace(".", ",") : "";
+    $("#debtSheet h2").textContent = edit ? "Editar dívida" : "Adicionar dívida";
+    $("#btnDebtSave").textContent = edit ? "Salvar alterações" : "Salvar dívida";
     debtSheet.classList.add("open"); $("#debtName").focus();
   }
-  $("#btnDebtCancel").addEventListener("click", () => debtSheet.classList.remove("open"));
-  debtSheet.addEventListener("click", e => { if (e.target === debtSheet) debtSheet.classList.remove("open"); });
+  $("#btnDebtCancel").addEventListener("click", () => { editingDebtId = null; debtSheet.classList.remove("open"); });
+  debtSheet.addEventListener("click", e => { if (e.target === debtSheet) { editingDebtId = null; debtSheet.classList.remove("open"); } });
   $("#btnDebtSave").addEventListener("click", () => {
     const name = $("#debtName").value.trim(), balance = parseNum($("#debtBalance").value);
     const rate = parseRate($("#debtRate").value), min = parseNum($("#debtMin").value);
     if (!name || balance <= 0) { $("#debtName").focus(); return; }
+    if (editingDebtId) {
+      const d = store.d.debts.find(x => x.id === editingDebtId);
+      if (d) { d.name = name; d.balance = balance; d.rate = rate; d.minPayment = min; }
+      editingDebtId = null;
+      store.save(); debtSheet.classList.remove("open"); renderDividas();
+      showToast(`Dívida "${name}" atualizada`); return;
+    }
     store.d.debts.push({ id: uid(), name, balance, rate, minPayment: min });
     store.save(); debtSheet.classList.remove("open"); renderDividas();
     showToast(`Dívida "${name}" adicionada`);
@@ -2805,7 +2835,7 @@
           <p>Cadastre um cartão e lance as compras. Eu somo a <b>fatura atual</b>, mostro o <b>limite usado</b> e aviso o <b>vencimento</b> — pra fatura nunca te pegar de surpresa.</p>
           <div class="cta-row"><button class="btn-mini" data-act="card">+ Adicionar cartão</button></div>
         </div>`;
-      $$("[data-act='card']", body).forEach(b => b.addEventListener("click", openCard));
+      $$("[data-act='card']", body).forEach(b => b.addEventListener("click", () => openCard()));
       return;
     }
     const totLimit = cards.reduce((a, c) => a + (c.limit || 0), 0);
@@ -2834,7 +2864,8 @@
           const compras = [...cardOpen(c)].sort((a, b) => (b.date + b.id).localeCompare(a.date + a.id));
           return `<div class="card">
             <div style="display:flex; align-items:baseline"><h2>${esc(c.name)}</h2>
-              <button class="del" data-del-card="${c.id}" aria-label="Excluir cartão" style="margin-left:auto">✕</button></div>
+              <button class="del edit" data-edit-card="${c.id}" aria-label="Editar cartão" title="Editar" style="margin-left:auto">✎</button>
+              <button class="del" data-del-card="${c.id}" aria-label="Excluir cartão">✕</button></div>
             <p class="hint">Fecha dia ${c.closeDay} · ${vencText}</p>
             <div style="display:flex; align-items:baseline; gap:8px; margin:6px 0 2px">
               <div class="value num money" style="font-size:26px; font-weight:750">${brl(fat)}</div>
@@ -2858,10 +2889,11 @@
           </div>`;
         }).join("")}
       </div>`;
-    $$("[data-act='card']", body).forEach(b => b.addEventListener("click", openCard));
+    $$("[data-act='card']", body).forEach(b => b.addEventListener("click", () => openCard()));
     $$("[data-act='cardBuy']", body).forEach(b => b.addEventListener("click", () => openCardBuy()));
     $$("[data-buy-card]", body).forEach(b => b.addEventListener("click", () => openCardBuy(b.dataset.buyCard)));
     $$("[data-pay-inv]", body).forEach(b => b.addEventListener("click", () => payInvoice(b.dataset.payInv)));
+    $$("[data-edit-card]", body).forEach(b => b.addEventListener("click", () => { const c = store.d.cards.find(x => x.id === b.dataset.editCard); if (c) openCard(c); }));
     $$("[data-del-card]", body).forEach(b => b.addEventListener("click", () => {
       if (!confirm("Excluir este cartão e suas compras em aberto?")) return;
       store.d.cards = store.d.cards.filter(c => c.id !== b.dataset.delCard); store.save(); renderCards();
@@ -2884,17 +2916,31 @@
     showToast(`Fatura de ${c.name} paga — ${brl(fat)}`);
   }
   const cardSheet = $("#cardSheet");
-  function openCard() {
-    $("#cardName").value = ""; $("#cardLimit").value = ""; $("#cardClose").value = ""; $("#cardDue").value = "";
+  let editingCardId = null;
+  function openCard(edit) {
+    editingCardId = edit ? edit.id : null;
+    $("#cardName").value = edit ? edit.name : "";
+    $("#cardLimit").value = edit ? String(edit.limit).replace(".", ",") : "";
+    $("#cardClose").value = edit ? edit.closeDay : "";
+    $("#cardDue").value = edit ? edit.dueDay : "";
+    $("#cardSheet h2").textContent = edit ? "Editar cartão" : "Adicionar cartão";
+    $("#btnCardSave").textContent = edit ? "Salvar alterações" : "Salvar cartão";
     cardSheet.classList.add("open"); $("#cardName").focus();
   }
-  $("#btnCardCancel").addEventListener("click", () => cardSheet.classList.remove("open"));
-  cardSheet.addEventListener("click", e => { if (e.target === cardSheet) cardSheet.classList.remove("open"); });
+  $("#btnCardCancel").addEventListener("click", () => { editingCardId = null; cardSheet.classList.remove("open"); });
+  cardSheet.addEventListener("click", e => { if (e.target === cardSheet) { editingCardId = null; cardSheet.classList.remove("open"); } });
   $("#btnCardSave").addEventListener("click", () => {
     const name = $("#cardName").value.trim(), limit = parseNum($("#cardLimit").value);
     const close = Math.max(1, Math.min(31, parseInt($("#cardClose").value, 10) || 1));
     const due = Math.max(1, Math.min(31, parseInt($("#cardDue").value, 10) || 1));
     if (!name) { $("#cardName").focus(); return; }
+    if (editingCardId) {
+      const c = store.d.cards.find(x => x.id === editingCardId);
+      if (c) { c.name = name; c.limit = limit; c.closeDay = close; c.dueDay = due; }
+      editingCardId = null;
+      store.save(); cardSheet.classList.remove("open"); renderCards();
+      showToast(`Cartão "${name}" atualizado`); return;
+    }
     store.d.cards.push({ id: uid(), name, limit, closeDay: close, dueDay: due, purchases: [] });
     store.save(); cardSheet.classList.remove("open"); renderCards();
     showToast(`Cartão "${name}" adicionado`);
@@ -2992,7 +3038,7 @@
         <h2>Sua carteira começa aqui</h2>
         <p>Adicione suas posições (Tesouro, CDB, ações, FIIs, cripto…) e eu mostro o total investido e como sua carteira está distribuída.</p>
         <div class="cta-row"><button class="btn-mini" id="invAddBtn">Adicionar investimento</button></div></div>`;
-      $("#invAddBtn").addEventListener("click", openInv);
+      $("#invAddBtn").addEventListener("click", () => openInv());
       return;
     }
     const total = inv.reduce((a, p) => a + p.value, 0) || 1;
@@ -3004,8 +3050,9 @@
     const colOf = k => (INV_CLASSES.find(c => c[0] === k) || ["", "var(--s1)"])[1];
     const rows = inv.map(p => `<div class="row-item">
       <span class="cat-dot" style="background:${colOf(p.klass)}"></span>
-      <div class="grow"><div class="t">${p.name}</div><div class="d">${p.klass}</div></div>
+      <div class="grow" data-editinv="${p.id}" style="cursor:pointer" title="Tocar para editar"><div class="t">${esc(p.name)}</div><div class="d">${esc(p.klass || "")}</div></div>
       <span class="num money">${brl(p.value)}</span>
+      <button class="del edit" data-editinv="${p.id}" aria-label="Editar" title="Editar">✎</button>
       <button class="del" data-del-inv="${p.id}" aria-label="Excluir">✕</button></div>`).join("");
     realInv.innerHTML = `
       <div class="grid g-tiles">
@@ -3032,10 +3079,11 @@
           <div class="alloc-bar">${segs}</div>
           <div class="alloc-legend">${legend}</div></div>
       </div>`;
-    $("#invAddBtn").addEventListener("click", openInv);
+    $("#invAddBtn").addEventListener("click", () => openInv());
     $$("[data-del-inv]", realInv).forEach(b => b.addEventListener("click", () => {
       store.d.investments = store.d.investments.filter(p => p.id !== b.dataset.delInv); store.save(); renderInv();
     }));
+    $$("[data-editinv]", realInv).forEach(b => b.addEventListener("click", () => { const p = store.d.investments.find(x => x.id === b.dataset.editinv); if (p) openInv(p); }));
   }
 
   /* ---------- Metas (Meus dados) ---------- */
@@ -3049,7 +3097,7 @@
         <h2>Defina seu primeiro objetivo</h2>
         <p>Comprar algo, viajar, montar a reserva… Crie uma meta e eu simulo quanto guardar por mês e quando você chega lá.</p>
         <div class="cta-row"><button class="btn-mini" id="metaAddBtn">Criar meta</button></div></div>`;
-      $("#metaAddBtn").addEventListener("click", openGoal);
+      $("#metaAddBtn").addEventListener("click", () => openGoal());
       return;
     }
     const totalCur = gs.reduce((a, g) => a + g.current, 0);
@@ -3097,15 +3145,17 @@
                 <div class="limit-bar"><i style="width:${Math.min(100, g.target ? g.current / g.target * 100 : 0)}%; background:var(--accent)"></i></div>
                 <div class="d num money">${brl(g.current)} de ${brl(g.target)} · ${g.target ? Math.round(g.current / g.target * 100) : 0}%</div></div>
               <button class="btn-ghost safe" data-aporte="${g.id}">Aportar</button>
+              <button class="del edit" data-editgoal="${g.id}" aria-label="Editar" title="Editar">✎</button>
               <button class="del" data-del-goal="${g.id}" aria-label="Excluir">✕</button></div>`).join("")}
           </div>
         </div>
       </div>`;
-    $("#metaAddBtn").addEventListener("click", openGoal);
+    $("#metaAddBtn").addEventListener("click", () => openGoal());
     $("#simSelect").addEventListener("change", e => { simGoalId = e.target.value; renderMetas(); });
     $$("[data-del-goal]", realMetas).forEach(b => b.addEventListener("click", () => {
       store.d.goals = store.d.goals.filter(g => g.id !== b.dataset.delGoal); store.save(); renderMetas(); renderReal();
     }));
+    $$("[data-editgoal]", realMetas).forEach(b => b.addEventListener("click", () => { const g = store.d.goals.find(x => x.id === b.dataset.editgoal); if (g) openGoal(g); }));
     $$("[data-aporte]", realMetas).forEach(b => b.addEventListener("click", () => openAporte(b.dataset.aporte)));
     const sl = $("#mSimSlider"), out = $("#mSimOut");
     const updSim = () => {
@@ -3629,27 +3679,59 @@
         && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); openAdd(); }
   });
 
-  /* ---------- adicionar conta ---------- */
+  /* ---------- adicionar/editar conta ---------- */
   const acctSheet = $("#acctSheet");
-  const openAcct = () => { $("#acctName").value = ""; $("#acctBal").value = ""; acctSheet.classList.add("open"); $("#acctName").focus(); };
-  $("#btnAcctCancel").addEventListener("click", () => acctSheet.classList.remove("open"));
-  acctSheet.addEventListener("click", e => { if (e.target === acctSheet) acctSheet.classList.remove("open"); });
+  let editingAcctId = null;
+  const openAcct = (edit) => {
+    editingAcctId = edit ? edit.id : null;
+    $("#acctName").value = edit ? edit.name : "";
+    $("#acctBal").value = edit ? String(edit.balance).replace(".", ",") : "";
+    $("#acctSheet h2").textContent = edit ? "Editar conta" : "Adicionar conta";
+    $("#btnAcctSave").textContent = edit ? "Salvar alterações" : "Salvar conta";
+    acctSheet.classList.add("open"); $("#acctName").focus();
+  };
+  $("#btnAcctCancel").addEventListener("click", () => { editingAcctId = null; acctSheet.classList.remove("open"); });
+  acctSheet.addEventListener("click", e => { if (e.target === acctSheet) { editingAcctId = null; acctSheet.classList.remove("open"); } });
   $("#btnAcctSave").addEventListener("click", () => {
     const name = $("#acctName").value.trim();
     if (!name) { $("#acctName").focus(); return; }
-    store.d.accounts.push({ id: uid(), name, balance: parseNum($("#acctBal").value) });
+    const bal = parseNum($("#acctBal").value);
+    if (editingAcctId) {
+      const a = store.d.accounts.find(x => x.id === editingAcctId);
+      if (a) { const oldName = a.name; a.name = name; a.balance = bal; if (oldName !== name) store.d.tx.forEach(t => { if (t.account === oldName) t.account = name; }); }
+      editingAcctId = null;
+      store.save(); acctSheet.classList.remove("open"); applyMode();
+      showToast(`Conta "${name}" atualizada`); return;
+    }
+    store.d.accounts.push({ id: uid(), name, balance: bal });
     store.save(); acctSheet.classList.remove("open"); renderReal();
     showToast(`Conta "${name}" adicionada`);
   });
 
-  /* ---------- adicionar meta ---------- */
+  /* ---------- adicionar/editar meta ---------- */
   const goalSheet = $("#goalSheet");
-  const openGoal = () => { $("#goalName").value = ""; $("#goalTarget").value = ""; $("#goalCurrent").value = ""; goalSheet.classList.add("open"); $("#goalName").focus(); };
-  $("#btnGoalCancel").addEventListener("click", () => goalSheet.classList.remove("open"));
-  goalSheet.addEventListener("click", e => { if (e.target === goalSheet) goalSheet.classList.remove("open"); });
+  let editingGoalId = null;
+  const openGoal = (edit) => {
+    editingGoalId = edit ? edit.id : null;
+    $("#goalName").value = edit ? edit.name : "";
+    $("#goalTarget").value = edit ? String(edit.target).replace(".", ",") : "";
+    $("#goalCurrent").value = edit ? String(edit.current).replace(".", ",") : "";
+    $("#goalSheet h2").textContent = edit ? "Editar meta" : "Nova meta";
+    $("#btnGoalSave").textContent = edit ? "Salvar alterações" : "Criar meta";
+    goalSheet.classList.add("open"); $("#goalName").focus();
+  };
+  $("#btnGoalCancel").addEventListener("click", () => { editingGoalId = null; goalSheet.classList.remove("open"); });
+  goalSheet.addEventListener("click", e => { if (e.target === goalSheet) { editingGoalId = null; goalSheet.classList.remove("open"); } });
   $("#btnGoalSave").addEventListener("click", () => {
     const name = $("#goalName").value.trim();
     if (!name) { $("#goalName").focus(); return; }
+    if (editingGoalId) {
+      const g = store.d.goals.find(x => x.id === editingGoalId);
+      if (g) { g.name = name; g.target = parseNum($("#goalTarget").value); g.current = parseNum($("#goalCurrent").value); }
+      editingGoalId = null;
+      store.save(); goalSheet.classList.remove("open"); renderReal(); renderMetas();
+      showToast(`Meta "${name}" atualizada`); return;
+    }
     store.d.goals.push({ id: uid(), name, target: parseNum($("#goalTarget").value), current: parseNum($("#goalCurrent").value) });
     store.save(); goalSheet.classList.remove("open"); renderReal(); renderMetas();
     showToast(`Meta "${name}" criada`);
@@ -3676,20 +3758,33 @@
   /* ---------- adicionar investimento ---------- */
   const invSheet = $("#invSheet");
   let invClass = INV_CLASSES[0][0];
-  function openInv() {
-    $("#invName").value = ""; $("#invValue").value = ""; invClass = INV_CLASSES[0][0];
-    $("#invClasses").innerHTML = INV_CLASSES.map((c, i) => `<button class="chip" aria-pressed="${i === 0}">${c[0]}</button>`).join("");
+  let editingInvId = null;
+  function openInv(edit) {
+    editingInvId = edit ? edit.id : null;
+    $("#invName").value = edit ? edit.name : "";
+    $("#invValue").value = edit ? String(edit.value).replace(".", ",") : "";
+    invClass = edit ? (edit.klass || INV_CLASSES[0][0]) : INV_CLASSES[0][0];
+    $("#invClasses").innerHTML = INV_CLASSES.map(c => `<button class="chip" aria-pressed="${c[0] === invClass}">${c[0]}</button>`).join("");
     $$("#invClasses .chip").forEach(ch => ch.addEventListener("click", () => {
       $$("#invClasses .chip").forEach(x => x.setAttribute("aria-pressed", "false"));
       ch.setAttribute("aria-pressed", "true"); invClass = ch.textContent;
     }));
+    $("#invSheet h2").textContent = edit ? "Editar investimento" : "Adicionar investimento";
+    $("#btnInvSave").textContent = edit ? "Salvar alterações" : "Salvar";
     invSheet.classList.add("open"); $("#invName").focus();
   }
-  $("#btnInvCancel").addEventListener("click", () => invSheet.classList.remove("open"));
-  invSheet.addEventListener("click", e => { if (e.target === invSheet) invSheet.classList.remove("open"); });
+  $("#btnInvCancel").addEventListener("click", () => { editingInvId = null; invSheet.classList.remove("open"); });
+  invSheet.addEventListener("click", e => { if (e.target === invSheet) { editingInvId = null; invSheet.classList.remove("open"); } });
   $("#btnInvSave").addEventListener("click", () => {
     const name = $("#invName").value.trim(), value = parseNum($("#invValue").value);
     if (!name || value <= 0) { $("#invName").focus(); return; }
+    if (editingInvId) {
+      const iv = store.d.investments.find(x => x.id === editingInvId);
+      if (iv) { iv.name = name; iv.value = value; iv.klass = invClass; }
+      editingInvId = null;
+      store.save(); invSheet.classList.remove("open"); renderInv();
+      showToast(`${name} atualizado`); return;
+    }
     store.d.investments.push({ id: uid(), name, klass: invClass, value });
     store.save(); invSheet.classList.remove("open"); renderInv();
     showToast(`${name} adicionado à carteira`);
@@ -3720,21 +3815,35 @@
   const billSheet = $("#billSheet");
   let billCat = "Moradia";
   const BILL_CATS = ["Moradia", "Água", "Energia", "Internet", "Telefonia", "Streaming", "Assinaturas", "Educação", "Saúde", "Outros"];
-  function openBill() {
-    $("#billName").value = ""; $("#billAmount").value = ""; $("#billDay").value = ""; billCat = BILL_CATS[0];
-    $("#billCats").innerHTML = BILL_CATS.map((c, i) => `<button class="chip" aria-pressed="${i === 0}">${c}</button>`).join("");
+  let editingBillId = null;
+  function openBill(edit) {
+    editingBillId = edit ? edit.id : null;
+    billCat = edit ? (edit.category || BILL_CATS[0]) : BILL_CATS[0];
+    $("#billName").value = edit ? edit.name : "";
+    $("#billAmount").value = edit ? String(edit.amount).replace(".", ",") : "";
+    $("#billDay").value = edit ? edit.dueDay : "";
+    $("#billCats").innerHTML = BILL_CATS.map(c => `<button class="chip" aria-pressed="${c === billCat}">${c}</button>`).join("");
     $$("#billCats .chip").forEach(ch => ch.addEventListener("click", () => {
       $$("#billCats .chip").forEach(x => x.setAttribute("aria-pressed", "false"));
       ch.setAttribute("aria-pressed", "true"); billCat = ch.textContent;
     }));
+    $("#billSheet h2").textContent = edit ? "Editar conta fixa" : "Conta fixa";
+    $("#btnBillSave").textContent = edit ? "Salvar alterações" : "Salvar conta";
     billSheet.classList.add("open"); $("#billName").focus();
   }
-  $("#btnBillCancel").addEventListener("click", () => billSheet.classList.remove("open"));
-  billSheet.addEventListener("click", e => { if (e.target === billSheet) billSheet.classList.remove("open"); });
+  $("#btnBillCancel").addEventListener("click", () => { editingBillId = null; billSheet.classList.remove("open"); });
+  billSheet.addEventListener("click", e => { if (e.target === billSheet) { editingBillId = null; billSheet.classList.remove("open"); } });
   $("#btnBillSave").addEventListener("click", () => {
     const name = $("#billName").value.trim(), amount = parseNum($("#billAmount").value);
     const day = Math.max(1, Math.min(31, parseInt($("#billDay").value, 10) || 1));
     if (!name || amount <= 0) { $("#billName").focus(); return; }
+    if (editingBillId) {
+      const b = store.d.bills.find(x => x.id === editingBillId);
+      if (b) { b.name = name; b.amount = amount; b.dueDay = day; b.category = billCat; }
+      editingBillId = null;
+      store.save(); billSheet.classList.remove("open"); renderReal(); renderGastos();
+      showToast(`Conta "${name}" atualizada`); return;
+    }
     store.d.bills.push({ id: uid(), name, amount, dueDay: day, category: billCat, recurring: true, paidMonths: [] });
     store.save(); billSheet.classList.remove("open"); renderReal(); renderGastos();
     showToast(`Conta "${name}" cadastrada`);
