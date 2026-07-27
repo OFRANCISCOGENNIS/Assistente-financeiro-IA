@@ -1421,6 +1421,45 @@
   </div>
 </div>
 
+<!-- sincronização (nuvem grátis) -->
+<div class="sheet-veil" id="syncSheet">
+  <div class="sheet" role="dialog" aria-label="Sincronização" style="text-align:left; max-height:90vh; overflow-y:auto">
+    <h2 style="text-align:center">☁️ Sincronizar aparelhos</h2>
+    <p>Liga o celular e o computador usando um projeto <b>gratuito</b> do Firebase (Google). Seus dados são <b>cifrados com a sua senha</b> antes de subir — nem o Google lê o conteúdo.</p>
+    <div id="syncStatus" class="hint" style="margin:8px 0; font-weight:600"></div>
+
+    <details id="syncHelp" style="margin:8px 0 12px">
+      <summary style="cursor:pointer; font-weight:650; color:var(--accent)">Como criar o projeto grátis (uma vez só)</summary>
+      <ol style="font-size:12.5px; color:var(--ink-2); line-height:1.7; padding-left:18px; margin:8px 0 0">
+        <li>Abra <b>console.firebase.google.com</b> e crie um projeto (grátis, sem cartão).</li>
+        <li>Em <b>Criar → Authentication → Sign-in method</b>, ative <b>E-mail/senha</b>.</li>
+        <li>Em <b>Criar → Firestore Database</b>, crie o banco.</li>
+        <li>Em <b>⚙️ Configurações do projeto → Seus apps → Web (&lt;/&gt;)</b>, registre um app e copie o objeto <b>firebaseConfig</b>.</li>
+        <li>Cole abaixo, informe um e-mail e senha e toque em Conectar.</li>
+      </ol>
+    </details>
+
+    <div id="syncForm">
+      <div class="field"><label for="syncConfig">Cole o firebaseConfig</label>
+        <textarea id="syncConfig" rows="5" placeholder='{ "apiKey": "...", "authDomain": "...", "projectId": "...", ... }'
+          style="width:100%; padding:10px 12px; border:1px solid var(--ring); border-radius:9px; background:var(--card); color:var(--ink); font-family:monospace; font-size:12px; resize:vertical"></textarea></div>
+      <div class="field"><label for="syncEmail">E-mail</label>
+        <input id="syncEmail" type="email" placeholder="voce@exemplo.com" autocomplete="username"></div>
+      <div class="field"><label for="syncPass">Senha da sincronização</label>
+        <input id="syncPass" type="password" placeholder="mín. 6 caracteres" autocomplete="current-password"></div>
+      <p class="hint" style="margin:2px 0 12px">⚠️ Essa senha também cifra seus dados. <b>Guarde bem</b> — sem ela, os dados na nuvem não podem ser lidos de volta.</p>
+      <div class="cta-row">
+        <button class="btn-primary" id="btnSyncSignin" style="flex:1">Conectar</button>
+        <button class="btn-ghost safe" id="btnSyncSignup">Criar conta</button>
+      </div>
+    </div>
+
+    <button class="btn-ghost safe" id="btnSyncNow" hidden style="width:100%; justify-content:center; margin-top:10px">🔄 Sincronizar agora</button>
+    <button class="btn-ghost danger" id="btnSyncOff" hidden style="width:100%; justify-content:center; margin-top:8px">Desconectar deste aparelho</button>
+    <button class="alt" id="btnSyncClose">Fechar</button>
+  </div>
+</div>
+
 <!-- boas-vindas / onboarding -->
 <div class="sheet-veil" id="welcomeSheet">
   <div class="sheet" role="dialog" aria-label="Bem-vindo">
@@ -1458,6 +1497,10 @@
     <div class="switch-row"><div class="grow"><div class="t">Acessibilidade</div>
       <div class="d">Contraste, texto grande, daltonismo</div></div>
       <button class="btn-ghost safe" id="cfgA11y">Abrir</button></div>
+
+    <div class="switch-row"><div class="grow"><div class="t">☁️ Sincronizar aparelhos</div>
+      <div class="d" id="cfgSyncStatus">Ligar celular e PC (Firebase grátis, cifrado)</div></div>
+      <button class="btn-ghost safe" id="cfgSync">Configurar</button></div>
 
     <div class="switch-row"><div class="grow"><div class="t">Backup dos dados</div>
       <div class="d">Baixe uma cópia ou restaure em outro navegador</div></div>
@@ -1974,6 +2017,116 @@
   $("#cfgClear").addEventListener("click", () => { configSheet.classList.remove("open"); openClear(); });
   $("#cfgTour").addEventListener("click", () => { configSheet.classList.remove("open"); openWelcome(); });
   const sideCfg = $("#sideConfig"); if (sideCfg) sideCfg.addEventListener("click", openConfig);
+
+  /* ---------- Sincronização (Firebase grátis + cifrado) ---------- */
+  const SYNC_KEY = "afia:sync";
+  const syncSheet = $("#syncSheet");
+  const sync = { cfg: null, email: "", db: null, fsMod: null, user: null, key: null, salt: null, connected: false };
+  try { const r = JSON.parse(localStorage.getItem(SYNC_KEY) || "null"); if (r) { sync.cfg = r.cfg; sync.email = r.email || ""; } } catch (e) {}
+  const bufToB64 = buf => btoa(String.fromCharCode.apply(null, new Uint8Array(buf)));
+  const b64ToBuf = b64 => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  async function deriveKey(pw, saltB64) {
+    const salt = saltB64 ? b64ToBuf(saltB64) : crypto.getRandomValues(new Uint8Array(16));
+    const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveKey"]);
+    const key = await crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: 150000, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+    return { key, saltB64: bufToB64(salt) };
+  }
+  async function encData(obj, key) {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(JSON.stringify(obj)));
+    return { iv: bufToB64(iv), ct: bufToB64(ct) };
+  }
+  async function decData(payload, key) {
+    const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64ToBuf(payload.iv) }, key, b64ToBuf(payload.ct));
+    return JSON.parse(new TextDecoder().decode(pt));
+  }
+  function setSyncStatus(msg, cls) {
+    const el = $("#syncStatus"); if (el) { el.textContent = msg; el.style.color = cls === "err" ? "var(--critical)" : cls === "ok" ? "var(--good-text)" : "var(--ink-3)"; }
+  }
+  async function loadFirebase() {
+    const V = "10.12.0", U = k => "https://www.gstatic.com/firebasejs/" + V + "/firebase-" + k + ".js";
+    const [appMod, authMod, fsMod] = await Promise.all([import(U("app")), import(U("auth")), import(U("firestore"))]);
+    return { appMod, authMod, fsMod };
+  }
+  async function syncConnect(create) {
+    let cfg;
+    try { cfg = JSON.parse($("#syncConfig").value.trim()); } catch (e) { setSyncStatus("Config inválido — cole o objeto firebaseConfig completo (com chaves).", "err"); return; }
+    const email = $("#syncEmail").value.trim(), pw = $("#syncPass").value;
+    if (!cfg.apiKey || !cfg.projectId) { setSyncStatus("Config incompleto (faltou apiKey/projectId).", "err"); return; }
+    if (!email || pw.length < 6) { setSyncStatus("Informe e-mail e senha (mín. 6 caracteres).", "err"); return; }
+    setSyncStatus("Conectando…");
+    try {
+      const { appMod, authMod, fsMod } = await loadFirebase();
+      const app = appMod.getApps().length ? appMod.getApp() : appMod.initializeApp(cfg);
+      const auth = authMod.getAuth(app), db = fsMod.getFirestore(app);
+      const cred = create ? await authMod.createUserWithEmailAndPassword(auth, email, pw)
+                          : await authMod.signInWithEmailAndPassword(auth, email, pw);
+      Object.assign(sync, { cfg, email, db, fsMod, user: cred.user, connected: true });
+      localStorage.setItem(SYNC_KEY, JSON.stringify({ cfg, email }));
+      await afterConnect(pw);
+    } catch (e) { setSyncStatus("Falhou: " + (e && (e.code || e.message) || e), "err"); }
+  }
+  async function afterConnect(pw) {
+    const ref = sync.fsMod.doc(sync.db, "afia", sync.user.uid);
+    let remote = null;
+    try { const snap = await sync.fsMod.getDoc(ref); if (snap.exists()) remote = snap.data(); } catch (e) {}
+    const localHas = store.d.accounts.length || store.d.tx.length;
+    if (remote && remote.payload && remote.salt) {
+      const { key } = await deriveKey(pw, remote.salt);
+      let remoteData;
+      try { remoteData = await decData(remote.payload, key); } catch (e) { setSyncStatus("Senha não confere com os dados que estão na nuvem.", "err"); sync.connected = false; return; }
+      sync.key = key; sync.salt = remote.salt;
+      if (!localHas) applyRemote(remoteData);
+      else {
+        const useCloud = confirm("A nuvem já tem dados salvos.\n\nOK = usar os dados da NUVEM neste aparelho (substitui os locais).\nCancelar = enviar os dados DESTE aparelho para a nuvem (substitui os da nuvem).");
+        if (useCloud) applyRemote(remoteData); else await syncUpload();
+      }
+    } else {
+      const d = await deriveKey(pw); sync.key = d.key; sync.salt = d.saltB64;
+      await syncUpload();
+    }
+    reflectConnected();
+    setSyncStatus("Sincronizado ✓", "ok");
+    showToast("Sincronização ativada");
+  }
+  function applyRemote(data) {
+    data.mode = "real";
+    store.d = Object.assign({ accounts: [], tx: [], goals: [], budgets: {}, investments: [], bills: [], pj: {}, profile: {}, cards: [], debts: [], customCats: { out: [], in: [] }, split: { people: [], expenses: [] }, shopping: { budget: 0, items: [] }, netHistory: [], reminders: [] }, data);
+    store.save(); applyMode(); applyProfile();
+  }
+  let syncUpTimer = null;
+  async function syncUpload() {
+    if (!sync.connected || !sync.key) return;
+    try {
+      const payload = await encData(store.d, sync.key);
+      await sync.fsMod.setDoc(sync.fsMod.doc(sync.db, "afia", sync.user.uid), { payload, salt: sync.salt, updatedAt: Date.now() });
+      setSyncStatus("Sincronizado ✓", "ok");
+    } catch (e) { setSyncStatus("Erro ao enviar: " + (e.code || e.message), "err"); }
+  }
+  function scheduleUpload() { if (!sync.connected) return; clearTimeout(syncUpTimer); syncUpTimer = setTimeout(syncUpload, 1500); }
+  const _origSave = store.save.bind(store);
+  store.save = function () { _origSave(); scheduleUpload(); };
+  function reflectConnected() {
+    const f = $("#syncForm"); if (f) f.hidden = sync.connected;
+    const bn = $("#btnSyncNow"); if (bn) bn.hidden = !sync.connected;
+    const bo = $("#btnSyncOff"); if (bo) bo.hidden = !sync.connected;
+    const cf = $("#cfgSyncStatus"); if (cf) cf.textContent = sync.connected ? ("Sincronizado · " + sync.email) : (sync.cfg ? "Configurado — reconecte para sincronizar" : "Ligar celular e PC (Firebase grátis, cifrado)");
+  }
+  function openSync() {
+    if (sync.cfg && $("#syncConfig")) $("#syncConfig").value = JSON.stringify(sync.cfg, null, 2);
+    if (sync.email && $("#syncEmail")) $("#syncEmail").value = sync.email;
+    reflectConnected();
+    setSyncStatus(sync.connected ? "Sincronizado ✓" : (sync.cfg ? "Configurado — digite a senha e toque em Conectar para reativar." : ""), sync.connected ? "ok" : "");
+    syncSheet.classList.add("open");
+  }
+  $("#btnSyncSignin").addEventListener("click", () => syncConnect(false));
+  $("#btnSyncSignup").addEventListener("click", () => syncConnect(true));
+  $("#btnSyncNow").addEventListener("click", syncUpload);
+  $("#btnSyncOff").addEventListener("click", () => { sync.connected = false; sync.key = null; try { localStorage.removeItem(SYNC_KEY); } catch (e) {} sync.cfg = null; reflectConnected(); setSyncStatus("Desconectado deste aparelho.", ""); showToast("Sincronização desativada aqui"); });
+  $("#btnSyncClose").addEventListener("click", () => syncSheet.classList.remove("open"));
+  syncSheet.addEventListener("click", e => { if (e.target === syncSheet) syncSheet.classList.remove("open"); });
+  $("#cfgSync").addEventListener("click", () => { configSheet.classList.remove("open"); openSync(); });
+  reflectConnected();
 
   function payBill(id) {
     const b = store.d.bills.find(x => x.id === id); if (!b) return;
@@ -4023,7 +4176,7 @@
   $("#cmdLock").addEventListener("click", () => { closeCmdk(); lockApp(); });
   addEventListener("keydown", e => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openCmdk(); }
-    if (e.key === "Escape") { closeCmdk(); [guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, pjSheet, profSheet, cardSheet, cardBuySheet, debtSheet, splitSheet, importSheet, moreSheet, configSheet, welcomeSheet, a11ySheet, clearSheet].forEach(s => s && s.classList.remove("open")); }
+    if (e.key === "Escape") { closeCmdk(); [guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, pjSheet, profSheet, cardSheet, cardBuySheet, debtSheet, splitSheet, importSheet, moreSheet, configSheet, welcomeSheet, syncSheet, a11ySheet, clearSheet].forEach(s => s && s.classList.remove("open")); }
   });
 
   /* ---------- gráficos (SVG gerado) ---------- */
