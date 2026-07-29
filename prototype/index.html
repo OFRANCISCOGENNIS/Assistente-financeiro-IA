@@ -1759,6 +1759,33 @@
     return pendingBills().map(b => ({ ...b, atrasada: b.dueDay < hoje, faltam: b.dueDay - hoje }))
       .filter(b => b.atrasada || b.faltam <= dias).sort((a, b) => a.dueDay - b.dueDay);
   };
+  // vencimentos próximos, unificados: contas fixas + faturas de cartão + lembretes
+  const upcomingDues = (dias = 4) => {
+    const now = new Date(), y = now.getFullYear(), m = now.getMonth();
+    const midToday = new Date(y, m, now.getDate());
+    const lastDay = new Date(y, m + 1, 0).getDate();
+    const dayDiff = dt => Math.round((new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()) - midToday) / 86400000);
+    const list = [];
+    pendingBills().forEach(b => {
+      const faltam = dayDiff(new Date(y, m, Math.min(b.dueDay, lastDay)));
+      if (faltam <= dias) list.push({ kind: "bill", icon: "🏠", label: b.name, amount: b.amount, faltam, atrasada: faltam < 0, act: "scrollBills" });
+    });
+    (store.d.cards || []).forEach(c => {
+      const fat = cardInvoice(c);
+      if (fat <= 0 || !c.dueDay) return;
+      const faltam = dayDiff(new Date(y, m, Math.min(c.dueDay, lastDay)));
+      if (faltam <= dias) list.push({ kind: "card", icon: "💳", label: "Fatura " + c.name, amount: fat, faltam, atrasada: faltam < 0, act: "goCards" });
+    });
+    (store.d.reminders || []).forEach(r => {
+      if (r.done || !r.date) return;
+      const p = String(r.date).split("-");
+      const faltam = dayDiff(new Date(+p[0], +p[1] - 1, +p[2]));
+      if (faltam <= dias && faltam >= -60) list.push({ kind: "rem", icon: "🔔", label: r.text, amount: null, faltam, atrasada: faltam < 0, act: "goCal" });
+    });
+    return list.sort((a, b) => a.faltam - b.faltam);
+  };
+  const dueWhen = it => it.faltam < 0 ? (it.faltam === -1 ? "venceu ontem" : `venceu há ${-it.faltam} dias`)
+    : it.faltam === 0 ? "vence hoje" : it.faltam === 1 ? "vence amanhã" : `vence em ${it.faltam} dias`;
   // projeção de saldo até o fim do mês (determinística, sem IA)
   const forecast = () => {
     const saldo = totalSaldo(), des = monthOut();
@@ -1792,14 +1819,24 @@
     const cats = byCategory(), maxCat = cats.length ? cats[0][1] : 1;
     const recentes = [...d.tx].sort((a, b) => (b.date + b.id).localeCompare(a.date + a.id)).slice(0, 8);
     const prevCats = catTotalsFor(prevMonthKey());
-    const due = billsDueSoon(3), fc = forecast();
-    // banner de contas vencendo / vencidas
-    const alertBanner = due.length ? `
-      <div class="alert ${due.some(b => b.atrasada) ? "critical" : "warn"}" style="margin-bottom:16px">
-        <span class="ic">${due.some(b => b.atrasada) ? "🔴" : "⏰"}</span>
-        <div><b>${due.some(b => b.atrasada) ? "Contas vencidas ou vencendo" : "Contas vencendo em breve"}:</b>
-          ${due.map(b => `${esc(b.name)} (${b.atrasada ? "venceu dia " + b.dueDay : b.faltam <= 0 ? "vence hoje" : "vence dia " + b.dueDay}, ${brl(b.amount)})`).join(" · ")}.
-          <button class="btn-mini alt" data-act="scrollBills" style="margin-top:8px">Ver contas do mês</button></div>
+    const dues = upcomingDues(4), fc = forecast();
+    // banner unificado de vencimentos: contas fixas + faturas de cartão + lembretes
+    const anyLate = dues.some(x => x.atrasada);
+    const shown = dues.slice(0, 5), extra = dues.length - shown.length;
+    const dueBtns = [];
+    if (dues.some(x => x.kind === "bill")) dueBtns.push('<button class="btn-mini alt" data-act="scrollBills">Ver contas do mês</button>');
+    if (dues.some(x => x.kind === "card")) dueBtns.push('<button class="btn-mini alt" data-act="goCards">Ver cartões</button>');
+    if (dues.some(x => x.kind === "rem")) dueBtns.push('<button class="btn-mini alt" data-act="goCal">Abrir calendário</button>');
+    const alertBanner = dues.length ? `
+      <div class="alert ${anyLate ? "critical" : "warn"}" style="margin-bottom:16px">
+        <span class="ic">${anyLate ? "🔴" : "⏰"}</span>
+        <div><b>${anyLate ? "Vencimentos atrasados ou chegando" : "Próximos vencimentos"}:</b>
+          <div style="margin:6px 0 2px; line-height:1.7">
+            ${shown.map(it => `<div>${it.icon} <b>${esc(it.label)}</b> — ${dueWhen(it)}${it.amount != null ? ` · <span class="num money">${brl(it.amount)}</span>` : ""}</div>`).join("")}
+            ${extra > 0 ? `<div class="hint">+${extra} outro${extra > 1 ? "s" : ""}</div>` : ""}
+          </div>
+          <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap">${dueBtns.join("")}</div>
+        </div>
       </div>` : "";
     // card de projeção de saldo
     const fcPos = fc.projetado >= 0;
@@ -4111,7 +4148,8 @@
   });
 
   const scrollBills = () => { const c = $("#billsCard"); if (c) { c.scrollIntoView({ behavior: "smooth", block: "center" }); c.classList.add("flash"); setTimeout(() => c.classList.remove("flash"), 1200); } };
-  const ACT = { addAcct: openAcct, addTx: openAdd, addGoal: openGoal, addBill: openBill, scrollBills, import: openImport };
+  const ACT = { addAcct: openAcct, addTx: openAdd, addGoal: openGoal, addBill: openBill, scrollBills, import: openImport,
+    goCards: () => { renderCards(); go("cartoes"); }, goCal: () => { renderCal(); go("cal"); } };
   applyMode();
 
   const btnEnv = $("#btnEnvelope");
