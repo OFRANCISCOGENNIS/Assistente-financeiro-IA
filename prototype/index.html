@@ -1433,15 +1433,16 @@
       <ol style="font-size:12.5px; color:var(--ink-2); line-height:1.7; padding-left:18px; margin:8px 0 0">
         <li>Abra <b>console.firebase.google.com</b> e crie um projeto (grátis, sem cartão).</li>
         <li>Em <b>Criar → Authentication → Sign-in method</b>, ative <b>E-mail/senha</b>.</li>
-        <li>Em <b>Criar → Firestore Database</b>, crie o banco.</li>
-        <li>Em <b>⚙️ Configurações do projeto → Seus apps → Web (&lt;/&gt;)</b>, registre um app e copie o objeto <b>firebaseConfig</b>.</li>
-        <li>Cole abaixo, informe um e-mail e senha e toque em Conectar.</li>
+        <li>Em <b>Criar → Firestore Database</b>, crie o banco (pode ser em modo de teste).</li>
+        <li>Na aba <b>Regras</b> do Firestore, cole a regra que o assistente te passou e clique <b>Publicar</b> (libera só os <i>seus</i> dados).</li>
+        <li>Em <b>⚙️ Configurações do projeto → Seus apps → Web (&lt;/&gt;)</b>, registre um app e copie o bloco <b>firebaseConfig</b> inteiro.</li>
+        <li>Cole abaixo (pode colar com <code>const firebaseConfig = &#123; … &#125;</code> e tudo) e, na primeira vez, toque em <b>Criar conta</b>.</li>
       </ol>
     </details>
 
     <div id="syncForm">
-      <div class="field"><label for="syncConfig">Cole o firebaseConfig</label>
-        <textarea id="syncConfig" rows="5" placeholder='{ "apiKey": "...", "authDomain": "...", "projectId": "...", ... }'
+      <div class="field"><label for="syncConfig">Cole o firebaseConfig (o bloco inteiro do Firebase)</label>
+        <textarea id="syncConfig" rows="6" placeholder='const firebaseConfig = {&#10;  apiKey: "AIza...",&#10;  authDomain: "seu-projeto.firebaseapp.com",&#10;  projectId: "seu-projeto",&#10;  ...&#10;};'
           style="width:100%; padding:10px 12px; border:1px solid var(--ring); border-radius:9px; background:var(--card); color:var(--ink); font-family:monospace; font-size:12px; resize:vertical"></textarea></div>
       <div class="field"><label for="syncEmail">E-mail</label>
         <input id="syncEmail" type="email" placeholder="voce@exemplo.com" autocomplete="username"></div>
@@ -2085,11 +2086,21 @@
     const [appMod, authMod, fsMod] = await Promise.all([import(U("app")), import(U("auth")), import(U("firestore"))]);
     return { appMod, authMod, fsMod };
   }
+  // aceita o firebaseConfig do jeito que o Firebase mostra: JSON puro OU o trecho
+  // JavaScript (const firebaseConfig = { … };) com chaves sem aspas, aspas simples,
+  // vírgula sobrando e comentários. Extrai os pares chave: "valor".
+  function parseFbConfig(raw) {
+    raw = (raw || "").trim();
+    if (!raw) return {};
+    try { const o = JSON.parse(raw); if (o && typeof o === "object") return o; } catch (e) {}
+    const cfg = {}, re = /([A-Za-z0-9_$]+)\s*:\s*(['"])([^'"]*)\2/g;
+    let m; while ((m = re.exec(raw)) !== null) cfg[m[1]] = m[3];
+    return cfg;
+  }
   async function syncConnect(create) {
-    let cfg;
-    try { cfg = JSON.parse($("#syncConfig").value.trim()); } catch (e) { setSyncStatus("Config inválido — cole o objeto firebaseConfig completo (com chaves).", "err"); return; }
+    const cfg = parseFbConfig($("#syncConfig").value);
     const email = $("#syncEmail").value.trim(), pw = $("#syncPass").value;
-    if (!cfg.apiKey || !cfg.projectId) { setSyncStatus("Config incompleto (faltou apiKey/projectId).", "err"); return; }
+    if (!cfg.apiKey || !cfg.projectId) { setSyncStatus("Não consegui ler o config. Cole o bloco todo que o Firebase mostra — pode ser com \"const firebaseConfig = { … }\" e tudo.", "err"); return; }
     if (!email || pw.length < 6) { setSyncStatus("Informe e-mail e senha (mín. 6 caracteres).", "err"); return; }
     setSyncStatus("Conectando…");
     try {
