@@ -510,6 +510,20 @@
   .seg button { padding: 7px 16px; border-radius: 7px; font-size: 13px; font-weight: 650;
     color: var(--ink-2); }
   .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+  /* seletor grande de tipo (Despesa / Receita) */
+  .type-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 6px 0 4px; }
+  .type-pick button { display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 14px 8px; border: 2px solid var(--ring); border-radius: 13px; background: var(--card);
+    color: var(--ink-2); cursor: pointer; font: inherit; transition: border-color .12s, background .12s; }
+  .type-pick .tp-ic { font-size: 23px; line-height: 1; }
+  .type-pick .tp-t { font-weight: 700; font-size: 15px; color: var(--ink); }
+  .type-pick .tp-d { font-size: 11px; color: var(--ink-3); }
+  .type-pick button[data-type="out"][aria-pressed="true"] { border-color: var(--critical);
+    background: color-mix(in srgb, var(--critical) 12%, transparent); }
+  .type-pick button[data-type="out"][aria-pressed="true"] .tp-t { color: var(--critical); }
+  .type-pick button[data-type="in"][aria-pressed="true"] { border-color: var(--good);
+    background: color-mix(in srgb, var(--good) 15%, transparent); }
+  .type-pick button[data-type="in"][aria-pressed="true"] .tp-t { color: var(--good-text); }
   .sheet .field input[type=date] { color-scheme: light dark; }
   .privacy-note { display: flex; gap: 7px; align-items: center; justify-content: center;
     color: var(--ink-3); font-size: 12px; margin-top: 14px; }
@@ -1111,12 +1125,16 @@
 
 <!-- lançamento rápido -->
 <div class="sheet-veil" id="addSheet">
-  <div class="sheet" role="dialog" aria-label="Registrar lançamento">
+  <div class="sheet" role="dialog" aria-label="Registrar lançamento" style="max-height:92vh; overflow-y:auto">
     <h2 id="addTitle">Registrar lançamento</h2>
-    <p style="margin-bottom:2px">Menos de 10 segundos.</p>
-    <div class="seg" id="addType" style="width:100%; justify-content:center">
-      <button data-type="out" aria-pressed="true" style="flex:1">Despesa</button>
-      <button data-type="in" aria-pressed="false" style="flex:1">Receita</button>
+    <p style="margin-bottom:8px">Primeiro, escolha o que é:</p>
+    <div class="type-pick" id="addType" role="group" aria-label="Tipo de lançamento">
+      <button type="button" data-type="out" aria-pressed="true">
+        <span class="tp-ic">💸</span><span class="tp-t">Despesa</span><span class="tp-d">dinheiro que sai</span>
+      </button>
+      <button type="button" data-type="in" aria-pressed="false">
+        <span class="tp-ic">💰</span><span class="tp-t">Receita</span><span class="tp-d">dinheiro que entra</span>
+      </button>
     </div>
     <div class="field">
       <label for="addValue">Valor</label>
