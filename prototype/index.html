@@ -510,6 +510,20 @@
   .seg button { padding: 7px 16px; border-radius: 7px; font-size: 13px; font-weight: 650;
     color: var(--ink-2); }
   .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+  /* seletor grande de tipo (Despesa / Receita) */
+  .type-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 6px 0 4px; }
+  .type-pick button { display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 14px 8px; border: 2px solid var(--ring); border-radius: 13px; background: var(--card);
+    color: var(--ink-2); cursor: pointer; font: inherit; transition: border-color .12s, background .12s; }
+  .type-pick .tp-ic { font-size: 23px; line-height: 1; }
+  .type-pick .tp-t { font-weight: 700; font-size: 15px; color: var(--ink); }
+  .type-pick .tp-d { font-size: 11px; color: var(--ink-3); }
+  .type-pick button[data-type="out"][aria-pressed="true"] { border-color: var(--critical);
+    background: color-mix(in srgb, var(--critical) 12%, transparent); }
+  .type-pick button[data-type="out"][aria-pressed="true"] .tp-t { color: var(--critical); }
+  .type-pick button[data-type="in"][aria-pressed="true"] { border-color: var(--good);
+    background: color-mix(in srgb, var(--good) 15%, transparent); }
+  .type-pick button[data-type="in"][aria-pressed="true"] .tp-t { color: var(--good-text); }
   .sheet .field input[type=date] { color-scheme: light dark; }
   .privacy-note { display: flex; gap: 7px; align-items: center; justify-content: center;
     color: var(--ink-3); font-size: 12px; margin-top: 14px; }
@@ -1111,12 +1125,16 @@
 
 <!-- lançamento rápido -->
 <div class="sheet-veil" id="addSheet">
-  <div class="sheet" role="dialog" aria-label="Registrar lançamento">
+  <div class="sheet" role="dialog" aria-label="Registrar lançamento" style="max-height:92vh; overflow-y:auto">
     <h2 id="addTitle">Registrar lançamento</h2>
-    <p style="margin-bottom:2px">Menos de 10 segundos.</p>
-    <div class="seg" id="addType" style="width:100%; justify-content:center">
-      <button data-type="out" aria-pressed="true" style="flex:1">Despesa</button>
-      <button data-type="in" aria-pressed="false" style="flex:1">Receita</button>
+    <p style="margin-bottom:8px">Primeiro, escolha o que é:</p>
+    <div class="type-pick" id="addType" role="group" aria-label="Tipo de lançamento">
+      <button type="button" data-type="out" aria-pressed="true">
+        <span class="tp-ic">💸</span><span class="tp-t">Despesa</span><span class="tp-d">dinheiro que sai</span>
+      </button>
+      <button type="button" data-type="in" aria-pressed="false">
+        <span class="tp-ic">💰</span><span class="tp-t">Receita</span><span class="tp-d">dinheiro que entra</span>
+      </button>
     </div>
     <div class="field">
       <label for="addValue">Valor</label>
@@ -1433,15 +1451,16 @@
       <ol style="font-size:12.5px; color:var(--ink-2); line-height:1.7; padding-left:18px; margin:8px 0 0">
         <li>Abra <b>console.firebase.google.com</b> e crie um projeto (grátis, sem cartão).</li>
         <li>Em <b>Criar → Authentication → Sign-in method</b>, ative <b>E-mail/senha</b>.</li>
-        <li>Em <b>Criar → Firestore Database</b>, crie o banco.</li>
-        <li>Em <b>⚙️ Configurações do projeto → Seus apps → Web (&lt;/&gt;)</b>, registre um app e copie o objeto <b>firebaseConfig</b>.</li>
-        <li>Cole abaixo, informe um e-mail e senha e toque em Conectar.</li>
+        <li>Em <b>Criar → Firestore Database</b>, crie o banco (pode ser em modo de teste).</li>
+        <li>Na aba <b>Regras</b> do Firestore, cole a regra que o assistente te passou e clique <b>Publicar</b> (libera só os <i>seus</i> dados).</li>
+        <li>Em <b>⚙️ Configurações do projeto → Seus apps → Web (&lt;/&gt;)</b>, registre um app e copie o bloco <b>firebaseConfig</b> inteiro.</li>
+        <li>Cole abaixo (pode colar com <code>const firebaseConfig = &#123; … &#125;</code> e tudo) e, na primeira vez, toque em <b>Criar conta</b>.</li>
       </ol>
     </details>
 
     <div id="syncForm">
-      <div class="field"><label for="syncConfig">Cole o firebaseConfig</label>
-        <textarea id="syncConfig" rows="5" placeholder='{ "apiKey": "...", "authDomain": "...", "projectId": "...", ... }'
+      <div class="field"><label for="syncConfig">Cole o firebaseConfig (o bloco inteiro do Firebase)</label>
+        <textarea id="syncConfig" rows="6" placeholder='const firebaseConfig = {&#10;  apiKey: "AIza...",&#10;  authDomain: "seu-projeto.firebaseapp.com",&#10;  projectId: "seu-projeto",&#10;  ...&#10;};'
           style="width:100%; padding:10px 12px; border:1px solid var(--ring); border-radius:9px; background:var(--card); color:var(--ink); font-family:monospace; font-size:12px; resize:vertical"></textarea></div>
       <div class="field"><label for="syncEmail">E-mail</label>
         <input id="syncEmail" type="email" placeholder="voce@exemplo.com" autocomplete="username"></div>
@@ -1759,6 +1778,33 @@
     return pendingBills().map(b => ({ ...b, atrasada: b.dueDay < hoje, faltam: b.dueDay - hoje }))
       .filter(b => b.atrasada || b.faltam <= dias).sort((a, b) => a.dueDay - b.dueDay);
   };
+  // vencimentos próximos, unificados: contas fixas + faturas de cartão + lembretes
+  const upcomingDues = (dias = 4) => {
+    const now = new Date(), y = now.getFullYear(), m = now.getMonth();
+    const midToday = new Date(y, m, now.getDate());
+    const lastDay = new Date(y, m + 1, 0).getDate();
+    const dayDiff = dt => Math.round((new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()) - midToday) / 86400000);
+    const list = [];
+    pendingBills().forEach(b => {
+      const faltam = dayDiff(new Date(y, m, Math.min(b.dueDay, lastDay)));
+      if (faltam <= dias) list.push({ kind: "bill", icon: "🏠", label: b.name, amount: b.amount, faltam, atrasada: faltam < 0, act: "scrollBills" });
+    });
+    (store.d.cards || []).forEach(c => {
+      const fat = cardInvoice(c);
+      if (fat <= 0 || !c.dueDay) return;
+      const faltam = dayDiff(new Date(y, m, Math.min(c.dueDay, lastDay)));
+      if (faltam <= dias) list.push({ kind: "card", icon: "💳", label: "Fatura " + c.name, amount: fat, faltam, atrasada: faltam < 0, act: "goCards" });
+    });
+    (store.d.reminders || []).forEach(r => {
+      if (r.done || !r.date) return;
+      const p = String(r.date).split("-");
+      const faltam = dayDiff(new Date(+p[0], +p[1] - 1, +p[2]));
+      if (faltam <= dias && faltam >= -60) list.push({ kind: "rem", icon: "🔔", label: r.text, amount: null, faltam, atrasada: faltam < 0, act: "goCal" });
+    });
+    return list.sort((a, b) => a.faltam - b.faltam);
+  };
+  const dueWhen = it => it.faltam < 0 ? (it.faltam === -1 ? "venceu ontem" : `venceu há ${-it.faltam} dias`)
+    : it.faltam === 0 ? "vence hoje" : it.faltam === 1 ? "vence amanhã" : `vence em ${it.faltam} dias`;
   // projeção de saldo até o fim do mês (determinística, sem IA)
   const forecast = () => {
     const saldo = totalSaldo(), des = monthOut();
@@ -1792,14 +1838,24 @@
     const cats = byCategory(), maxCat = cats.length ? cats[0][1] : 1;
     const recentes = [...d.tx].sort((a, b) => (b.date + b.id).localeCompare(a.date + a.id)).slice(0, 8);
     const prevCats = catTotalsFor(prevMonthKey());
-    const due = billsDueSoon(3), fc = forecast();
-    // banner de contas vencendo / vencidas
-    const alertBanner = due.length ? `
-      <div class="alert ${due.some(b => b.atrasada) ? "critical" : "warn"}" style="margin-bottom:16px">
-        <span class="ic">${due.some(b => b.atrasada) ? "🔴" : "⏰"}</span>
-        <div><b>${due.some(b => b.atrasada) ? "Contas vencidas ou vencendo" : "Contas vencendo em breve"}:</b>
-          ${due.map(b => `${esc(b.name)} (${b.atrasada ? "venceu dia " + b.dueDay : b.faltam <= 0 ? "vence hoje" : "vence dia " + b.dueDay}, ${brl(b.amount)})`).join(" · ")}.
-          <button class="btn-mini alt" data-act="scrollBills" style="margin-top:8px">Ver contas do mês</button></div>
+    const dues = upcomingDues(4), fc = forecast();
+    // banner unificado de vencimentos: contas fixas + faturas de cartão + lembretes
+    const anyLate = dues.some(x => x.atrasada);
+    const shown = dues.slice(0, 5), extra = dues.length - shown.length;
+    const dueBtns = [];
+    if (dues.some(x => x.kind === "bill")) dueBtns.push('<button class="btn-mini alt" data-act="scrollBills">Ver contas do mês</button>');
+    if (dues.some(x => x.kind === "card")) dueBtns.push('<button class="btn-mini alt" data-act="goCards">Ver cartões</button>');
+    if (dues.some(x => x.kind === "rem")) dueBtns.push('<button class="btn-mini alt" data-act="goCal">Abrir calendário</button>');
+    const alertBanner = dues.length ? `
+      <div class="alert ${anyLate ? "critical" : "warn"}" style="margin-bottom:16px">
+        <span class="ic">${anyLate ? "🔴" : "⏰"}</span>
+        <div><b>${anyLate ? "Vencimentos atrasados ou chegando" : "Próximos vencimentos"}:</b>
+          <div style="margin:6px 0 2px; line-height:1.7">
+            ${shown.map(it => `<div>${it.icon} <b>${esc(it.label)}</b> — ${dueWhen(it)}${it.amount != null ? ` · <span class="num money">${brl(it.amount)}</span>` : ""}</div>`).join("")}
+            ${extra > 0 ? `<div class="hint">+${extra} outro${extra > 1 ? "s" : ""}</div>` : ""}
+          </div>
+          <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap">${dueBtns.join("")}</div>
+        </div>
       </div>` : "";
     // card de projeção de saldo
     const fcPos = fc.projetado >= 0;
@@ -1892,6 +1948,7 @@
               <span class="cat-dot" style="background:${t.type === "in" ? "var(--good)" : "var(--s1)"}"></span>
               <div class="grow" data-editrow="${t.id}" style="cursor:pointer" title="Tocar para editar"><div class="t">${esc(t.desc || t.category)}</div><div class="d">${t.desc ? esc(t.category) + " · " : ""}${fmtDate(t.date)}${t.account ? " · " + esc(t.account) : ""}</div></div>
               <span class="num ${t.type === "in" ? "tx-in" : "tx-out"}">${t.type === "in" ? "+" : "−"}${brl(t.amount)}</span>
+              <button class="del" data-dup="${t.id}" aria-label="Repetir igual" title="Repetir igual (hoje)">⟳</button>
               <button class="del edit" data-edit="${t.id}" aria-label="Editar" title="Editar">✎</button>
               <button class="del" data-del="${t.id}" aria-label="Excluir">✕</button></div>`).join("")}
           </div>
@@ -1905,6 +1962,7 @@
             ${d.goals.map(g => `<div class="row-item"><div class="grow"><div class="t">${g.name}</div>
               <div class="limit-bar"><i style="width:${Math.min(100, g.target ? g.current / g.target * 100 : 0)}%; background:var(--accent)"></i></div>
               <div class="d num money">${brl(g.current)} de ${brl(g.target)} · ${g.target ? Math.round(g.current / g.target * 100) : 0}%</div></div>
+              <button class="btn-ghost safe" data-aporte="${g.id}" title="Guardar dinheiro nesta meta">Guardar</button>
               <button class="del edit" data-editgoal="${g.id}" aria-label="Editar" title="Editar">✎</button>
               <button class="del" data-del-goal="${g.id}" aria-label="Excluir">✕</button></div>`).join("") || `<p class="hint">Nenhuma meta ainda.</p>`}
           </div>
@@ -1952,6 +2010,10 @@
       const id = b.dataset.edit || b.dataset.editrow;
       const t = store.d.tx.find(x => x.id === id); if (t) openAdd(t);
     }));
+    $$("[data-dup]", realDash).forEach(b => b.addEventListener("click", () => {
+      const t = store.d.tx.find(x => x.id === b.dataset.dup); if (t) openAdd(t, { dup: true });
+    }));
+    $$("[data-aporte]", realDash).forEach(b => b.addEventListener("click", () => openAporte(b.dataset.aporte)));
     $$("[data-del-goal]", realDash).forEach(b => b.addEventListener("click", () => {
       store.d.goals = store.d.goals.filter(g => g.id !== b.dataset.delGoal); store.save(); renderReal();
     }));
@@ -2048,11 +2110,21 @@
     const [appMod, authMod, fsMod] = await Promise.all([import(U("app")), import(U("auth")), import(U("firestore"))]);
     return { appMod, authMod, fsMod };
   }
+  // aceita o firebaseConfig do jeito que o Firebase mostra: JSON puro OU o trecho
+  // JavaScript (const firebaseConfig = { … };) com chaves sem aspas, aspas simples,
+  // vírgula sobrando e comentários. Extrai os pares chave: "valor".
+  function parseFbConfig(raw) {
+    raw = (raw || "").trim();
+    if (!raw) return {};
+    try { const o = JSON.parse(raw); if (o && typeof o === "object") return o; } catch (e) {}
+    const cfg = {}, re = /([A-Za-z0-9_$]+)\s*:\s*(['"])([^'"]*)\2/g;
+    let m; while ((m = re.exec(raw)) !== null) cfg[m[1]] = m[3];
+    return cfg;
+  }
   async function syncConnect(create) {
-    let cfg;
-    try { cfg = JSON.parse($("#syncConfig").value.trim()); } catch (e) { setSyncStatus("Config inválido — cole o objeto firebaseConfig completo (com chaves).", "err"); return; }
+    const cfg = parseFbConfig($("#syncConfig").value);
     const email = $("#syncEmail").value.trim(), pw = $("#syncPass").value;
-    if (!cfg.apiKey || !cfg.projectId) { setSyncStatus("Config incompleto (faltou apiKey/projectId).", "err"); return; }
+    if (!cfg.apiKey || !cfg.projectId) { setSyncStatus("Não consegui ler o config. Cole o bloco todo que o Firebase mostra — pode ser com \"const firebaseConfig = { … }\" e tudo.", "err"); return; }
     if (!email || pw.length < 6) { setSyncStatus("Informe e-mail e senha (mín. 6 caracteres).", "err"); return; }
     setSyncStatus("Conectando…");
     try {
@@ -2298,6 +2370,7 @@
             <span class="cat-dot" style="background:var(--s1)"></span>
             <div class="grow" data-editrow="${t.id}" style="cursor:pointer" title="Tocar para editar"><div class="t">${esc(t.desc || t.category)}</div><div class="d">${t.desc ? esc(t.category) + " · " : ""}${fmtDate(t.date)}${t.account ? " · " + esc(t.account) : ""}</div></div>
             <span class="num tx-out">−${brl(t.amount)}</span>
+            <button class="del" data-dup="${t.id}" aria-label="Repetir igual" title="Repetir igual (hoje)">⟳</button>
             <button class="del edit" data-edit="${t.id}" aria-label="Editar" title="Editar">✎</button>
             <button class="del" data-del="${t.id}" aria-label="Excluir">✕</button></div>`).join("")
             : `<p class="hint">Nenhum gasto registrado este mês.</p>`}
@@ -2313,6 +2386,9 @@
     $$("[data-edit], [data-editrow]", body).forEach(b => b.addEventListener("click", () => {
       const id = b.dataset.edit || b.dataset.editrow;
       const t = store.d.tx.find(x => x.id === id); if (t) openAdd(t);
+    }));
+    $$("[data-dup]", body).forEach(b => b.addEventListener("click", () => {
+      const t = store.d.tx.find(x => x.id === b.dataset.dup); if (t) openAdd(t, { dup: true });
     }));
     $$("[data-del]", body).forEach(b => b.addEventListener("click", () => {
       store.d.tx = store.d.tx.filter(t => t.id !== b.dataset.del); store.save(); renderReal(); renderRel(); renderGastos();
@@ -3882,20 +3958,21 @@
   }));
   let editingTxId = null;
   const selectChip = (container, text) => { let hit = false; $$(".chip", container).forEach(c => { const on = c.textContent.trim() === text && !c.dataset.addCat; c.setAttribute("aria-pressed", String(on)); if (on) hit = true; }); return hit; };
-  const openAdd = (editTx) => {
+  const openAdd = (editTx, opts) => {
+    const dup = !!(opts && opts.dup); // "repetir": pré-preenche mas cria um lançamento novo (data de hoje)
     if (store.d.mode !== "real") { store.d.mode = "real"; store.save(); applyMode(); }
-    editingTxId = editTx ? editTx.id : null;
+    editingTxId = (editTx && !dup) ? editTx.id : null;
     addType = editTx ? editTx.type : "out";
     $$("#addType button").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.type === addType)));
     refreshAddSheet();
-    $("#addDate").value = editTx ? editTx.date : todayISO();
+    $("#addDate").value = (editTx && !dup) ? editTx.date : todayISO();
     $("#addValue").value = editTx ? String(editTx.amount).replace(".", ",") : "";
     if ($("#addDesc")) $("#addDesc").value = editTx ? (editTx.desc || "") : "";
     if (editTx) {
       selectChip($("#addCats"), editTx.category);
       if (editTx.account) selectChip($("#addPay"), editTx.account);
-      $("#addTitle").textContent = "Editar lançamento";
-      $("#btnAddSave").textContent = "Salvar alterações";
+      $("#addTitle").textContent = dup ? "Repetir lançamento" : "Editar lançamento";
+      $("#btnAddSave").textContent = dup ? "Registrar" : "Salvar alterações";
     } else {
       $("#btnAddSave").textContent = "Registrar";
     }
@@ -4111,7 +4188,8 @@
   });
 
   const scrollBills = () => { const c = $("#billsCard"); if (c) { c.scrollIntoView({ behavior: "smooth", block: "center" }); c.classList.add("flash"); setTimeout(() => c.classList.remove("flash"), 1200); } };
-  const ACT = { addAcct: openAcct, addTx: openAdd, addGoal: openGoal, addBill: openBill, scrollBills, import: openImport };
+  const ACT = { addAcct: openAcct, addTx: openAdd, addGoal: openGoal, addBill: openBill, scrollBills, import: openImport,
+    goCards: () => { renderCards(); go("cartoes"); }, goCal: () => { renderCal(); go("cal"); } };
   applyMode();
 
   const btnEnv = $("#btnEnvelope");
