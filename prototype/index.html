@@ -1948,6 +1948,7 @@
               <span class="cat-dot" style="background:${t.type === "in" ? "var(--good)" : "var(--s1)"}"></span>
               <div class="grow" data-editrow="${t.id}" style="cursor:pointer" title="Tocar para editar"><div class="t">${esc(t.desc || t.category)}</div><div class="d">${t.desc ? esc(t.category) + " · " : ""}${fmtDate(t.date)}${t.account ? " · " + esc(t.account) : ""}</div></div>
               <span class="num ${t.type === "in" ? "tx-in" : "tx-out"}">${t.type === "in" ? "+" : "−"}${brl(t.amount)}</span>
+              <button class="del" data-dup="${t.id}" aria-label="Repetir igual" title="Repetir igual (hoje)">⟳</button>
               <button class="del edit" data-edit="${t.id}" aria-label="Editar" title="Editar">✎</button>
               <button class="del" data-del="${t.id}" aria-label="Excluir">✕</button></div>`).join("")}
           </div>
@@ -1961,6 +1962,7 @@
             ${d.goals.map(g => `<div class="row-item"><div class="grow"><div class="t">${g.name}</div>
               <div class="limit-bar"><i style="width:${Math.min(100, g.target ? g.current / g.target * 100 : 0)}%; background:var(--accent)"></i></div>
               <div class="d num money">${brl(g.current)} de ${brl(g.target)} · ${g.target ? Math.round(g.current / g.target * 100) : 0}%</div></div>
+              <button class="btn-ghost safe" data-aporte="${g.id}" title="Guardar dinheiro nesta meta">Guardar</button>
               <button class="del edit" data-editgoal="${g.id}" aria-label="Editar" title="Editar">✎</button>
               <button class="del" data-del-goal="${g.id}" aria-label="Excluir">✕</button></div>`).join("") || `<p class="hint">Nenhuma meta ainda.</p>`}
           </div>
@@ -2008,6 +2010,10 @@
       const id = b.dataset.edit || b.dataset.editrow;
       const t = store.d.tx.find(x => x.id === id); if (t) openAdd(t);
     }));
+    $$("[data-dup]", realDash).forEach(b => b.addEventListener("click", () => {
+      const t = store.d.tx.find(x => x.id === b.dataset.dup); if (t) openAdd(t, { dup: true });
+    }));
+    $$("[data-aporte]", realDash).forEach(b => b.addEventListener("click", () => openAporte(b.dataset.aporte)));
     $$("[data-del-goal]", realDash).forEach(b => b.addEventListener("click", () => {
       store.d.goals = store.d.goals.filter(g => g.id !== b.dataset.delGoal); store.save(); renderReal();
     }));
@@ -2364,6 +2370,7 @@
             <span class="cat-dot" style="background:var(--s1)"></span>
             <div class="grow" data-editrow="${t.id}" style="cursor:pointer" title="Tocar para editar"><div class="t">${esc(t.desc || t.category)}</div><div class="d">${t.desc ? esc(t.category) + " · " : ""}${fmtDate(t.date)}${t.account ? " · " + esc(t.account) : ""}</div></div>
             <span class="num tx-out">−${brl(t.amount)}</span>
+            <button class="del" data-dup="${t.id}" aria-label="Repetir igual" title="Repetir igual (hoje)">⟳</button>
             <button class="del edit" data-edit="${t.id}" aria-label="Editar" title="Editar">✎</button>
             <button class="del" data-del="${t.id}" aria-label="Excluir">✕</button></div>`).join("")
             : `<p class="hint">Nenhum gasto registrado este mês.</p>`}
@@ -2379,6 +2386,9 @@
     $$("[data-edit], [data-editrow]", body).forEach(b => b.addEventListener("click", () => {
       const id = b.dataset.edit || b.dataset.editrow;
       const t = store.d.tx.find(x => x.id === id); if (t) openAdd(t);
+    }));
+    $$("[data-dup]", body).forEach(b => b.addEventListener("click", () => {
+      const t = store.d.tx.find(x => x.id === b.dataset.dup); if (t) openAdd(t, { dup: true });
     }));
     $$("[data-del]", body).forEach(b => b.addEventListener("click", () => {
       store.d.tx = store.d.tx.filter(t => t.id !== b.dataset.del); store.save(); renderReal(); renderRel(); renderGastos();
@@ -3948,20 +3958,21 @@
   }));
   let editingTxId = null;
   const selectChip = (container, text) => { let hit = false; $$(".chip", container).forEach(c => { const on = c.textContent.trim() === text && !c.dataset.addCat; c.setAttribute("aria-pressed", String(on)); if (on) hit = true; }); return hit; };
-  const openAdd = (editTx) => {
+  const openAdd = (editTx, opts) => {
+    const dup = !!(opts && opts.dup); // "repetir": pré-preenche mas cria um lançamento novo (data de hoje)
     if (store.d.mode !== "real") { store.d.mode = "real"; store.save(); applyMode(); }
-    editingTxId = editTx ? editTx.id : null;
+    editingTxId = (editTx && !dup) ? editTx.id : null;
     addType = editTx ? editTx.type : "out";
     $$("#addType button").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.type === addType)));
     refreshAddSheet();
-    $("#addDate").value = editTx ? editTx.date : todayISO();
+    $("#addDate").value = (editTx && !dup) ? editTx.date : todayISO();
     $("#addValue").value = editTx ? String(editTx.amount).replace(".", ",") : "";
     if ($("#addDesc")) $("#addDesc").value = editTx ? (editTx.desc || "") : "";
     if (editTx) {
       selectChip($("#addCats"), editTx.category);
       if (editTx.account) selectChip($("#addPay"), editTx.account);
-      $("#addTitle").textContent = "Editar lançamento";
-      $("#btnAddSave").textContent = "Salvar alterações";
+      $("#addTitle").textContent = dup ? "Repetir lançamento" : "Editar lançamento";
+      $("#btnAddSave").textContent = dup ? "Registrar" : "Salvar alterações";
     } else {
       $("#btnAddSave").textContent = "Registrar";
     }
