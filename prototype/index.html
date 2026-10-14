@@ -1191,6 +1191,10 @@
       <label for="goalCurrent">Já guardado</label>
       <input id="goalCurrent" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
     </div>
+    <div class="field">
+      <label for="goalDate">Quero juntar até <span style="color:var(--ink-3); font-weight:500">(opcional)</span></label>
+      <input id="goalDate" type="date">
+    </div>
     <button class="btn-primary" id="btnGoalSave" style="margin-top:18px">Criar meta</button>
     <button class="alt" id="btnGoalCancel">Cancelar</button>
   </div>
@@ -1815,6 +1819,27 @@
     const projetado = saldo - pend - gastoProj;
     return { saldo, pend, ritmoDia, gastoProj, diasRest, projetado };
   };
+  // meta com data-alvo: quanto guardar por mês para chegar no prazo
+  function goalPlan(g) {
+    if (!g || !g.targetDate || !g.target) return null;
+    const p = String(g.targetDate).split("-");
+    const alvo = new Date(+p[0], +p[1] - 1, +p[2]);
+    if (isNaN(alvo.getTime())) return null;
+    const falta = Math.max(0, (g.target || 0) - (g.current || 0));
+    const now = new Date(), hoje = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const alvoLabel = MESES_L[alvo.getMonth()] + " de " + alvo.getFullYear();
+    let meses = (alvo.getFullYear() - now.getFullYear()) * 12 + (alvo.getMonth() - now.getMonth());
+    if (meses <= 0) meses = (alvo >= hoje) ? 1 : 0; // mesmo mês ainda no futuro = 1; já passou = 0
+    const perMonth = meses > 0 ? falta / meses : falta;
+    return { falta, meses, perMonth, alvoLabel, concluida: falta <= 0, vencida: alvo < hoje };
+  }
+  function goalPlanLine(g) {
+    const pl = goalPlan(g);
+    if (!pl) return "";
+    if (pl.concluida) return `<div class="d" style="color:var(--good-text)">🎉 Meta atingida!</div>`;
+    if (pl.vencida) return `<div class="d" style="color:var(--critical)">Prazo (${pl.alvoLabel}) já passou · faltam ${brl(pl.falta)}</div>`;
+    return `<div class="d">🎯 Guarde <b class="num money">${brl(pl.perMonth)}</b>/mês até ${pl.alvoLabel} <span style="color:var(--ink-3)">(${pl.meses} ${pl.meses === 1 ? "mês" : "meses"})</span></div>`;
+  }
 
   /* ---------- render do painel real ---------- */
   const realDash = $("#realDash");
@@ -1961,7 +1986,7 @@
           <div class="row-list mini-list">
             ${d.goals.map(g => `<div class="row-item"><div class="grow"><div class="t">${g.name}</div>
               <div class="limit-bar"><i style="width:${Math.min(100, g.target ? g.current / g.target * 100 : 0)}%; background:var(--accent)"></i></div>
-              <div class="d num money">${brl(g.current)} de ${brl(g.target)} · ${g.target ? Math.round(g.current / g.target * 100) : 0}%</div></div>
+              <div class="d num money">${brl(g.current)} de ${brl(g.target)} · ${g.target ? Math.round(g.current / g.target * 100) : 0}%</div>${goalPlanLine(g)}</div>
               <button class="btn-ghost safe" data-aporte="${g.id}" title="Guardar dinheiro nesta meta">Guardar</button>
               <button class="del edit" data-editgoal="${g.id}" aria-label="Editar" title="Editar">✎</button>
               <button class="del" data-del-goal="${g.id}" aria-label="Excluir">✕</button></div>`).join("") || `<p class="hint">Nenhuma meta ainda.</p>`}
@@ -3480,7 +3505,7 @@
             ${gs.map(g => `<div class="row-item">
               <div class="grow"><div class="t">${g.name}</div>
                 <div class="limit-bar"><i style="width:${Math.min(100, g.target ? g.current / g.target * 100 : 0)}%; background:var(--accent)"></i></div>
-                <div class="d num money">${brl(g.current)} de ${brl(g.target)} · ${g.target ? Math.round(g.current / g.target * 100) : 0}%</div></div>
+                <div class="d num money">${brl(g.current)} de ${brl(g.target)} · ${g.target ? Math.round(g.current / g.target * 100) : 0}%</div>${goalPlanLine(g)}</div>
               <button class="btn-ghost safe" data-aporte="${g.id}">Aportar</button>
               <button class="del edit" data-editgoal="${g.id}" aria-label="Editar" title="Editar">✎</button>
               <button class="del" data-del-goal="${g.id}" aria-label="Excluir">✕</button></div>`).join("")}
@@ -4054,6 +4079,7 @@
     $("#goalName").value = edit ? edit.name : "";
     $("#goalTarget").value = edit ? String(edit.target).replace(".", ",") : "";
     $("#goalCurrent").value = edit ? String(edit.current).replace(".", ",") : "";
+    $("#goalDate").value = edit ? (edit.targetDate || "") : "";
     $("#goalSheet h2").textContent = edit ? "Editar meta" : "Nova meta";
     $("#btnGoalSave").textContent = edit ? "Salvar alterações" : "Criar meta";
     goalSheet.classList.add("open"); $("#goalName").focus();
@@ -4065,12 +4091,12 @@
     if (!name) { $("#goalName").focus(); return; }
     if (editingGoalId) {
       const g = store.d.goals.find(x => x.id === editingGoalId);
-      if (g) { g.name = name; g.target = parseNum($("#goalTarget").value); g.current = parseNum($("#goalCurrent").value); }
+      if (g) { g.name = name; g.target = parseNum($("#goalTarget").value); g.current = parseNum($("#goalCurrent").value); g.targetDate = $("#goalDate").value || ""; }
       editingGoalId = null;
       store.save(); goalSheet.classList.remove("open"); renderReal(); renderMetas();
       showToast(`Meta "${name}" atualizada`); return;
     }
-    store.d.goals.push({ id: uid(), name, target: parseNum($("#goalTarget").value), current: parseNum($("#goalCurrent").value) });
+    store.d.goals.push({ id: uid(), name, target: parseNum($("#goalTarget").value), current: parseNum($("#goalCurrent").value), targetDate: $("#goalDate").value || "" });
     store.save(); goalSheet.classList.remove("open"); renderReal(); renderMetas();
     showToast(`Meta "${name}" criada`);
   });
