@@ -1941,7 +1941,19 @@
         </div>
         <p class="hint" style="margin-top:10px">Barras verdes = meses em que você guardou dinheiro. Vermelhas = gastou mais do que entrou.</p>
       </div></div>` : "";
-    realDash.innerHTML = alertBanner + forecastCard + patrimonioCard + `
+    // contas fixas do mês ainda não lançadas — perguntar antes (nunca desconta sozinho)
+    const pendBills = pendingBills();
+    const totPend = pendBills.reduce((a, b) => a + b.amount, 0);
+    const autoBillsBanner = (pendBills.length && !autoBillsHandled()) ? `
+      <div class="alert warn" style="margin-bottom:16px">
+        <span class="ic">🔁</span>
+        <div><b>Contas fixas de ${MESES_L[new Date().getMonth()]}:</b> ${pendBills.length} conta(s) ainda não lançada(s) este mês — total <b class="num money">${brl(totPend)}</b>. Quer lançar todas de uma vez?
+          <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap">
+            <button class="btn-mini" data-autobills="go">Lançar todas agora</button>
+            <button class="btn-mini alt" data-autobills="skip">Agora não</button>
+          </div></div>
+      </div>` : "";
+    realDash.innerHTML = alertBanner + autoBillsBanner + forecastCard + patrimonioCard + `
       <div class="grid g-tiles">
         <div class="card tile"><div class="label">Saldo total</div>
           <div class="value num money">${brl(saldo)}</div>
@@ -2059,6 +2071,10 @@
       const t = store.d.tx.find(x => x.id === b.dataset.dup); if (t) openAdd(t, { dup: true });
     }));
     $$("[data-aporte]", realDash).forEach(b => b.addEventListener("click", () => openAporte(b.dataset.aporte)));
+    $$("[data-autobills]", realDash).forEach(b => b.addEventListener("click", () => {
+      if (b.dataset.autobills === "go") { payPendingBills(); setAutoBillsHandled(); renderReal(); renderRel(); renderGastos(); }
+      else { setAutoBillsHandled(); renderReal(); }
+    }));
     $$("[data-del-goal]", realDash).forEach(b => b.addEventListener("click", () => {
       store.d.goals = store.d.goals.filter(g => g.id !== b.dataset.delGoal); store.save(); renderReal();
     }));
@@ -2255,6 +2271,26 @@
     store.save(); renderReal(); renderRel(); renderGastos();
     showToast(`${b.name} paga — ${brl(b.amount)}`);
   }
+  // "perguntar antes": lança todas as contas fixas pendentes do mês (desconta só após confirmação)
+  function payPendingBills() {
+    const pend = (store.d.bills || []).filter(b => !(b.paidMonths || []).includes(thisMonth()));
+    if (!pend.length) return 0;
+    const acct = store.d.accounts[0];
+    let total = 0;
+    pend.forEach(b => {
+      b.paidMonths = b.paidMonths || [];
+      if (!b.paidMonths.includes(thisMonth())) b.paidMonths.push(thisMonth());
+      store.d.tx.push({ id: uid(), type: "out", amount: b.amount, category: b.category || "Contas", account: acct ? acct.name : "", date: todayISO() });
+      if (acct) acct.balance -= b.amount;
+      total += b.amount;
+    });
+    store.save();
+    showToast(`${pend.length} conta(s) fixa(s) lançada(s) — ${brl(total)}`);
+    return pend.length;
+  }
+  const AUTOBILLS_KEY = "afia:autobills";
+  function autoBillsHandled() { try { return localStorage.getItem(AUTOBILLS_KEY) === thisMonth(); } catch (e) { return false; } }
+  function setAutoBillsHandled() { try { localStorage.setItem(AUTOBILLS_KEY, thisMonth()); } catch (e) {} }
   const fmtDate = iso => { if (!iso) return ""; const [y, m, dd] = iso.split("-"); return dd + "/" + m; };
 
   /* ---------- Assinaturas & recorrências (detecção determinística) ---------- */
