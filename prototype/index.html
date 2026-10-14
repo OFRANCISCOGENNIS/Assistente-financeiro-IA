@@ -1861,6 +1861,7 @@
     }
     const saldo = totalSaldo(), rec = monthIn(), des = monthOut(), eco = rec - des;
     const cats = byCategory(), maxCat = cats.length ? cats[0][1] : 1;
+    const catBudgets = d.budgets || {};
     const recentes = [...d.tx].sort((a, b) => (b.date + b.id).localeCompare(a.date + a.id)).slice(0, 8);
     const prevCats = catTotalsFor(prevMonthKey());
     const dues = upcomingDues(4), fc = forecast();
@@ -1980,7 +1981,15 @@
               : `<span class="mchip down" title="${brl(prev)} no mês passado">▼ ${-dpct}%</span>`;
             return `<div class="budget-row"><div class="b-head"><span class="cat">${c} ${badge}</span>
               <span class="pct num money">${brl(v)}</span></div>
-              <div class="limit-bar"><i style="width:${Math.max(6, v / maxCat * 100)}%; background:var(--s1)"></i></div></div>`;
+              ${(() => {
+                const lim = catBudgets[c] || 0;
+                if (!lim) return `<div class="limit-bar"><i style="width:${Math.max(6, v / maxCat * 100)}%; background:var(--s1)"></i></div>`;
+                const bpct = Math.round(v / lim * 100);
+                const col = bpct > 100 ? "var(--critical)" : bpct >= 85 ? "var(--warn)" : "var(--good)";
+                return `<div class="limit-bar"><i style="width:${Math.max(4, Math.min(100, bpct))}%; background:${col}"></i></div>
+                  <div class="b-sub"><span>${bpct}% do limite</span>
+                    <span style="${bpct > 100 ? "color:var(--critical); font-weight:650" : ""}">${bpct > 100 ? brl(v - lim) + " acima de " + brl(lim) : brl(lim - v) + " de " + brl(lim) + " livres"}</span></div>`;
+              })()}</div>`;
           }).join("")
             : `<p class="hint">Nenhuma despesa registrada este mês ainda.</p>`}
         </div>
@@ -4122,8 +4131,18 @@
     if (ac) ac.balance += (addType === "in" ? amount : -amount);
     store.save();
     addSheet.classList.remove("open");
-    renderReal(); renderRel(); renderGastos();
-    showToast(`${addType === "in" ? "Receita" : "Despesa"} de ${brl(amount)} registrada em ${cat}`);
+    renderReal(); renderRel(); renderGastos(); renderOrc();
+    let budMsg = "";
+    if (addType === "out") {
+      const lim = (store.d.budgets || {})[cat] || 0;
+      if (lim) {
+        const spentCat = store.d.tx.filter(t => t.type === "out" && t.category === cat && inMonth(t)).reduce((a, t) => a + t.amount, 0);
+        const bpct = Math.round(spentCat / lim * 100);
+        if (spentCat > lim) budMsg = ` · ⚠️ estourou ${cat}: ${brl(spentCat)} de ${brl(lim)} (${bpct}%)`;
+        else if (bpct >= 85) budMsg = ` · ⚠️ ${cat} em ${bpct}% do limite`;
+      }
+    }
+    showToast(`${addType === "in" ? "Receita" : "Despesa"} de ${brl(amount)} registrada em ${cat}${budMsg}`);
   });
   addEventListener("keydown", e => {
     if (e.key.toLowerCase() === "n" && document.body.classList.contains("logged")
