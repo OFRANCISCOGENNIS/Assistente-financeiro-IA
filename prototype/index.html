@@ -1158,6 +1158,18 @@
       <label for="addDate">Data</label>
       <input id="addDate" type="date">
     </div>
+    <div class="field" id="addRepeatRow">
+      <label for="addRepeat">Repetir <span style="color:var(--ink-3); font-weight:500">(opcional)</span></label>
+      <div style="display:flex; gap:8px">
+        <select id="addRepeat" style="flex:1; padding:10px 12px; border:1px solid var(--ring); border-radius:9px; background:var(--card); color:var(--ink); font:inherit">
+          <option value="no">Não repetir</option>
+          <option value="parc">Parcelar (dividir o valor)</option>
+          <option value="rec">Repetir todo mês (valor cheio)</option>
+        </select>
+        <input id="addRepeatN" type="number" min="2" max="60" value="12" aria-label="Quantas vezes" style="width:74px; padding:10px; border:1px solid var(--ring); border-radius:9px; background:var(--card); color:var(--ink); font:inherit">
+      </div>
+      <span class="hint" id="addRepeatHint" style="display:none; margin-top:4px">Parcelar divide o valor em N meses. Repetir lança o valor cheio todo mês. Meses futuros entram como “agendados”.</span>
+    </div>
     <button class="btn-primary" id="btnAddSave" style="margin-top:18px">Registrar</button>
     <button class="alt" id="btnAddCancel">Cancelar</button>
   </div>
@@ -1759,6 +1771,20 @@
   // para percentuais/taxas: aceita "1,5" e "1.5" como decimal (sem separador de milhar)
   const parseRate = s => { if (!s) return 0; const n = parseFloat(String(s).replace("%", "").replace(",", ".").trim()); return isNaN(n) ? 0 : n; };
   const todayISO = () => { const d = new Date(); return d.toISOString().slice(0, 10); };
+  const isoLocal = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const todayLocal = () => isoLocal(new Date());
+  // agendados (data futura) não mexem no saldo até a data chegar; aqui "amadurecem" os que já venceram
+  function maturePlanned() {
+    const today = todayLocal(); let changed = false;
+    (store.d.tx || []).forEach(t => {
+      if (t.planned && (t.type === "in" || t.type === "out") && (t.date || "") <= today) {
+        const ac = store.d.accounts.find(a => a.name === t.account);
+        if (ac) ac.balance += (t.type === "in" ? t.amount : -t.amount);
+        t.planned = false; changed = true;
+      }
+    });
+    if (changed) store.save();
+  }
   const thisMonth = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); };
   const inMonth = t => (t.date || "").slice(0, 7) === thisMonth();
 
@@ -1768,11 +1794,11 @@
   const norm = s => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
   const daysLeft = () => { const d = new Date(); const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); return Math.max(1, last - d.getDate() + 1); };
   const totalSaldo = () => store.d.accounts.reduce((s, a) => s + a.balance, 0);
-  const monthIn = () => store.d.tx.filter(t => t.type === "in" && inMonth(t)).reduce((s, t) => s + t.amount, 0);
-  const monthOut = () => store.d.tx.filter(t => t.type === "out" && inMonth(t)).reduce((s, t) => s + t.amount, 0);
+  const monthIn = () => store.d.tx.filter(t => t.type === "in" && !t.planned && inMonth(t)).reduce((s, t) => s + t.amount, 0);
+  const monthOut = () => store.d.tx.filter(t => t.type === "out" && !t.planned && inMonth(t)).reduce((s, t) => s + t.amount, 0);
   const byCategory = () => {
     const m = {};
-    store.d.tx.filter(t => t.type === "out" && inMonth(t)).forEach(t => { m[t.category] = (m[t.category] || 0) + t.amount; });
+    store.d.tx.filter(t => t.type === "out" && !t.planned && inMonth(t)).forEach(t => { m[t.category] = (m[t.category] || 0) + t.amount; });
     return Object.entries(m).sort((a, b) => b[1] - a[1]);
   };
   function achievements() {
@@ -2029,6 +2055,12 @@
               <button class="del edit" data-editacct="${a.id}" aria-label="Editar" title="Editar">✎</button>
               <button class="del" data-del-acct="${a.id}" aria-label="Excluir">✕</button></div>`).join("") || `<p class="hint">Nenhuma conta ainda.</p>`}
           </div>
+          ${(() => {
+            const pl = (d.tx || []).filter(t => t.planned && (t.type === "in" || t.type === "out"));
+            if (!pl.length) return "";
+            const net = pl.reduce((a, t) => a + (t.type === "in" ? t.amount : -t.amount), 0), prev = totalSaldo() + net;
+            return `<div class="b-sub" style="margin-top:10px; padding-top:8px; border-top:1px solid var(--ring)"><span>🔮 Saldo previsto <span style="color:var(--ink-3)">(${pl.length} agendado${pl.length > 1 ? "s" : ""})</span></span><b class="num money" style="color:${prev >= 0 ? "var(--good-text)" : "var(--critical)"}">${brl(prev)}</b></div>`;
+          })()}
           <div class="cta-row" style="margin-top:12px"><button class="btn-mini alt" data-act="addAcct">+ Conta</button>
             ${d.accounts.length >= 2 ? `<button class="btn-mini alt" data-act="transfer">↔ Transferir</button>` : ""}</div>
         </div>
@@ -2045,7 +2077,7 @@
               <button class="del" data-del="${t.id}" aria-label="Excluir" title="Excluir">✕</button></div>`
               : `<div class="row-item">
               <span class="cat-dot" style="background:${t.type === "in" ? "var(--good)" : "var(--s1)"}"></span>
-              <div class="grow" data-editrow="${t.id}" style="cursor:pointer" title="Tocar para editar"><div class="t">${esc(t.desc || t.category)}${tagChips(t)}</div><div class="d">${t.desc ? esc(t.category) + " · " : ""}${fmtDate(t.date)}${t.account ? " · " + esc(t.account) : ""}</div></div>
+              <div class="grow" data-editrow="${t.id}" style="cursor:pointer" title="Tocar para editar"><div class="t">${esc(t.desc || t.category)}${tagChips(t)}${t.planned ? ` <span class="mchip flat">⏳ agendado</span>` : ""}</div><div class="d">${t.desc ? esc(t.category) + " · " : ""}${fmtDate(t.date)}${t.account ? " · " + esc(t.account) : ""}</div></div>
               <span class="num ${t.type === "in" ? "tx-in" : "tx-out"}">${t.type === "in" ? "+" : "−"}${brl(t.amount)}</span>
               <button class="del" data-dup="${t.id}" aria-label="Repetir igual" title="Repetir igual (hoje)">⟳</button>
               <button class="del edit" data-edit="${t.id}" aria-label="Editar" title="Editar">✎</button>
@@ -2388,7 +2420,7 @@
   function renderGastos() {
     const body = $("#gastosBody"); if (!body) return;
     const bills = store.d.bills || [];
-    const monthTx = store.d.tx.filter(t => t.type === "out" && inMonth(t));
+    const monthTx = store.d.tx.filter(t => t.type === "out" && !t.planned && inMonth(t));
     if (!bills.length && !store.d.tx.length) {
       body.innerHTML = `
         <div class="card empty">
@@ -2415,7 +2447,7 @@
     const gKey = gD.getFullYear() + "-" + String(gD.getMonth() + 1).padStart(2, "0");
     const gLabel = MESES_L[gD.getMonth()] + " de " + gD.getFullYear();
     const isCur = gastosOffset === 0;
-    const gMTx = store.d.tx.filter(t => (t.date || "").slice(0, 7) === gKey);
+    const gMTx = store.d.tx.filter(t => !t.planned && (t.date || "").slice(0, 7) === gKey);
     const gOut = gMTx.filter(t => t.type === "out").reduce((a, t) => a + t.amount, 0);
     const gIn = gMTx.filter(t => t.type === "in").reduce((a, t) => a + t.amount, 0);
     const gCats = Object.entries(gMTx.filter(t => t.type === "out").reduce((m, t) => { m[t.category] = (m[t.category] || 0) + t.amount; return m; }, {})).sort((a, b) => b[1] - a[1]).slice(0, 6);
@@ -3678,7 +3710,7 @@
   }
   function relTx() {
     const keys = relRange();
-    return store.d.tx.filter(t => t.type !== "transfer" && keys.includes((t.date || "").slice(0, 7)));
+    return store.d.tx.filter(t => t.type !== "transfer" && !t.planned && keys.includes((t.date || "").slice(0, 7)));
   }
   function groupBy(list, type) {
     const m = {}; list.filter(t => t.type === type).forEach(t => m[t.category] = (m[t.category] || 0) + t.amount);
@@ -3696,8 +3728,8 @@
     const out = [];
     for (let i = n - 1; i >= 0; i--) {
       const k = monthKey(i);
-      const rec = store.d.tx.filter(t => t.type === "in" && (t.date || "").slice(0, 7) === k).reduce((a, t) => a + t.amount, 0);
-      const des = store.d.tx.filter(t => t.type === "out" && (t.date || "").slice(0, 7) === k).reduce((a, t) => a + t.amount, 0);
+      const rec = store.d.tx.filter(t => t.type === "in" && !t.planned && (t.date || "").slice(0, 7) === k).reduce((a, t) => a + t.amount, 0);
+      const des = store.d.tx.filter(t => t.type === "out" && !t.planned && (t.date || "").slice(0, 7) === k).reduce((a, t) => a + t.amount, 0);
       out.push([MESES_L[parseInt(k.slice(5)) - 1].slice(0, 3), rec, des]);
     }
     return out;
@@ -4030,6 +4062,7 @@
   }
   function applyMode() {
     // O app opera sempre com os dados do usuário (localStorage). Sem modo demonstração.
+    maturePlanned();
     toggleReal("demoDash", "realDash");
     toggleReal("demoOrc", "realOrc");
     toggleReal("demoInv", "realInv");
@@ -4131,6 +4164,9 @@
     $("#addValue").value = editTx ? String(editTx.amount).replace(".", ",") : "";
     if ($("#addDesc")) $("#addDesc").value = editTx ? (editTx.desc || "") : "";
     if ($("#addTags")) $("#addTags").value = (editTx && editTx.tags) ? editTx.tags.join(", ") : "";
+    if ($("#addRepeat")) $("#addRepeat").value = "no";
+    { const repRow = $("#addRepeatRow"); if (repRow) repRow.style.display = (editTx && !dup) ? "none" : ""; }
+    { const rn = $("#addRepeatN"); if (rn) rn.style.display = "none"; const rh = $("#addRepeatHint"); if (rh) rh.style.display = "none"; }
     if (editTx) {
       selectChip($("#addCats"), editTx.category);
       if (editTx.account) selectChip($("#addPay"), editTx.account);
@@ -4141,6 +4177,10 @@
     }
     addSheet.classList.add("open"); $("#addValue").focus();
   };
+  { // controle da repetição (parcelar / recorrente)
+    const r = $("#addRepeat"), rn = $("#addRepeatN"), rh = $("#addRepeatHint");
+    if (r) r.addEventListener("change", () => { const on = r.value !== "no"; if (rn) rn.style.display = on ? "" : "none"; if (rh) rh.style.display = on ? "" : "none"; });
+  }
   $("#fabAdd").addEventListener("click", () => openAdd());
   $("#cmdAdd").addEventListener("click", () => { closeCmdk(); openAdd(); });
   $("#btnAddCancel").addEventListener("click", () => { editingTxId = null; addSheet.classList.remove("open"); });
@@ -4157,33 +4197,55 @@
       const t = store.d.tx.find(x => x.id === editingTxId);
       if (t) {
         const oldAc = store.d.accounts.find(a => a.name === t.account);
-        if (oldAc) oldAc.balance -= (t.type === "in" ? t.amount : -t.amount);
-        t.type = addType; t.amount = amount; t.category = cat; t.account = acct; t.date = date; t.desc = desc; t.tags = tags;
+        if (!t.planned && oldAc) oldAc.balance -= (t.type === "in" ? t.amount : -t.amount);
+        const newPlanned = date > todayLocal();
+        t.type = addType; t.amount = amount; t.category = cat; t.account = acct; t.date = date; t.desc = desc; t.tags = tags; t.planned = newPlanned;
         const newAc = store.d.accounts.find(a => a.name === acct);
-        if (newAc) newAc.balance += (addType === "in" ? amount : -amount);
+        if (!newPlanned && newAc) newAc.balance += (addType === "in" ? amount : -amount);
       }
       editingTxId = null;
       store.save(); addSheet.classList.remove("open"); applyMode();
       showToast("Lançamento atualizado");
       return;
     }
-    store.d.tx.push({ id: uid(), type: addType, amount, category: cat, account: acct, date, desc, tags });
+    // repetição: parcelado (divide o valor em N) ou recorrente (valor cheio por N meses)
+    const repMode = ($("#addRepeat") || {}).value || "no";
+    const repN = Math.max(1, Math.min(60, parseInt(($("#addRepeatN") || {}).value, 10) || 1));
+    if (repMode !== "no" && repN > 1) {
+      const series = uid();
+      const per = repMode === "parc" ? Math.round(amount / repN * 100) / 100 : amount;
+      const [by, bm, bd] = date.split("-").map(Number);
+      for (let i = 0; i < repN; i++) {
+        const diso = isoLocal(new Date(by, bm - 1 + i, bd));
+        const planned = diso > todayLocal();
+        const label = repMode === "parc" ? `${desc || cat} (${i + 1}/${repN})` : desc;
+        store.d.tx.push({ id: uid(), type: addType, amount: per, category: cat, account: acct, date: diso, desc: label, tags, planned, series });
+        if (!planned) { const ac = store.d.accounts.find(a => a.name === acct); if (ac) ac.balance += (addType === "in" ? per : -per); }
+      }
+      store.save(); addSheet.classList.remove("open"); applyMode();
+      showToast(`${repN}× ${repMode === "parc" ? "parcelas" : "lançamentos mensais"} criados (${brl(per)} cada)`);
+      return;
+    }
+    const planned = date > todayLocal();
+    store.d.tx.push({ id: uid(), type: addType, amount, category: cat, account: acct, date, desc, tags, planned });
     const ac = store.d.accounts.find(a => a.name === acct);
-    if (ac) ac.balance += (addType === "in" ? amount : -amount);
+    if (!planned && ac) ac.balance += (addType === "in" ? amount : -amount);
     store.save();
     addSheet.classList.remove("open");
     renderReal(); renderRel(); renderGastos(); renderOrc();
     let budMsg = "";
-    if (addType === "out") {
+    if (addType === "out" && !planned) {
       const lim = (store.d.budgets || {})[cat] || 0;
       if (lim) {
-        const spentCat = store.d.tx.filter(t => t.type === "out" && t.category === cat && inMonth(t)).reduce((a, t) => a + t.amount, 0);
+        const spentCat = store.d.tx.filter(t => t.type === "out" && !t.planned && t.category === cat && inMonth(t)).reduce((a, t) => a + t.amount, 0);
         const bpct = Math.round(spentCat / lim * 100);
         if (spentCat > lim) budMsg = ` · ⚠️ estourou ${cat}: ${brl(spentCat)} de ${brl(lim)} (${bpct}%)`;
         else if (bpct >= 85) budMsg = ` · ⚠️ ${cat} em ${bpct}% do limite`;
       }
     }
-    showToast(`${addType === "in" ? "Receita" : "Despesa"} de ${brl(amount)} registrada em ${cat}${budMsg}`);
+    showToast(planned
+      ? `${addType === "in" ? "Receita" : "Despesa"} agendada para ${fmtDate(date)} — entra no saldo na data`
+      : `${addType === "in" ? "Receita" : "Despesa"} de ${brl(amount)} registrada em ${cat}${budMsg}`);
   });
   addEventListener("keydown", e => {
     if (e.key.toLowerCase() === "n" && document.body.classList.contains("logged")
