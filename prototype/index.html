@@ -205,6 +205,8 @@
   .pill.ok   { background: color-mix(in srgb, var(--good) 15%, transparent); color: var(--good-text); }
   .pill.due  { background: color-mix(in srgb, var(--critical) 14%, transparent); color: var(--critical); }
   .mchip { font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 99px; margin-left: 6px; white-space: nowrap; vertical-align: middle; }
+  .tag-chip { display: inline-block; font-size: 10.5px; font-weight: 600; padding: 0 6px; border-radius: 99px; margin-left: 4px;
+    background: color-mix(in srgb, var(--accent) 13%, transparent); color: var(--accent); white-space: nowrap; }
   .mchip.up   { background: color-mix(in srgb, var(--critical) 13%, transparent); color: var(--critical); }
   .mchip.down { background: color-mix(in srgb, var(--good) 15%, transparent); color: var(--good-text); }
   .mchip.flat, .mchip.new { background: color-mix(in srgb, var(--ink) 8%, transparent); color: var(--ink-3); }
@@ -1144,6 +1146,10 @@
       <label for="addDesc">Descrição <span style="color:var(--ink-3); font-weight:500">(opcional)</span></label>
       <input id="addDesc" type="text" placeholder="Ex.: Almoço com cliente, Uber aeroporto" autocomplete="off">
     </div>
+    <div class="field">
+      <label for="addTags">Etiquetas <span style="color:var(--ink-3); font-weight:500">(opcional, separe por vírgula)</span></label>
+      <input id="addTags" type="text" placeholder="Ex.: viagem, trabalho" autocomplete="off">
+    </div>
     <span class="fieldset-label" id="addCatLabel">Categoria</span>
     <div class="chip-row" id="addCats"></div>
     <span class="fieldset-label">Conta</span>
@@ -1758,6 +1764,7 @@
 
   /* ---------- cálculos ---------- */
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const tagChips = t => (t.tags && t.tags.length) ? " " + t.tags.map(tg => `<span class="tag-chip">#${esc(tg)}</span>`).join("") : "";
   const norm = s => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
   const daysLeft = () => { const d = new Date(); const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); return Math.max(1, last - d.getDate() + 1); };
   const totalSaldo = () => store.d.accounts.reduce((s, a) => s + a.balance, 0);
@@ -2038,7 +2045,7 @@
               <button class="del" data-del="${t.id}" aria-label="Excluir" title="Excluir">✕</button></div>`
               : `<div class="row-item">
               <span class="cat-dot" style="background:${t.type === "in" ? "var(--good)" : "var(--s1)"}"></span>
-              <div class="grow" data-editrow="${t.id}" style="cursor:pointer" title="Tocar para editar"><div class="t">${esc(t.desc || t.category)}</div><div class="d">${t.desc ? esc(t.category) + " · " : ""}${fmtDate(t.date)}${t.account ? " · " + esc(t.account) : ""}</div></div>
+              <div class="grow" data-editrow="${t.id}" style="cursor:pointer" title="Tocar para editar"><div class="t">${esc(t.desc || t.category)}${tagChips(t)}</div><div class="d">${t.desc ? esc(t.category) + " · " : ""}${fmtDate(t.date)}${t.account ? " · " + esc(t.account) : ""}</div></div>
               <span class="num ${t.type === "in" ? "tx-in" : "tx-out"}">${t.type === "in" ? "+" : "−"}${brl(t.amount)}</span>
               <button class="del" data-dup="${t.id}" aria-label="Repetir igual" title="Repetir igual (hoje)">⟳</button>
               <button class="del edit" data-edit="${t.id}" aria-label="Editar" title="Editar">✎</button>
@@ -2518,9 +2525,9 @@
           </select>
         </div>
         <div class="row-list mini-list" id="gastosList">
-          ${lista.length ? lista.map(t => `<div class="row-item" data-search="${esc((norm(t.desc || "") + " " + norm(t.category || "")))}" data-cat="${esc(t.category)}">
+          ${lista.length ? lista.map(t => `<div class="row-item" data-search="${esc((norm(t.desc || "") + " " + norm(t.category || "") + " " + norm((t.tags || []).join(" "))))}" data-cat="${esc(t.category)}">
             <span class="cat-dot" style="background:var(--s1)"></span>
-            <div class="grow" data-editrow="${t.id}" style="cursor:pointer" title="Tocar para editar"><div class="t">${esc(t.desc || t.category)}</div><div class="d">${t.desc ? esc(t.category) + " · " : ""}${fmtDate(t.date)}${t.account ? " · " + esc(t.account) : ""}</div></div>
+            <div class="grow" data-editrow="${t.id}" style="cursor:pointer" title="Tocar para editar"><div class="t">${esc(t.desc || t.category)}${tagChips(t)}</div><div class="d">${t.desc ? esc(t.category) + " · " : ""}${fmtDate(t.date)}${t.account ? " · " + esc(t.account) : ""}</div></div>
             <span class="num tx-out">−${brl(t.amount)}</span>
             <button class="del" data-dup="${t.id}" aria-label="Repetir igual" title="Repetir igual (hoje)">⟳</button>
             <button class="del edit" data-edit="${t.id}" aria-label="Editar" title="Editar">✎</button>
@@ -4123,6 +4130,7 @@
     $("#addDate").value = (editTx && !dup) ? editTx.date : todayISO();
     $("#addValue").value = editTx ? String(editTx.amount).replace(".", ",") : "";
     if ($("#addDesc")) $("#addDesc").value = editTx ? (editTx.desc || "") : "";
+    if ($("#addTags")) $("#addTags").value = (editTx && editTx.tags) ? editTx.tags.join(", ") : "";
     if (editTx) {
       selectChip($("#addCats"), editTx.category);
       if (editTx.account) selectChip($("#addPay"), editTx.account);
@@ -4144,12 +4152,13 @@
     const acct = ($('#addPay .chip[aria-pressed="true"]') || {}).textContent || "";
     const date = $("#addDate").value || todayISO();
     const desc = (($("#addDesc") || {}).value || "").trim();
+    const tags = (($("#addTags") || {}).value || "").split(",").map(s => s.trim()).filter(Boolean);
     if (editingTxId) {
       const t = store.d.tx.find(x => x.id === editingTxId);
       if (t) {
         const oldAc = store.d.accounts.find(a => a.name === t.account);
         if (oldAc) oldAc.balance -= (t.type === "in" ? t.amount : -t.amount);
-        t.type = addType; t.amount = amount; t.category = cat; t.account = acct; t.date = date; t.desc = desc;
+        t.type = addType; t.amount = amount; t.category = cat; t.account = acct; t.date = date; t.desc = desc; t.tags = tags;
         const newAc = store.d.accounts.find(a => a.name === acct);
         if (newAc) newAc.balance += (addType === "in" ? amount : -amount);
       }
@@ -4158,7 +4167,7 @@
       showToast("Lançamento atualizado");
       return;
     }
-    store.d.tx.push({ id: uid(), type: addType, amount, category: cat, account: acct, date, desc });
+    store.d.tx.push({ id: uid(), type: addType, amount, category: cat, account: acct, date, desc, tags });
     const ac = store.d.accounts.find(a => a.name === acct);
     if (ac) ac.balance += (addType === "in" ? amount : -amount);
     store.save();
