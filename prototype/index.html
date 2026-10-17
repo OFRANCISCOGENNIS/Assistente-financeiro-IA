@@ -1200,6 +1200,26 @@
   </div>
 </div>
 
+<!-- transferência entre contas -->
+<div class="sheet-veil" id="transferSheet">
+  <div class="sheet" role="dialog" aria-label="Transferir entre contas" style="max-height:92vh; overflow-y:auto">
+    <h2>↔ Transferir entre contas</h2>
+    <p style="margin-bottom:2px">Mover dinheiro de uma conta para outra. Não conta como receita nem despesa.</p>
+    <div class="field"><label for="trFrom">De (saiu daqui)</label>
+      <select id="trFrom" style="width:100%; padding:10px 12px; border:1px solid var(--ring); border-radius:9px; background:var(--card); color:var(--ink); font:inherit"></select></div>
+    <div class="field"><label for="trTo">Para (entrou aqui)</label>
+      <select id="trTo" style="width:100%; padding:10px 12px; border:1px solid var(--ring); border-radius:9px; background:var(--card); color:var(--ink); font:inherit"></select></div>
+    <div class="field"><label for="trValue">Valor</label>
+      <input id="trValue" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off"></div>
+    <div class="field"><label for="trDesc">Descrição <span style="color:var(--ink-3); font-weight:500">(opcional)</span></label>
+      <input id="trDesc" type="text" placeholder="Ex.: Guardar na poupança" autocomplete="off"></div>
+    <div class="field"><label for="trDate">Data</label>
+      <input id="trDate" type="date"></div>
+    <button class="btn-primary" id="btnTransferSave" style="margin-top:18px">Transferir</button>
+    <button class="alt" id="btnTransferCancel">Cancelar</button>
+  </div>
+</div>
+
 <!-- definir limites do orçamento -->
 <div class="sheet-veil" id="budgetSheet">
   <div class="sheet" role="dialog" aria-label="Definir limites do orçamento" style="max-height:82vh; overflow-y:auto">
@@ -2002,7 +2022,8 @@
               <button class="del edit" data-editacct="${a.id}" aria-label="Editar" title="Editar">✎</button>
               <button class="del" data-del-acct="${a.id}" aria-label="Excluir">✕</button></div>`).join("") || `<p class="hint">Nenhuma conta ainda.</p>`}
           </div>
-          <div class="cta-row" style="margin-top:12px"><button class="btn-mini alt" data-act="addAcct">+ Conta</button></div>
+          <div class="cta-row" style="margin-top:12px"><button class="btn-mini alt" data-act="addAcct">+ Conta</button>
+            ${d.accounts.length >= 2 ? `<button class="btn-mini alt" data-act="transfer">↔ Transferir</button>` : ""}</div>
         </div>
       </div>
       <div class="grid g-1-1">
@@ -2010,7 +2031,12 @@
           <h2>Últimos lançamentos</h2>
           <p class="hint">${d.tx.length} no total</p>
           <div class="row-list mini-list">
-            ${recentes.map(t => `<div class="row-item">
+            ${recentes.map(t => t.type === "transfer" ? `<div class="row-item">
+              <span class="cat-dot" style="background:var(--ink-3)"></span>
+              <div class="grow"><div class="t">↔ ${esc(t.desc || "Transferência")}</div><div class="d">${esc(t.from)} → ${esc(t.to)} · ${fmtDate(t.date)}</div></div>
+              <span class="num" style="color:var(--ink-2)">${brl(t.amount)}</span>
+              <button class="del" data-del="${t.id}" aria-label="Excluir" title="Excluir">✕</button></div>`
+              : `<div class="row-item">
               <span class="cat-dot" style="background:${t.type === "in" ? "var(--good)" : "var(--s1)"}"></span>
               <div class="grow" data-editrow="${t.id}" style="cursor:pointer" title="Tocar para editar"><div class="t">${esc(t.desc || t.category)}</div><div class="d">${t.desc ? esc(t.category) + " · " : ""}${fmtDate(t.date)}${t.account ? " · " + esc(t.account) : ""}</div></div>
               <span class="num ${t.type === "in" ? "tx-in" : "tx-out"}">${t.type === "in" ? "+" : "−"}${brl(t.amount)}</span>
@@ -2070,7 +2096,13 @@
         <button id="btnReset" style="color:var(--critical); font-weight:650; text-decoration:underline">Apagar tudo</button></div>`;
 
     $$("[data-del]", realDash).forEach(b => b.addEventListener("click", () => {
-      store.d.tx = store.d.tx.filter(t => t.id !== b.dataset.del); store.save(); renderReal();
+      const t = store.d.tx.find(x => x.id === b.dataset.del);
+      if (t && t.type === "transfer") { // reverte as duas contas
+        const fa = store.d.accounts.find(a => a.name === t.from), ta = store.d.accounts.find(a => a.name === t.to);
+        if (fa) fa.balance += t.amount;
+        if (ta) ta.balance -= t.amount;
+      }
+      store.d.tx = store.d.tx.filter(x => x.id !== b.dataset.del); store.save(); renderReal();
     }));
     $$("[data-edit], [data-editrow]", realDash).forEach(b => b.addEventListener("click", () => {
       const id = b.dataset.edit || b.dataset.editrow;
@@ -3639,7 +3671,7 @@
   }
   function relTx() {
     const keys = relRange();
-    return store.d.tx.filter(t => keys.includes((t.date || "").slice(0, 7)));
+    return store.d.tx.filter(t => t.type !== "transfer" && keys.includes((t.date || "").slice(0, 7)));
   }
   function groupBy(list, type) {
     const m = {}; list.filter(t => t.type === type).forEach(t => m[t.category] = (m[t.category] || 0) + t.amount);
@@ -3850,7 +3882,7 @@
     const ev = {};
     const push = (d, o) => { (ev[d] = ev[d] || []).push(o); };
     const key = year + "-" + String(month + 1).padStart(2, "0");
-    store.d.tx.filter(t => (t.date || "").slice(0, 7) === key).forEach(t =>
+    store.d.tx.filter(t => (t.type === "in" || t.type === "out") && (t.date || "").slice(0, 7) === key).forEach(t =>
       push(+t.date.slice(8, 10), { kind: t.type === "in" ? "in" : "out", label: t.desc || t.category, amount: (t.type === "in" ? "+" : "−") + brl(t.amount) }));
     (store.d.bills || []).forEach(b => {
       const paid = (b.paidMonths || []).includes(key);
@@ -4322,8 +4354,34 @@
   });
 
   const scrollBills = () => { const c = $("#billsCard"); if (c) { c.scrollIntoView({ behavior: "smooth", block: "center" }); c.classList.add("flash"); setTimeout(() => c.classList.remove("flash"), 1200); } };
+  const transferSheet = $("#transferSheet");
+  function openTransfer() {
+    if (store.d.mode !== "real") { store.d.mode = "real"; store.save(); applyMode(); }
+    const accts = store.d.accounts || [];
+    if (accts.length < 2) { showToast("Cadastre pelo menos 2 contas para transferir"); return; }
+    const opts = accts.map(a => `<option value="${esc(a.name)}">${esc(a.name)}</option>`).join("");
+    $("#trFrom").innerHTML = opts; $("#trTo").innerHTML = opts;
+    if ($("#trTo").options.length > 1) $("#trTo").selectedIndex = 1;
+    $("#trValue").value = ""; $("#trDesc").value = ""; $("#trDate").value = todayISO();
+    transferSheet.classList.add("open"); $("#trValue").focus();
+  }
+  $("#btnTransferCancel").addEventListener("click", () => transferSheet.classList.remove("open"));
+  transferSheet.addEventListener("click", e => { if (e.target === transferSheet) transferSheet.classList.remove("open"); });
+  $("#btnTransferSave").addEventListener("click", () => {
+    const from = $("#trFrom").value, to = $("#trTo").value, amount = parseNum($("#trValue").value);
+    if (from === to) { showToast("Escolha duas contas diferentes"); return; }
+    if (amount <= 0) { $("#trValue").focus(); showToast("Informe um valor válido"); return; }
+    const fa = store.d.accounts.find(a => a.name === from), ta = store.d.accounts.find(a => a.name === to);
+    const date = $("#trDate").value || todayISO(), desc = ($("#trDesc").value || "").trim();
+    store.d.tx.push({ id: uid(), type: "transfer", amount, from, to, date, desc });
+    if (fa) fa.balance -= amount;
+    if (ta) ta.balance += amount;
+    store.save(); transferSheet.classList.remove("open");
+    renderReal();
+    showToast(`Transferência de ${brl(amount)}: ${from} → ${to}`);
+  });
   const ACT = { addAcct: openAcct, addTx: openAdd, addGoal: openGoal, addBill: openBill, scrollBills, import: openImport,
-    goCards: () => { renderCards(); go("cartoes"); }, goCal: () => { renderCal(); go("cal"); } };
+    transfer: openTransfer, goCards: () => { renderCards(); go("cartoes"); }, goCal: () => { renderCal(); go("cal"); } };
   applyMode();
 
   const btnEnv = $("#btnEnvelope");
@@ -4388,7 +4446,7 @@
   $("#cmdLock").addEventListener("click", () => { closeCmdk(); lockApp(); });
   addEventListener("keydown", e => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openCmdk(); }
-    if (e.key === "Escape") { closeCmdk(); [guardSheet, addSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, pjSheet, profSheet, cardSheet, cardBuySheet, debtSheet, splitSheet, importSheet, moreSheet, configSheet, welcomeSheet, syncSheet, a11ySheet, clearSheet].forEach(s => s && s.classList.remove("open")); }
+    if (e.key === "Escape") { closeCmdk(); [guardSheet, addSheet, transferSheet, acctSheet, goalSheet, budgetSheet, invSheet, aporteSheet, billSheet, pjSheet, profSheet, cardSheet, cardBuySheet, debtSheet, splitSheet, importSheet, moreSheet, configSheet, welcomeSheet, syncSheet, a11ySheet, clearSheet].forEach(s => s && s.classList.remove("open")); }
   });
 
   /* ---------- gráficos (SVG gerado) ---------- */
