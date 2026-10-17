@@ -1339,9 +1339,9 @@
 <!-- importar extrato CSV -->
 <div class="sheet-veil" id="importSheet">
   <div class="sheet" role="dialog" aria-label="Importar extrato" style="max-width:560px; max-height:88vh; overflow-y:auto">
-    <h2>Importar extrato (CSV)</h2>
-    <p style="margin-bottom:8px">Selecione um arquivo <b>.csv</b> do seu banco. Eu detecto as colunas de <b>data</b>, <b>descrição</b> e <b>valor</b> — valores negativos viram despesas; positivos, receitas.</p>
-    <input type="file" id="importFile" accept=".csv,text/csv" style="margin-bottom:6px">
+    <h2>Importar extrato (CSV ou OFX)</h2>
+    <p style="margin-bottom:8px">Selecione um arquivo <b>.ofx</b> ou <b>.csv</b> do seu banco. No OFX eu leio tudo automaticamente; no CSV detecto as colunas de <b>data</b>, <b>descrição</b> e <b>valor</b>. Valores negativos viram despesas; positivos, receitas.</p>
+    <input type="file" id="importFile" accept=".csv,.ofx,text/csv,application/x-ofx" style="margin-bottom:6px">
     <button class="link-btn" id="btnImportSample" type="button" style="text-align:left; margin:2px 0 10px">Baixar um CSV de exemplo</button>
     <div id="importAcctWrap" hidden>
       <span class="fieldset-label">Conta de destino</span>
@@ -2959,6 +2959,21 @@
     }
     return rows;
   }
+  // OFX (extrato padrão dos bancos): lê os blocos <STMTTRN> (tags SGML, muitas vezes sem fechamento)
+  function parseOFXText(text) {
+    const rows = [];
+    const blocks = text.match(/<STMTTRN>[\s\S]*?<\/STMTTRN>/gi) || [];
+    const field = (blk, tag) => { const m = blk.match(new RegExp("<" + tag + ">\\s*([^<\\r\\n]+)", "i")); return m ? m[1].trim() : ""; };
+    blocks.forEach(blk => {
+      const amt = parseFloat(field(blk, "TRNAMT").replace(",", "."));
+      if (isNaN(amt) || amt === 0) return;
+      const dt = field(blk, "DTPOSTED").replace(/[^0-9]/g, "").slice(0, 8);
+      const date = /^\d{8}$/.test(dt) ? `${dt.slice(0, 4)}-${dt.slice(4, 6)}-${dt.slice(6, 8)}` : todayISO();
+      const desc = field(blk, "MEMO") || field(blk, "NAME") || "Lançamento";
+      rows.push({ date, amount: Math.abs(amt), type: amt < 0 ? "out" : "in", category: guessCat(desc), desc });
+    });
+    return rows;
+  }
   const importSheet = $("#importSheet");
   let importAcct = "";
   function openImport() {
@@ -2978,7 +2993,9 @@
     const f = e.target.files && e.target.files[0]; if (!f) return;
     const rd = new FileReader();
     rd.onload = () => {
-      impRows = parseCSVText(String(rd.result));
+      const text = String(rd.result);
+      const isOFX = /<OFX|<STMTTRN/i.test(text) || /\.ofx$/i.test(f.name || "");
+      impRows = isOFX ? parseOFXText(text) : parseCSVText(text);
       const prev = $("#importPreview");
       if (!impRows.length) { prev.innerHTML = `<div class="alert warn" style="margin-top:10px"><span class="ic">⚠️</span><div>Não consegui ler lançamentos. Confira se o arquivo tem colunas de data e valor.</div></div>`; $("#btnImportConfirm").hidden = true; $("#importAcctWrap").hidden = true; return; }
       const nIn = impRows.filter(r => r.type === "in").length, nOut = impRows.length - nIn;
